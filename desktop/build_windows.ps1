@@ -38,8 +38,8 @@ $pth = Get-ChildItem $pyDir -Filter "python*._pth" | Select-Object -First 1
 $zipName = $pth.BaseName + ".zip"
 Set-Content -Path $pth.FullName -Encoding ascii -Value @($zipName, ".", "Lib\site-packages", "..\jarvis", "import site")
 
-# 2. Pakete (nur fertige Wheels)
-python -m pip install --disable-pip-version-check --no-warn-script-location --only-binary=:all: `
+# 2. Pakete (fertige Wheels bevorzugt; reine Python-Pakete wie pyautogui gibt es nur als Quellpaket)
+python -m pip install --disable-pip-version-check --no-warn-script-location --prefer-binary `
     --target (Join-Path $pyDir "Lib\site-packages") -r (Join-Path $root "requirements.txt")
 if ($LASTEXITCODE -ne 0) { throw "pip install fehlgeschlagen" }
 
