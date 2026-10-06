@@ -54,7 +54,7 @@ jobs:
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
           if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
           $version = python -c "import config; print(config.VERSION)"
-          & $iscc "/DAppVersion=$version" installer.iss
+          & $iscc /Qp "/DAppVersion=$version" installer.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup fehlgeschlagen" }
           Get-ChildItem dist-installer
 
