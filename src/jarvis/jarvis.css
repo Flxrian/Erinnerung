@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+body {
+  @apply min-h-screen bg-[#03070d] text-cyan-100 antialiased;
+  background-image: radial-gradient(circle at 50% 30%, rgba(14, 116, 144, 0.25), transparent 60%);
+}
+
+@keyframes jarvis-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes jarvis-spin-rev {
+  to { transform: rotate(-360deg); }
+}
+@keyframes jarvis-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+.reactor-ring { animation: jarvis-spin 18s linear infinite; }
+.reactor-ring-rev { animation: jarvis-spin-rev 12s linear infinite; }
+.reactor[data-state="listening"] .reactor-core,
+.reactor[data-state="speaking"] .reactor-core { animation: jarvis-pulse 0.9s ease-in-out infinite; }
+.reactor[data-state="thinking"] .reactor-ring { animation-duration: 2s; }
+.reactor[data-state="thinking"] .reactor-ring-rev { animation-duration: 1.5s; }

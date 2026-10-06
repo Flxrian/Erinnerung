@@ -1,12 +1,30 @@
-# Erinnerung – Aktivitäts-Tracker
+# Erinnerung & J.A.R.V.I.S.
 
 React-App (Vite + TypeScript + Tailwind) zum Erfassen und Teilen von Aktivitäten, mit Ticketsystem und Admin-Bereich.
 
 ## Ohne Installation nutzen
 
-`Erinnerung.html` herunterladen und per Doppelklick im Browser öffnen – fertig. Kein Node.js, kein Server nötig.
+- **`Erinnerung.html`** – Aktivitäts-Tracker
+- **`Jarvis.html`** – persönlicher Sprachassistent
 
+Herunterladen und per Doppelklick im Browser öffnen (am besten Chrome oder Edge). Kein Node.js, kein Server nötig.
 Neu erzeugen mit `npm run build:single`.
+
+## J.A.R.V.I.S.
+
+- **Sprechen**: auf den leuchtenden Kreis oder das Mikrofon tippen – oder in den Einstellungen „Dauerhaft zuhören“ aktivieren und „Jarvis, …“ sagen
+- **Antwortet per Sprache** (Stimme und Tempo einstellbar)
+- **Dateien**: per Sprache anlegen, vorlesen, gezielt ändern („ersetze Brot durch Vollkornbrot“), ergänzen, umbenennen, löschen.
+  Speicherort wahlweise ein echter Ordner auf dem PC (Chrome/Edge) oder der Browser-Speicher (mit Download)
+- **Erinnerungen & Timer** mit Ton, Sprachansage und Desktop-Benachrichtigung
+- **Websuche** für aktuelle Infos, **Webseiten öffnen**, **Langzeitgedächtnis** („merk dir, dass …“)
+
+Für die volle Intelligenz braucht Jarvis einen Claude API-Schlüssel ([console.anthropic.com](https://console.anthropic.com/settings/keys)),
+der in den Einstellungen eingetragen wird. Ohne Schlüssel versteht er einfache Befehle: Uhrzeit, Datum, „Timer 5 Minuten“,
+„Erinnere mich in 10 Minuten an …“, „Notiere …“, „Öffne YouTube“.
+
+Der Schlüssel liegt nur im Browser und wird direkt an die Claude API geschickt. Die App ist für den eigenen Rechner gedacht –
+nicht mit eingetragenem Schlüssel öffentlich hosten.
 
 ## Starten (Entwicklung)
 
