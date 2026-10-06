@@ -59,3 +59,11 @@ def test_open_website_only_http(monkeypatch):
     assert "nur Webseiten" in commands.open_website("file:///C:/Windows")
     commands.open_website("youtube.com")
     assert opened == ["https://youtube.com"]
+
+
+def test_google_pcm_parsing_and_byteswap():
+    import stt
+    text = '{"result":[]}\n{"result":[{"alternative":[{"transcript":"wie spät ist es","confidence":0.9}],"final":true}],"result_index":0}\n'
+    assert stt._parse_google(text) == "wie spät ist es"
+    assert stt._parse_google('{"result":[]}\n') is None
+    assert stt._swap16(b"\x01\x02\x03\x04") == b"\x02\x01\x04\x03"

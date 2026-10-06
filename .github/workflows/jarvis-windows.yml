@@ -19,9 +19,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Muss eine Version sein, für die python.org ein "embeddable package" anbietet
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.12.10"
           cache: pip
           cache-dependency-path: desktop/requirements*.txt
 
@@ -31,34 +32,44 @@ jobs:
       - name: Tests
         run: python -m pytest -q tests
 
-      - name: Jarvis.exe bauen
-        run: pyinstaller --noconfirm jarvis.spec
+      - name: Programmordner mit signiertem Python bauen (inkl. Selbsttest)
+        shell: pwsh
+        run: ./build_windows.ps1
 
-      - name: Selbsttest der fertigen Jarvis.exe
+      - name: Spracherkennung ohne FLAC prüfen
+        continue-on-error: true
         shell: pwsh
         run: |
-          $env:JARVIS_DATA_DIR = "$env:RUNNER_TEMP\jarvis-selftest"
-          $p = Start-Process -FilePath "dist\Jarvis\Jarvis.exe" -ArgumentList "--selftest" -Wait -PassThru
-          Get-Content "$env:JARVIS_DATA_DIR\jarvis_app.log"
-          if ($p.ExitCode -ne 0) { throw "Selbsttest fehlgeschlagen (Exit-Code $($p.ExitCode))" }
+          Add-Type -AssemblyName System.Speech
+          $s = New-Object System.Speech.Synthesis.SpeechSynthesizer
+          $fmt = New-Object System.Speech.AudioFormat.SpeechAudioFormatInfo(16000, [System.Speech.AudioFormat.AudioBitsPerSample]::Sixteen, [System.Speech.AudioFormat.AudioChannel]::Mono)
+          $s.SetOutputToWaveFile("$env:RUNNER_TEMP\probe.wav", $fmt)
+          $s.Speak("Please remind me in ten minutes to take out the laundry.")
+          $s.Dispose()
+          python tools/probe_google_stt.py "$env:RUNNER_TEMP\probe.wav"
 
       - name: Installer bauen
         shell: pwsh
         run: |
           $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
-          if (-not (Test-Path $iscc)) {
-            choco install innosetup -y --no-progress
-          }
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
           $version = python -c "import config; print(config.VERSION)"
           & $iscc "/DAppVersion=$version" installer.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup fehlgeschlagen" }
-          Compress-Archive -Path "dist\Jarvis\*" -DestinationPath "dist-installer\Jarvis-portable.zip"
           Get-ChildItem dist-installer
 
       - uses: actions/upload-artifact@v4
         with:
           name: Jarvis-Windows
           path: desktop/dist-installer/*
+
+      - name: Alte Download-Version entfernen
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete jarvis-latest --yes --cleanup-tag --repo "${{ github.repository }}"
+          exit 0
 
       - name: Download-Seite aktualisieren
         uses: softprops/action-gh-release@v2
@@ -67,14 +78,14 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: Jarvis für Windows (neueste Version)
           prerelease: true
-          overwrite_files: true
-          files: desktop/dist-installer/*
+          files: desktop/dist-installer/Jarvis-Setup.exe
           body: |
             **Jarvis-Setup.exe** herunterladen, doppelklicken, fertig – keine Python-Installation nötig.
 
-            Windows zeigt beim ersten Start evtl. „Der Computer wurde durch Windows geschützt“
-            (das Programm ist nicht digital signiert) → „Weitere Informationen“ → „Trotzdem ausführen“.
+            Jarvis startet über das offizielle, signierte Python von python.org und wird daher
+            von Windows' Smart App Control nicht blockiert.
 
-            Ohne Installation: **Jarvis-portable.zip** entpacken und `Jarvis.exe` starten.
+            Beim Installer selbst kann Windows „Der Computer wurde durch Windows geschützt“ zeigen
+            → „Weitere Informationen“ → „Trotzdem ausführen“.
 
             Gebaut aus Commit ${{ github.sha }}.

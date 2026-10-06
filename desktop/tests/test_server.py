@@ -78,3 +78,13 @@ def test_events_keep_numeric_ids():
         events.publish("confirm_done", id="toolu_1")
     e = events.publish("confirm_done", confirm_id="toolu_1")
     assert isinstance(e["id"], int) and events.since(e["id"] - 1)[-1]["confirm_id"] == "toolu_1"
+
+
+def test_show_and_quit_need_local_header(client, monkeypatch):
+    called = []
+    monkeypatch.setattr(server, "on_show_window", lambda: called.append("show"))
+    assert client.post("/api/show").status_code == 403  # z.B. Formular einer fremden Webseite
+    assert client.post("/api/show", headers={"X-Jarvis-Local": "1"},
+                       environ_base={"REMOTE_ADDR": "192.168.1.5"}).status_code == 403
+    assert client.post("/api/show", headers={"X-Jarvis-Local": "1"}).status_code == 200
+    assert called == ["show"]

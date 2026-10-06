@@ -32,8 +32,9 @@ LOCAL_TOKEN = secrets.token_urlsafe(24)
 app = Flask(__name__, static_folder=str(config.STATIC_DIR), static_url_path="")
 app.json.ensure_ascii = False
 
-# Wird vom Desktop-Programm gesetzt: Fenster nach vorne holen
+# Werden vom Desktop-Programm gesetzt: Fenster nach vorne holen / beenden
 on_show_window = None
+on_quit = None
 
 # ---------------------------------------------------------------------
 # Sicherheit
@@ -313,13 +314,29 @@ def open_folder():
     return jsonify({"ok": True, "path": path})
 
 
+def _local_control() -> bool:
+    # Eigener Header erzwingt bei Browsern einen CORS-Preflight – fremde Webseiten
+    # können diese Routen daher nicht auslösen, nur Programme auf diesem PC.
+    return _is_loopback() and request.headers.get("X-Jarvis-Local") == "1"
+
+
 @app.route("/api/show", methods=["POST"])
 def show():
     # Zweiter Programmstart meldet sich hier: Fenster nach vorne holen.
-    if not _is_loopback():
+    if not _local_control():
         return jsonify({"error": "Nur lokal."}), 403
     if on_show_window:
         on_show_window()
+    return jsonify({"ok": True})
+
+
+@app.route("/api/quit", methods=["POST"])
+def quit_app():
+    # Für den Deinstaller/Updater: Jarvis sauber beenden.
+    if not _local_control():
+        return jsonify({"error": "Nur lokal."}), 403
+    if on_quit:
+        threading.Timer(0.3, on_quit).start()
     return jsonify({"ok": True})
 
 

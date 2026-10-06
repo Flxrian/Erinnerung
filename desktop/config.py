@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 APP_NAME = "Jarvis"
-VERSION = "3.0.0"
+VERSION = "3.0.1"
 IS_WINDOWS = platform.system() == "Windows"
 
 

@@ -9,11 +9,13 @@ PCs und Arbeiten mit Dateien per Sprache.
 1. Auf GitHub unter **Releases → „Jarvis für Windows (neueste Version)“**
    die Datei **`Jarvis-Setup.exe`** herunterladen.
 2. Doppelklicken. Falls Windows „Der Computer wurde durch Windows geschützt“
-   zeigt (das Programm ist nicht digital signiert): **Weitere Informationen →
-   Trotzdem ausführen**.
+   zeigt: **Weitere Informationen → Trotzdem ausführen**.
 3. Installieren – keine Adminrechte und kein Python nötig.
 
-Ohne Installation: `Jarvis-portable.zip` entpacken und `Jarvis.exe` starten.
+Jarvis läuft über das mitgelieferte, offizielle Python von python.org
+(digital signiert). Eine eigene `Jarvis.exe` gibt es absichtlich nicht mehr:
+Windows 11 „Smart App Control“ blockiert unsignierte Programme
+(„Eine Anwendungssteuerungsrichtlinie hat diese Datei blockiert“, Code 4551).
 
 ## Erster Start
 
@@ -63,7 +65,7 @@ nach 5 falschen Passwörtern 5 Minuten gesperrt.
 
 ## Wo liegt was?
 
-- Programm: `%LOCALAPPDATA%\Programs\Jarvis`
+- Programm: `%LOCALAPPDATA%\Programs\Jarvis` (`python\` = signiertes Python, `jarvis\` = Jarvis)
 - Einstellungen, Verlauf, Protokolle: `%APPDATA%\Jarvis` (bleibt beim Deinstallieren erhalten)
 - Fehlersuche: `%APPDATA%\Jarvis\jarvis_app.log`
 
@@ -80,12 +82,14 @@ den Handy-Server. Tests: `pip install -r requirements-dev.txt && pytest tests`.
 ## Selbst bauen
 
 Passiert automatisch bei jedem Push über GitHub Actions
-(`.github/workflows/jarvis-windows.yml`): Tests → `pyinstaller jarvis.spec` →
-Selbsttest der `.exe` → Inno Setup (`installer.iss`) → Release `jarvis-latest`.
+(`.github/workflows/jarvis-windows.yml`): Tests → `build_windows.ps1`
+(offizielles Python von python.org + Pakete + Jarvis, prüft Signaturen,
+Selbsttest) → Inno Setup (`installer.iss`) → Release `jarvis-latest`.
 
 ## Änderungen gegenüber v2
 
 - Richtiges Programm mit Fenster, Infobereich-Symbol, Tastenkürzel, Installer und Autostart
+- Läuft trotz Smart App Control (signiertes Python statt eigener .exe, Spracherkennung ohne flac.exe)
 - Einstellungen im Programm statt in `config.py` (gespeichert in `%APPDATA%\Jarvis\settings.json`, wirken sofort)
 - Neue Datei-Werkzeuge `edit_file` und `append_to_file` für gezielte Änderungen per Sprache
 - Bestätigen per Sprache („ja“/„nein“)

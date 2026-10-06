@@ -13,6 +13,7 @@ läuft in beiden Fällen über SpeechRecognition/Microphone – nur die
 Erkennung selbst unterscheidet sich.
 """
 
+import json
 import os
 import tempfile
 
@@ -35,16 +36,65 @@ def _get_whisper_model():
     return _whisper_model
 
 
+_GOOGLE_ENDPOINT = "http://www.google.com/speech-api/v2/recognize"
+_GOOGLE_KEY = "AIzaSyBOti4mM-6x9WDnZIjIeyEU21OpBXqWBgw"  # öffentlicher Standard-Schlüssel von SpeechRecognition
+# Byte-Reihenfolge der PCM-Samples (geprüft im Windows-Build, siehe tools/probe_google_stt.py)
+L16_BIG_ENDIAN = False
+
+
+def _parse_google(response_text: str) -> str | None:
+    for line in response_text.split("\n"):
+        if not line.strip():
+            continue
+        result = json.loads(line).get("result") or []
+        if result and result[0].get("alternative"):
+            return result[0]["alternative"][0].get("transcript") or None
+    return None
+
+
+def _recognize_google_pcm(audio) -> str | None:
+    """Schickt das Audio als rohes PCM (audio/l16) statt als FLAC.
+    So wird kein mitgeliefertes flac-Programm gestartet – das blockiert
+    Windows' Smart App Control, weil es nicht signiert ist."""
+    import requests
+    rate = 16000
+    pcm = audio.get_raw_data(convert_rate=rate, convert_width=2)
+    if L16_BIG_ENDIAN:
+        pcm = _swap16(pcm)
+    resp = requests.post(
+        _GOOGLE_ENDPOINT,
+        params={"client": "chromium", "lang": config.STT_LANGUAGE, "key": _GOOGLE_KEY, "pFilter": 0},
+        headers={"Content-Type": f"audio/l16; rate={rate}"},
+        data=pcm,
+        timeout=15,
+    )
+    resp.raise_for_status()
+    return _parse_google(resp.text)
+
+
+def _swap16(data: bytes) -> bytes:
+    import array
+    samples = array.array("h")
+    samples.frombytes(data[: len(data) // 2 * 2])
+    samples.byteswap()
+    return samples.tobytes()
+
+
 def _recognize_google(audio) -> str | None:
     try:
-        text = _recognizer.recognize_google(audio, language=config.STT_LANGUAGE)
+        text = _recognize_google_pcm(audio)
+    except Exception as e:
+        print(f"[STT] Google-Erkennung (PCM) fehlgeschlagen ({e}) – versuche FLAC.")
+        try:
+            text = _recognizer.recognize_google(audio, language=config.STT_LANGUAGE)
+        except sr.UnknownValueError:
+            return None
+        except Exception as e2:
+            print(f"[STT] Google-Spracherkennung nicht erreichbar: {e2}")
+            return None
+    if text:
         print(f"Du: {text}")
-        return text
-    except sr.UnknownValueError:
-        return None
-    except sr.RequestError as e:
-        print(f"[STT] Google-Spracherkennung nicht erreichbar: {e}")
-        return None
+    return text
 
 
 def _recognize_whisper(audio) -> str | None:

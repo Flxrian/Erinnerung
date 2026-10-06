@@ -4,9 +4,10 @@ Das Desktop-Programm: eigenes Fenster, Symbol im Infobereich (neben der
 Uhr), Tastenkürzel zum Zuhören und Hintergrundbetrieb für Erinnerungen und
 Handy-Zugriff.
 
-Starten:  python jarvis_app.py            (oder Jarvis.exe)
+Starten:  python jarvis_app.py   (installiert: Startmenü → Jarvis)
 Optionen: --minimized   nur im Infobereich starten (Autostart)
           --selftest    prüft, ob alles Nötige vorhanden ist, und beendet sich
+          --quit        beendet ein laufendes Jarvis (für den Deinstaller)
 """
 
 import argparse
@@ -73,7 +74,7 @@ def _message_box(text: str, title: str = "Jarvis"):
 def _local(path: str, method: str = "GET", timeout: float = 1.5):
     req = urllib.request.Request(f"http://127.0.0.1:{config.LOCAL_PORT}{path}", method=method,
                                  data=b"{}" if method == "POST" else None,
-                                 headers={"Content-Type": "application/json"})
+                                 headers={"Content-Type": "application/json", "X-Jarvis-Local": "1"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read().decode("utf-8"))
 
@@ -238,7 +239,16 @@ def main():
     parser = argparse.ArgumentParser(description="Jarvis – persönlicher Sprachassistent")
     parser.add_argument("--minimized", action="store_true", help="nur im Infobereich starten")
     parser.add_argument("--selftest", action="store_true", help="Installation prüfen und beenden")
+    parser.add_argument("--quit", action="store_true", help="laufendes Jarvis beenden")
     args = parser.parse_args()
+
+    if args.quit:
+        try:
+            _local("/api/quit", "POST")
+            time.sleep(2)
+        except Exception:
+            pass  # läuft nicht
+        return 0
 
     _setup_logging()
 
@@ -259,6 +269,7 @@ def main():
 
     app = App()
     server.on_show_window = app.show
+    server.on_quit = app.quit
     server.on_settings_changed = app.register_hotkey
     server.apply_phone_settings()
     voice.apply_settings()
