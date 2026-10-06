@@ -2,7 +2,13 @@
 
 React-App (Vite + TypeScript + Tailwind) zum Erfassen und Teilen von Aktivitäten, mit Ticketsystem und Admin-Bereich.
 
-## Starten
+## Ohne Installation nutzen
+
+`Erinnerung.html` herunterladen und per Doppelklick im Browser öffnen – fertig. Kein Node.js, kein Server nötig.
+
+Neu erzeugen mit `npm run build:single`.
+
+## Starten (Entwicklung)
 
 ```bash
 npm install
