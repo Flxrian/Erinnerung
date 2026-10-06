@@ -1,0 +1,24 @@
+# Kern
+anthropic>=1,<2
+flask>=3.0.0
+requests>=2.31.0
+cryptography>=42.0.0
+
+# Programmfenster, Infobereich, Tastenkürzel
+pywebview>=5.3
+pystray>=0.19.5
+pynput>=1.7.7
+Pillow>=10.0.0
+
+# Sprache
+SpeechRecognition>=3.10.0
+PyAudio>=0.2.14
+edge-tts>=6.1.0
+pygame>=2.5.0
+pyttsx3>=2.90
+
+# PC-Steuerung
+pyautogui>=0.9.54
+psutil>=5.9.0
+pycaw>=20230407; sys_platform == "win32"
+comtypes>=1.2.0; sys_platform == "win32"

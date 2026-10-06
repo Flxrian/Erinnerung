@@ -2,6 +2,11 @@
 
 React-App (Vite + TypeScript + Tailwind) zum Erfassen und Teilen von Aktivitäten, mit Ticketsystem und Admin-Bereich.
 
+## Jarvis als Windows-Programm
+
+Im Ordner [`desktop/`](desktop/README.md): Jarvis mit PC-Steuerung als installierbares Programm
+(`Jarvis-Setup.exe` unter Releases).
+
 ## Ohne Installation nutzen
 
 - **`Erinnerung.html`** – Aktivitäts-Tracker

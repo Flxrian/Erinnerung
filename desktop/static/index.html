@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#03070d">
+<title>Jarvis</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
+<link rel="icon" href="/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Jarvis">
+<style>
+  :root {
+    --bg: #03070d;
+    --bg2: #06111c;
+    --panel: #081624;
+    --line: #12324a;
+    --accent: #22d3ee;
+    --accent2: #67e8f9;
+    --text: #e0f7ff;
+    --dim: #6f93ab;
+    --warn: #ff9f1c;
+    --err: #ff6b6b;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg) radial-gradient(circle at 50% 18%, rgba(14,116,144,.25), transparent 55%) no-repeat;
+    color: var(--text);
+    font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    display: flex; flex-direction: column; overflow: hidden;
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  input, select, textarea { font: inherit; }
+
+  header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; flex-shrink: 0; }
+  header h1 { margin: 0; flex: 1; font: 600 15px/1 Consolas, "Courier New", monospace; letter-spacing: .35em; color: var(--accent); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #3a4a58; }
+  .dot.on { background: #34d399; box-shadow: 0 0 8px #34d399; }
+  .icon-btn { background: none; border: 0; padding: 6px; border-radius: 8px; color: var(--accent2); display: grid; place-items: center; }
+  .icon-btn:hover { background: #0b2233; }
+  .icon-btn svg { width: 20px; height: 20px; }
+
+  #stage { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; padding-bottom: 6px; }
+  .reactor { position: relative; width: 150px; height: 150px; border: 0; background: none; padding: 0; border-radius: 50%; }
+  .reactor svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ring { animation: spin 18s linear infinite; transform-origin: 50% 50%; }
+  .ring-rev { animation: spin 12s linear infinite reverse; transform-origin: 50% 50%; }
+  .core { position: absolute; inset: 50px; border-radius: 50%; background: #0891b2cc; box-shadow: 0 0 36px 8px rgba(8,145,178,.45); transition: background .4s, box-shadow .4s; }
+  .reactor[data-state=listening] .core { background: #f87171; box-shadow: 0 0 50px 14px rgba(248,113,113,.55); animation: pulse .9s ease-in-out infinite; }
+  .reactor[data-state=thinking] .core { background: #0ea5e9; box-shadow: 0 0 46px 12px rgba(14,165,233,.5); }
+  .reactor[data-state=thinking] .ring { animation-duration: 2s; }
+  .reactor[data-state=thinking] .ring-rev { animation-duration: 1.4s; }
+  .reactor[data-state=speaking] .core { background: #a5f3fc; box-shadow: 0 0 60px 18px rgba(165,243,252,.55); animation: pulse .8s ease-in-out infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse { 50% { transform: scale(1.1); } }
+  #status { margin-top: 6px; font: 12px Consolas, monospace; letter-spacing: .2em; text-transform: uppercase; color: var(--accent); min-height: 16px; }
+
+  #log { flex: 1; overflow-y: auto; padding: 8px 16px 12px; display: flex; flex-direction: column; gap: 10px; }
+  .bubble { max-width: 86%; padding: 9px 13px; border-radius: 14px; font-size: 15px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .bubble.user { align-self: flex-end; background: #0e3346; border-bottom-right-radius: 4px; }
+  .bubble.jarvis { align-self: flex-start; background: var(--bg2); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+  .bubble.jarvis.error { border-color: #5a2a2a; color: #ffc2c2; }
+  .bubble.system { align-self: center; background: none; color: var(--dim); font-size: 12.5px; text-align: center; padding: 2px 8px; }
+  .bubble.reminder { align-self: center; background: #2a1d05; border: 1px solid var(--warn); color: #ffd69a; }
+  .bubble.old { opacity: .55; }
+
+  .card { align-self: stretch; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; font-size: 14px; line-height: 1.5; color: #bfe6f5; }
+  .card b { color: var(--text); }
+  .card button { display: block; margin-top: 12px; }
+
+  footer { flex-shrink: 0; display: flex; align-items: center; gap: 10px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: 1px solid #0d2333; background: rgba(3,7,13,.9); }
+  #textInput { flex: 1; min-width: 0; background: var(--bg2); border: 1px solid var(--line); color: var(--text); border-radius: 22px; padding: 11px 16px; font-size: 15px; outline: none; }
+  #textInput:focus { border-color: var(--accent); }
+  .round { width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--accent); background: #062433; color: var(--accent2); display: grid; place-items: center; flex-shrink: 0; }
+  .round svg { width: 21px; height: 21px; }
+  .round.active { background: #f87171; border-color: #f87171; color: #200; }
+
+  .btn { border: 1px solid var(--line); background: #0a2232; color: var(--text); border-radius: 10px; padding: 9px 14px; font-size: 14px; }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #022; font-weight: 600; }
+
+  .overlay { position: fixed; inset: 0; z-index: 50; background: rgba(2,5,10,.88); display: flex; align-items: flex-end; justify-content: center; }
+  .overlay.hidden { display: none; }
+  .sheet { width: 100%; max-width: 560px; max-height: 92vh; overflow-y: auto; background: #071320; border: 1px solid var(--line); border-bottom: 0; border-radius: 18px 18px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom, 0px)); }
+  @media (min-width: 600px) { .overlay { align-items: center; } .sheet { border-radius: 18px; border-bottom: 1px solid var(--line); } }
+
+  #loginOverlay { align-items: center; flex-direction: column; gap: 14px; text-align: center; padding: 24px; background: var(--bg); }
+  #loginOverlay p { color: var(--dim); font-size: 13px; margin: 0; max-width: 300px; }
+  #loginPass { width: 100%; max-width: 300px; background: var(--bg2); border: 1px solid var(--line); color: var(--text); border-radius: 12px; padding: 13px 16px; font-size: 16px; outline: none; text-align: center; }
+  #loginBtn { width: 100%; max-width: 300px; }
+  #loginError { color: var(--err); font-size: 13px; min-height: 16px; }
+
+  #confirmCard h3 { margin: 0 0 4px; color: var(--warn); font-size: 16px; }
+  #confirmToolName { font-size: 11px; color: var(--dim); margin-bottom: 10px; font-family: Consolas, monospace; }
+  #confirmDesc { background: #020910; border: 1px solid var(--line); border-radius: 10px; padding: 12px; font: 13px Consolas, monospace; white-space: pre-wrap; max-height: 260px; overflow-y: auto; margin-bottom: 14px; color: #cfe8ff; }
+  #confirmBtns { display: flex; gap: 10px; }
+  #confirmBtns button { flex: 1; padding: 12px; font-weight: 600; }
+  #denyBtn { color: var(--err); }
+  #allowBtn { background: var(--warn); border-color: var(--warn); color: #1a0f00; }
+
+  #settings h2 { margin: 0 0 4px; font-size: 18px; }
+  #settings .sub { color: var(--dim); font-size: 12.5px; margin: 0 0 14px; }
+  #settings section { border-top: 1px solid var(--line); padding: 14px 0 6px; }
+  #settings section > h3 { margin: 0 0 10px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); }
+  .field { display: block; margin-bottom: 12px; font-size: 14px; }
+  .field > span { display: block; margin-bottom: 5px; }
+  .field small, .hint { display: block; color: var(--dim); font-size: 12px; margin-top: 4px; line-height: 1.4; }
+  .field input[type=text], .field input[type=password], .field input[type=number], .field select, .field textarea {
+    width: 100%; background: #020910; border: 1px solid var(--line); color: var(--text); border-radius: 9px; padding: 9px 11px; font-size: 14px; outline: none;
+  }
+  .field textarea { min-height: 120px; font: 12.5px Consolas, monospace; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+  .check { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; font-size: 14px; }
+  .check input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .lan { font: 13px Consolas, monospace; color: var(--accent2); word-break: break-all; }
+  #settingsActions { position: sticky; bottom: -18px; background: #071320; padding: 12px 0 0; display: flex; gap: 10px; justify-content: flex-end; }
+  #settingsMsg { flex: 1; align-self: center; font-size: 13px; }
+  .dep { display: none; }
+  .dep.show { display: block; }
+</style>
+</head>
+<body>
+
+<div id="loginOverlay" class="overlay hidden">
+  <svg width="64" height="64" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" fill="none" stroke="#22d3ee" stroke-width="5"/><circle cx="50" cy="50" r="26" fill="none" stroke="#22d3ee" stroke-width="3"/><circle cx="50" cy="50" r="12" fill="#67e8f9"/></svg>
+  <h2 style="margin:0;letter-spacing:.3em">JARVIS</h2>
+  <p>Gib das Passwort ein, das du am PC unter Einstellungen → Handy festgelegt hast.</p>
+  <input id="loginPass" type="password" placeholder="Passwort" autocomplete="current-password">
+  <button id="loginBtn" class="btn primary">Verbinden</button>
+  <div id="loginError"></div>
+</div>
+
+<div id="confirmOverlay" class="overlay hidden">
+  <div class="sheet" id="confirmCard">
+    <h3>Bestätigung erforderlich</h3>
+    <div id="confirmToolName"></div>
+    <div id="confirmDesc"></div>
+    <div id="confirmBtns">
+      <button id="denyBtn" class="btn">Ablehnen</button>
+      <button id="allowBtn" class="btn">Erlauben</button>
+    </div>
+  </div>
+</div>
+
+<div id="settingsOverlay" class="overlay hidden">
+  <form class="sheet" id="settings" autocomplete="off">
+    <h2>Einstellungen</h2>
+    <p class="sub" id="settingsSub">Wird sofort übernommen – kein Neustart nötig.</p>
+
+    <section>
+      <h3>KI</h3>
+      <label class="field"><span>Claude API-Schlüssel</span>
+        <input type="password" name="ANTHROPIC_API_KEY" placeholder="sk-ant-…">
+        <small>Bekommst du unter <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent2)">console.anthropic.com</a>. Kostet pro Anfrage ein paar Cent.</small>
+      </label>
+      <label class="field"><span>Modell</span><select name="MODEL"></select></label>
+      <label class="field"><span>Dein Name</span><input type="text" name="USER_NAME" placeholder="optional"></label>
+    </section>
+
+    <section>
+      <h3>Stimme</h3>
+      <label class="field"><span>Sprachausgabe</span>
+        <select name="TTS_PROVIDER">
+          <option value="edge">Microsoft Neural (natürlich, gratis, Internet)</option>
+          <option value="windows">Windows-Stimme (offline)</option>
+          <option value="elevenlabs">ElevenLabs</option>
+          <option value="google">Google Cloud WaveNet</option>
+          <option value="local_clone">Eigene Stimme (Voice Cloning, Zusatzpakete nötig)</option>
+        </select>
+      </label>
+      <div class="dep" data-when="TTS_PROVIDER=edge">
+        <label class="field"><span>Stimme</span>
+          <select name="EDGE_TTS_VOICE">
+            <option value="de-DE-ConradNeural">Conrad (männlich)</option>
+            <option value="de-DE-KillianNeural">Killian (männlich)</option>
+            <option value="de-DE-FlorianMultilingualNeural">Florian (männlich)</option>
+            <option value="de-AT-JonasNeural">Jonas (männlich, Österreich)</option>
+            <option value="de-CH-JanNeural">Jan (männlich, Schweiz)</option>
+            <option value="de-DE-KatjaNeural">Katja (weiblich)</option>
+            <option value="de-DE-AmalaNeural">Amala (weiblich)</option>
+            <option value="de-DE-SeraphinaMultilingualNeural">Seraphina (weiblich)</option>
+          </select>
+        </label>
+      </div>
+      <div class="dep" data-when="TTS_PROVIDER=elevenlabs">
+        <label class="field"><span>ElevenLabs API-Schlüssel</span><input type="password" name="ELEVENLABS_API_KEY"></label>
+        <label class="field"><span>ElevenLabs Voice-ID</span><input type="text" name="ELEVENLABS_VOICE_ID"></label>
+      </div>
+      <div class="dep" data-when="TTS_PROVIDER=google">
+        <label class="field"><span>Google API-Schlüssel</span><input type="password" name="GOOGLE_TTS_API_KEY"></label>
+        <label class="field"><span>Google-Stimme</span><input type="text" name="GOOGLE_TTS_VOICE"></label>
+      </div>
+      <div class="dep" data-when="TTS_PROVIDER=local_clone">
+        <label class="field"><span>Referenz-Aufnahme (.wav)</span><input type="text" name="LOCAL_CLONE_REFERENCE_WAV" placeholder="C:\Jarvis\voices\stimme.wav">
+          <small>Funktioniert nur, wenn Jarvis aus dem Quellcode mit requirements-extra.txt läuft.</small></label>
+      </div>
+      <label class="field"><span>Sprechtempo: <b id="rateLabel"></b></span><input type="range" name="TTS_RATE" min="120" max="260" step="10" style="width:100%;accent-color:var(--accent)"></label>
+      <div class="row"><button type="button" class="btn" id="testVoice">Stimme testen</button></div>
+    </section>
+
+    <section>
+      <h3>Zuhören</h3>
+      <label class="check"><input type="checkbox" name="CONTINUOUS_LISTENING"><span>Dauerhaft zuhören und auf das Aktivierungswort reagieren<small class="hint">Sag z.B. „Jarvis, wie spät ist es?“</small></span></label>
+      <label class="field"><span>Aktivierungswort</span><input type="text" name="WAKE_WORD"></label>
+      <label class="field"><span>Tastenkürzel zum Zuhören</span><input type="text" name="HOTKEY"><small>Format wie &lt;ctrl&gt;+&lt;alt&gt;+j – leer lassen zum Abschalten.</small></label>
+      <label class="field"><span>Spracherkennung</span>
+        <select name="STT_PROVIDER">
+          <option value="google">Google (gratis, Internet)</option>
+          <option value="whisper_local">Whisper lokal (offline, Zusatzpakete nötig)</option>
+        </select>
+      </label>
+      <label class="check"><input type="checkbox" name="BEEP_ENABLED"><span>Signalton beim Zuhören</span></label>
+    </section>
+
+    <section>
+      <h3>Dateien &amp; Programmieren</h3>
+      <label class="check"><input type="checkbox" name="CODING_ENABLED"><span>Jarvis darf Dateien lesen, anlegen und bearbeiten</span></label>
+      <label class="field"><span>Arbeitsordner</span><input type="text" name="WORKSPACE_DIR"><small>Jarvis arbeitet nur in diesem Ordner.</small></label>
+      <div class="row" style="margin-bottom:12px"><button type="button" class="btn" data-open="workspace">Arbeitsordner öffnen</button></div>
+      <label class="check"><input type="checkbox" name="TRASH_INSTEAD_OF_DELETE"><span>Gelöschte Dateien in _trash verschieben statt endgültig löschen</span></label>
+      <label class="check"><input type="checkbox" name="WRITE_FILE_BACKUP"><span>Vor jeder Änderung ein Backup in _backups anlegen</span></label>
+    </section>
+
+    <section>
+      <h3>Programme &amp; Ordner</h3>
+      <label class="field"><span>Programme („öffne …“)</span><textarea name="KNOWN_APPS" spellcheck="false"></textarea><small>Eine Zeile pro Programm: name = Pfad</small></label>
+      <label class="field"><span>Ordner</span><textarea name="KNOWN_FOLDERS" spellcheck="false" style="min-height:90px"></textarea></label>
+    </section>
+
+    <section>
+      <h3>Handy</h3>
+      <label class="check"><input type="checkbox" name="PHONE_ACCESS"><span>Jarvis vom Handy im selben WLAN nutzen</span></label>
+      <div class="dep" data-when="PHONE_ACCESS=true">
+        <label class="field"><span>Passwort fürs Handy</span><input type="password" name="APP_TOKEN" placeholder="mindestens 8 Zeichen"></label>
+        <label class="check"><input type="checkbox" name="HTTPS_ENABLED"><span>Verschlüsselt (HTTPS) – empfohlen<small class="hint">Beim ersten Öffnen zeigt das Handy eine Zertifikatswarnung → „Trotzdem fortfahren“.</small></span></label>
+        <label class="field"><span>Port</span><input type="number" name="PORT" min="1024" max="65535"></label>
+        <p class="hint">Am Handy öffnen: <span class="lan" id="lanUrl">–</span></p>
+      </div>
+    </section>
+
+    <section>
+      <h3>Programm</h3>
+      <label class="check" id="autostartRow"><input type="checkbox" id="autostart"><span>Mit Windows starten (im Infobereich)</span></label>
+      <label class="check"><input type="checkbox" name="START_MINIMIZED"><span>Beim Start nur im Infobereich (neben der Uhr)</span></label>
+      <div class="row"><button type="button" class="btn" data-open="data">Datenordner öffnen</button><button type="button" class="btn" id="resetChat">Gespräch zurücksetzen</button></div>
+      <p class="hint" id="versionInfo"></p>
+    </section>
+
+    <div id="settingsActions">
+      <span id="settingsMsg"></span>
+      <button type="button" class="btn" id="settingsCancel">Schließen</button>
+      <button type="submit" class="btn primary">Speichern</button>
+    </div>
+  </form>
+</div>
+
+<header>
+  <div class="dot" id="connDot" title="Verbindung"></div>
+  <h1>J.A.R.V.I.S.</h1>
+  <button class="icon-btn" id="newChatBtn" title="Neues Gespräch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <button class="icon-btn hidden-phone" id="settingsBtn" title="Einstellungen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+</header>
+
+<div id="stage">
+  <button class="reactor" id="reactor" data-state="idle" title="Sprechen">
+    <svg viewBox="0 0 200 200" class="ring"><circle cx="100" cy="100" r="94" fill="none" stroke="rgba(34,211,238,.35)" stroke-width="2" stroke-dasharray="4 8"/><circle cx="100" cy="100" r="85" fill="none" stroke="rgba(34,211,238,.75)" stroke-width="3" stroke-dasharray="60 30 10 30"/></svg>
+    <svg viewBox="0 0 200 200" class="ring-rev"><circle cx="100" cy="100" r="70" fill="none" stroke="rgba(103,232,249,.6)" stroke-width="6" stroke-dasharray="20 14"/></svg>
+    <div class="core"></div>
+  </button>
+  <div id="status">Bereit</div>
+</div>
+
+<div id="log"></div>
+
+<footer>
+  <button class="round" id="micBtn" title="Sprechen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+  <input id="textInput" type="text" placeholder="Nachricht an Jarvis…" autocomplete="off">
+  <button class="round" id="sendBtn" title="Senden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></button>
+</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const log = $('log'), statusEl = $('status'), reactor = $('reactor');
+const STATUS_TEXT = { idle: 'Bereit', listening: 'Höre zu …', thinking: 'Denke nach …', speaking: 'Spreche …' };
+
+// ---------------------------------------------------------------------
+// Modus: Programmfenster am PC (Schlüssel im Link) oder Handy (Passwort)
+// ---------------------------------------------------------------------
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} },
+};
+const hashToken = new URLSearchParams(location.hash.slice(1)).get('token');
+if (hashToken) {
+  try { sessionStorage.setItem('jarvis_local_token', hashToken); } catch {}
+  history.replaceState(null, '', location.pathname);
+}
+let localToken = hashToken || (() => { try { return sessionStorage.getItem('jarvis_local_token'); } catch { return null; } })();
+let desktop = false;
+let authToken = localToken || store.get('jarvis_token') || '';
+let deviceId = store.get('jarvis_device_id');
+if (!deviceId) {
+  deviceId = crypto.randomUUID ? crypto.randomUUID() : 'dev-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+  store.set('jarvis_device_id', deviceId);
+}
+
+async function api(path, body, method) {
+  const res = await fetch(path, {
+    method: method || (body === undefined ? 'GET' : 'POST'),
+    headers: { 'Content-Type': 'application/json', 'X-Jarvis-Token': authToken, 'X-Device-Id': deviceId },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  let data = {};
+  try { data = await res.json(); } catch {}
+  if (!res.ok && !data.error) data.error = 'Fehler ' + res.status;
+  data._status = res.status;
+  return data;
+}
+
+// ---------------------------------------------------------------------
+// Anzeige
+// ---------------------------------------------------------------------
+function addBubble(text, kind, extra) {
+  const b = document.createElement('div');
+  b.className = 'bubble ' + kind + (extra ? ' ' + extra : '');
+  b.textContent = text;
+  log.appendChild(b);
+  log.scrollTop = log.scrollHeight;
+  return b;
+}
+function setState(state) {
+  reactor.dataset.state = state;
+  statusEl.textContent = STATUS_TEXT[state] || state;
+  $('micBtn').classList.toggle('active', state === 'listening');
+}
+function showResult(data) {
+  if (data.error && !data.type) { addBubble('⚠ ' + data.error, 'system'); return; }
+  if (data.type === 'confirm') {
+    if (data.text) addBubble(data.text, 'jarvis');
+    showConfirm(data);
+    return;
+  }
+  if (data.type === 'reply') {
+    addBubble(data.text, 'jarvis', data.error ? 'error' : '');
+    if (!desktop) speakInBrowser(data.text);
+  }
+}
+
+// ---------------------------------------------------------------------
+// Anmelden
+// ---------------------------------------------------------------------
+async function login(token) {
+  authToken = token;
+  try {
+    const data = await api('/api/login', {});
+    if (data._status === 401 || data._status === 403 || data._status === 429) {
+      if (localToken && token === localToken) {  // veralteter Fenster-Schlüssel
+        localToken = null;
+        try { sessionStorage.removeItem('jarvis_local_token'); } catch {}
+      }
+      showLogin(data.error);
+      return false;
+    }
+    desktop = !!data.desktop;
+    if (!desktop) store.set('jarvis_token', token);
+    $('loginOverlay').classList.add('hidden');
+    await start();
+    return true;
+  } catch {
+    showLogin('Keine Verbindung zum PC. Läuft Jarvis dort?');
+    return false;
+  }
+}
+function showLogin(msg) {
+  $('loginError').textContent = msg || '';
+  $('loginOverlay').classList.remove('hidden');
+  setTimeout(() => $('loginPass').focus(), 50);
+}
+$('loginBtn').onclick = () => { const v = $('loginPass').value.trim(); if (v) login(v); };
+$('loginPass').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('loginBtn').click(); });
+
+// ---------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------
+async function start() {
+  document.querySelectorAll('.hidden-phone').forEach((el) => el.style.display = desktop ? '' : 'none');
+  const health = await api('/api/health');
+  const hist = await api('/api/history');
+  log.innerHTML = '';
+  (hist.messages || []).slice(-30).forEach((m) => addBubble(m.content, m.role === 'user' ? 'user' : 'jarvis', 'old'));
+  if (!health.api_key) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<b>Willkommen bei Jarvis.</b><br>Damit ich denken kann, brauche ich einen Claude API-Schlüssel. Trag ihn in den Einstellungen ein – danach kannst du sofort loslegen.';
+    if (desktop) {
+      const btn = document.createElement('button');
+      btn.className = 'btn primary'; btn.textContent = 'Einstellungen öffnen';
+      btn.onclick = openSettings;
+      card.appendChild(btn);
+    }
+    log.appendChild(card);
+  } else if (!(hist.messages || []).length) {
+    addBubble(desktop
+      ? 'Bereit. Klick auf den Kreis oder drück Strg+Alt+J und sprich – oder schreib unten.'
+      : 'Bereit. Tippe aufs Mikrofon oder schreib eine Nachricht.', 'system');
+  }
+  if (desktop) pollEvents();
+  setInterval(checkConnection, 8000);
+  checkConnection();
+}
+
+async function checkConnection() {
+  try { $('connDot').classList.toggle('on', (await fetch('/api/health')).ok); }
+  catch { $('connDot').classList.remove('on'); }
+}
+
+// ---------------------------------------------------------------------
+// Ereignisse vom PC (Sprachbefehle, Erinnerungen, Status)
+// ---------------------------------------------------------------------
+async function pollEvents() {
+  let after = (await api('/api/events?after=0&wait=0')).latest || 0;
+  for (;;) {
+    try {
+      const data = await api(`/api/events?after=${after}&wait=20`);
+      if (data._status === 403) return;
+      for (const ev of data.events || []) {
+        after = Math.max(after, ev.id);
+        handleEvent(ev);
+      }
+    } catch {
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+}
+function handleEvent(ev) {
+  switch (ev.kind) {
+    case 'status': setState(ev.state); break;
+    case 'user': addBubble(ev.text, 'user'); break;
+    case 'jarvis': addBubble(ev.text, 'jarvis', ev.error ? 'error' : ''); break;
+    case 'info': addBubble(ev.text, 'system'); break;
+    case 'reminder': addBubble('🔔 ' + ev.text, 'reminder'); break;
+    case 'confirm': showConfirm({ id: ev.confirm_id, tool_name: ev.tool_name, description: ev.text }); break;
+    case 'confirm_done': if ($('confirmOverlay').dataset.id === ev.confirm_id) $('confirmOverlay').classList.add('hidden'); break;
+  }
+}
+
+// ---------------------------------------------------------------------
+// Senden
+// ---------------------------------------------------------------------
+let sending = false;
+async function sendMessage(text) {
+  text = text.trim();
+  if (!text || sending) return;
+  sending = true;
+  addBubble(text, 'user');
+  $('textInput').value = '';
+  if (!desktop) setState('thinking');
+  try {
+    const data = await api('/api/chat', { message: text, speak: true });
+    if (data._status === 401) { showLogin('Passwort falsch oder geändert.'); return; }
+    showResult(data);
+  } catch {
+    addBubble('Keine Verbindung zu Jarvis.', 'system');
+  } finally {
+    sending = false;
+    if (!desktop) setState('idle');
+  }
+}
+$('sendBtn').onclick = () => sendMessage($('textInput').value);
+$('textInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage($('textInput').value); });
+$('newChatBtn').onclick = async () => {
+  if (!confirm('Neues Gespräch beginnen? Der bisherige Verlauf wird gelöscht.')) return;
+  await api('/api/reset', {});
+  log.innerHTML = '';
+  addBubble('Neues Gespräch.', 'system');
+};
+
+// ---------------------------------------------------------------------
+// Bestätigungen
+// ---------------------------------------------------------------------
+function showConfirm(data) {
+  $('confirmToolName').textContent = data.tool_name;
+  $('confirmDesc').textContent = data.description;
+  $('confirmOverlay').dataset.id = data.id;
+  $('confirmOverlay').classList.remove('hidden');
+}
+async function sendConfirmation(approved) {
+  const id = $('confirmOverlay').dataset.id;
+  $('confirmOverlay').classList.add('hidden');
+  addBubble(approved ? 'Erlaubt.' : 'Abgelehnt.', 'system');
+  try { showResult(await api('/api/confirm', { id, approved, speak: true })); }
+  catch { addBubble('Keine Verbindung bei der Bestätigung.', 'system'); }
+}
+$('allowBtn').onclick = () => sendConfirmation(true);
+$('denyBtn').onclick = () => sendConfirmation(false);
+
+// ---------------------------------------------------------------------
+// Sprechen und Zuhören
+// ---------------------------------------------------------------------
+function speakInBrowser(text) {
+  if (!('speechSynthesis' in window) || !text) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'de-DE';
+  const de = speechSynthesis.getVoices().find((v) => v.lang.startsWith('de'));
+  if (de) u.voice = de;
+  u.onstart = () => setState('speaking');
+  u.onend = () => setState('idle');
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+
+const BrowserSR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognizer = null, recognizing = false;
+function micPressed() {
+  if (desktop) {
+    // Am PC hört Jarvis selbst über das Mikrofon des Computers zu.
+    if (reactor.dataset.state === 'speaking') { api('/api/voice/stop', {}); return; }
+    api('/api/voice/activate', {});
+    return;
+  }
+  if (!BrowserSR) { addBubble('Spracheingabe geht in diesem Browser nicht – bitte Chrome nutzen oder tippen.', 'system'); return; }
+  if (recognizing) { recognizer.stop(); return; }
+  speechSynthesis.cancel();
+  recognizer = new BrowserSR();
+  recognizer.lang = 'de-DE';
+  recognizer.interimResults = false;
+  recognizer.onstart = () => { recognizing = true; setState('listening'); };
+  recognizer.onresult = (e) => sendMessage(e.results[0][0].transcript);
+  recognizer.onerror = (e) => { if (e.error === 'not-allowed') addBubble('Mikrofon blockiert – bitte im Browser erlauben.', 'system'); };
+  recognizer.onend = () => { recognizing = false; if (reactor.dataset.state === 'listening') setState('idle'); };
+  recognizer.start();
+}
+$('micBtn').onclick = micPressed;
+reactor.onclick = micPressed;
+
+// ---------------------------------------------------------------------
+// Einstellungen (nur am PC)
+// ---------------------------------------------------------------------
+const form = $('settings');
+const BOOL_FIELDS = new Set();
+const MAP_FIELDS = new Set(['KNOWN_APPS', 'KNOWN_FOLDERS']);
+let loaded = {};
+
+function mapToText(obj) { return Object.entries(obj || {}).map(([k, v]) => `${k} = ${v}`).join('\n'); }
+function textToMap(text) {
+  const out = {};
+  for (const line of text.split('\n')) {
+    const i = line.indexOf('=');
+    if (i > 0) { const k = line.slice(0, i).trim(); const v = line.slice(i + 1).trim(); if (k && v) out[k] = v; }
+  }
+  return out;
+}
+function updateDeps() {
+  form.querySelectorAll('.dep').forEach((el) => {
+    const [name, value] = el.dataset.when.split('=');
+    const input = form.elements[name];
+    const current = input.type === 'checkbox' ? String(input.checked) : input.value;
+    el.classList.toggle('show', current === value);
+  });
+  $('rateLabel').textContent = form.elements.TTS_RATE.value;
+}
+form.addEventListener('input', updateDeps);
+
+async function openSettings() {
+  $('settingsMsg').textContent = '';
+  const [settings, meta] = await Promise.all([api('/api/settings'), api('/api/meta')]);
+  if (settings.error) { addBubble('⚠ ' + settings.error, 'system'); return; }
+  loaded = settings;
+  const modelSel = form.elements.MODEL;
+  modelSel.innerHTML = '';
+  const models = { ...meta.models };
+  if (!models[settings.MODEL]) models[settings.MODEL] = settings.MODEL;
+  for (const [id, label] of Object.entries(models)) modelSel.add(new Option(label, id));
+
+  for (const el of form.elements) {
+    if (!el.name || !(el.name in settings)) continue;
+    if (el.type === 'checkbox') { el.checked = !!settings[el.name]; BOOL_FIELDS.add(el.name); }
+    else if (MAP_FIELDS.has(el.name)) el.value = mapToText(settings[el.name]);
+    else if (el.type === 'password') { el.value = ''; el.placeholder = settings[el.name + '__set'] ? '•••••••• gespeichert (leer lassen = behalten)' : (el.dataset.ph || el.placeholder); }
+    else el.value = settings[el.name];
+  }
+  $('autostart').checked = !!meta.autostart;
+  $('autostartRow').style.display = meta.autostart_supported ? '' : 'none';
+  $('lanUrl').textContent = meta.lan_url || '(wird nach dem Speichern angezeigt)';
+  $('versionInfo').textContent = `Version ${meta.version} · Daten: ${meta.data_dir}`;
+  updateDeps();
+  $('settingsOverlay').classList.remove('hidden');
+}
+$('settingsBtn').onclick = openSettings;
+$('settingsCancel').onclick = () => $('settingsOverlay').classList.add('hidden');
+
+async function saveSettings(closeAfter) {
+  const body = {};
+  for (const el of form.elements) {
+    if (!el.name) continue;
+    if (el.type === 'checkbox') body[el.name] = el.checked;
+    else if (MAP_FIELDS.has(el.name)) body[el.name] = textToMap(el.value);
+    else if (el.type === 'password') { if (el.value) body[el.name] = el.value; }
+    else body[el.name] = el.value;
+  }
+  if (body.PHONE_ACCESS && !body.APP_TOKEN && !loaded.APP_TOKEN__set) { $('settingsMsg').textContent = 'Bitte ein Passwort fürs Handy festlegen.'; return false; }
+  if (body.APP_TOKEN && body.APP_TOKEN.length < 8) { $('settingsMsg').textContent = 'Das Handy-Passwort braucht mindestens 8 Zeichen.'; return false; }
+  $('settingsMsg').textContent = 'Speichere …';
+  const res = await api('/api/settings', body);
+  if (res.error) { $('settingsMsg').textContent = res.error; return false; }
+  if ($('autostartRow').style.display !== 'none') {
+    const auto = await api('/api/autostart', { enabled: $('autostart').checked });
+    if (auto.error) addBubble('⚠ ' + auto.error, 'system');
+  }
+  loaded = res.settings;
+  $('lanUrl').textContent = res.lan_url || '–';
+  $('settingsMsg').textContent = 'Gespeichert ✓';
+  form.querySelectorAll('input[type=password]').forEach((el) => { el.value = ''; });
+  const health = await api('/api/health');
+  if (health.api_key) document.querySelectorAll('#log .card').forEach((c) => c.remove());
+  if (closeAfter) setTimeout(() => { if ($('settingsMsg').textContent === 'Gespeichert ✓') $('settingsOverlay').classList.add('hidden'); }, 900);
+  return true;
+}
+form.addEventListener('submit', (e) => { e.preventDefault(); saveSettings(true); });
+form.querySelectorAll('[data-open]').forEach((b) => b.onclick = () => api('/api/open_folder', { which: b.dataset.open }));
+$('resetChat').onclick = () => $('newChatBtn').click();
+$('testVoice').onclick = async () => {
+  if (await saveSettings(false)) api('/api/voice/test', {});
+};
+
+// ---------------------------------------------------------------------
+if (authToken) login(authToken); else showLogin();
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('/sw.js').catch(() => {});
+</script>
+</body>
+</html>

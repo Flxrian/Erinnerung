@@ -1,0 +1,7 @@
+# Optional und groß (mehrere GB) – nur für den Start aus dem Quellcode,
+# nicht in Jarvis.exe enthalten:
+#   TTS_PROVIDER "local_clone" (eigene Stimme) und STT_PROVIDER "whisper_local"
+-r requirements.txt
+TTS>=0.22.0
+torch>=2.0.0
+faster-whisper>=1.0.0
