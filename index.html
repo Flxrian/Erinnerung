@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tätigkeitsbericht Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #f3f5f8; --card: #ffffff; --text: #1d2430; --muted: #667085;
+    --line: #d7dde5; --accent: #1f7ac9; --accent-soft: #e6f1fb;
+    --ok: #1a7f4b; --ok-soft: #e3f5ea; --warn: #a15c00; --danger: #b42318;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12161c; --card: #1b2129; --text: #e6e9ee; --muted: #98a2b3;
+      --line: #2d3540; --accent: #5aa8ec; --accent-soft: #1d2d3d;
+      --ok: #4cc283; --ok-soft: #173326; --warn: #e3a64b; --danger: #f97066;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { background: var(--accent); color: #fff; padding: 14px 16px; }
+  header h1 { margin: 0; font-size: 20px; }
+  header p { margin: 2px 0 0; opacity: .85; font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px;
+    grid-template-columns: minmax(0, 1fr) 340px; }
+  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px; }
+  .card h2 { margin: 0 0 10px; font-size: 16px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field label, .lbl { font-size: 12px; color: var(--muted); }
+  input, select, textarea, button { font: inherit; color: var(--text); }
+  input, select, textarea { background: var(--card); border: 1px solid var(--line); border-radius: 6px;
+    padding: 7px 9px; width: 100%; }
+  textarea { resize: vertical; min-height: 70px; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button { border: 1px solid var(--line); background: var(--card); border-radius: 6px; padding: 8px 12px;
+    cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  button.small { padding: 4px 8px; font-size: 13px; }
+  button.danger { color: var(--danger); }
+  button:hover { filter: brightness(.96); }
+  .grow { flex: 1 1 160px; }
+  .status { margin-top: 10px; padding: 8px 10px; border-radius: 6px; background: var(--accent-soft); font-size: 14px; }
+  .status.done { background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+  .day { border-top: 1px solid var(--line); padding: 10px 0; }
+  .day-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .day-head strong { font-size: 15px; }
+  .day-head .date { color: var(--muted); font-size: 13px; margin-left: 6px; font-weight: 400; }
+  .day-head label { font-size: 13px; display: flex; gap: 6px; align-items: center; cursor: pointer; }
+  .day-head input[type=checkbox] { width: auto; }
+  .line { display: grid; grid-template-columns: minmax(0, 1fr) 76px; gap: 6px; margin-bottom: 5px; }
+  .line input.empty { border-style: dashed; }
+  .day.frei .line { display: none; }
+  .day.frei .frei-note { display: block; }
+  .frei-note { display: none; color: var(--muted); font-style: italic; font-size: 14px; }
+  .sum { color: var(--muted); font-size: 12px; }
+  .log-item { border-top: 1px solid var(--line); padding: 8px 0; display: flex; flex-direction: column; gap: 6px; }
+  .log-item .t { font-weight: 600; }
+  .log-item .s { color: var(--muted); font-size: 12px; }
+  .log-item .b { display: flex; gap: 6px; flex-wrap: wrap; }
+  .hint { color: var(--muted); font-size: 12px; margin: 4px 0 0; }
+  details summary { cursor: pointer; font-weight: 600; }
+  details[open] summary { margin-bottom: 8px; }
+  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: #1d2430; color: #fff;
+    padding: 10px 16px; border-radius: 8px; font-size: 14px; opacity: 0; transition: opacity .25s; pointer-events: none;
+    max-width: calc(100% - 32px); }
+  .toast.show { opacity: 1; }
+  aside { display: flex; flex-direction: column; gap: 16px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Tätigkeitsbericht – Meine Ausbildung</h1>
+  <p>Woche wählen · automatisch ausfüllen · fertiges PDF wird gespeichert</p>
+</header>
+
+<main>
+  <section>
+    <div class="card">
+      <h2>Kalenderwoche</h2>
+      <div class="row">
+        <div class="field"><label for="year">Jahr</label><select id="year"></select></div>
+        <div class="field grow"><label for="kw">KW</label><select id="kw"></select></div>
+        <div class="field"><label for="pickDate">oder Datum im Kalender</label><input type="date" id="pickDate"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field grow"><label for="modul">Modulthema</label><input id="modul" placeholder="z. B. Warenpräsentation"></div>
+      </div>
+      <div class="row" style="margin-top:12px">
+        <button class="primary" id="btnFill">Automatisch ausfüllen</button>
+        <button id="btnSave">Speichern &amp; PDF</button>
+        <button id="btnClear" class="danger">Woche leeren</button>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px">
+      <h2>Einträge der Woche</h2>
+      <div id="days"></div>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card">
+      <h2>Meine Daten</h2>
+      <div class="field"><label for="name">Name</label><input id="name"></div>
+      <div class="field" style="margin-top:8px"><label for="vorname">Vorname</label><input id="vorname"></div>
+      <div class="row" style="margin-top:8px">
+        <div class="field grow"><label for="lines">Zeilen pro Tag</label>
+          <select id="lines"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option></select></div>
+        <div class="field grow"><label for="autoDl">Wenn alles voll ist</label>
+          <select id="autoDl"><option value="1">PDF automatisch laden</option><option value="0">nur im Log speichern</option></select></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <details open>
+        <summary>Meine Texte</summary>
+        <div class="field">
+          <label for="bausteine">Ein Text pro Zeile, optional Stunden nach „|“</label>
+          <textarea id="bausteine" rows="8" placeholder="Ware verräumt | 2&#10;Kunden beraten | 1,5&#10;Kasse | 3"></textarea>
+        </div>
+        <p class="hint">Daraus füllt „Automatisch ausfüllen“ jede leere Zeile. Innerhalb eines Tages wird kein Text doppelt verwendet.</p>
+      </details>
+    </div>
+
+    <div class="card">
+      <details>
+        <summary>Feste Texte je Wochentag</summary>
+        <p class="hint" style="margin-top:0">Werden zuerst eingetragen (z. B. Berufsschule am Mittwoch). Nur „arbeitsfrei“ eintragen = Tag ist frei.</p>
+        <div id="templates"></div>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Log – gespeicherte Wochen</h2>
+      <div id="log"></div>
+      <div class="row" style="margin-top:10px">
+        <button class="small" id="btnExport">Backup exportieren</button>
+        <button class="small" id="btnImport">Backup importieren</button>
+        <input type="file" id="importFile" accept="application/json" hidden>
+      </div>
+    </div>
+  </aside>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+const STORE = 'taetigkeitsbericht_v1';
+const $ = id => document.getElementById(id);
+
+// ---------- Datum / Kalenderwoche ----------
+function isoWeek(d) {
+  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = t.getUTCDay() || 7;
+  t.setUTCDate(t.getUTCDate() + 4 - day);
+  const yStart = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
+  return { year: t.getUTCFullYear(), kw: Math.ceil(((t - yStart) / 864e5 + 1) / 7) };
+}
+function mondayOf(year, kw) {
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const d = new Date(jan4);
+  d.setUTCDate(jan4.getUTCDate() - ((jan4.getUTCDay() || 7) - 1) + (kw - 1) * 7);
+  return d;
+}
+function weeksInYear(year) { return isoWeek(new Date(year, 11, 28)).kw; }
+function dayDate(year, kw, i) { const d = mondayOf(year, kw); d.setUTCDate(d.getUTCDate() + i); return d; }
+const fmt = d => String(d.getUTCDate()).padStart(2, '0') + '.' + String(d.getUTCMonth() + 1).padStart(2, '0') + '.';
+const fmtFull = d => fmt(d) + d.getUTCFullYear();
+const keyOf = (y, k) => y + '-' + String(k).padStart(2, '0');
+
+// ---------- Speicher ----------
+function defaults() {
+  const t = {}; DAYS.forEach(d => t[d] = d === 'Sa' ? 'arbeitsfrei' : '');
+  return { settings: { name: '', vorname: '', lines: 5, autoDl: '1' }, bausteine: '', templates: t, weeks: {} };
+}
+let db;
+try { db = Object.assign(defaults(), JSON.parse(localStorage.getItem(STORE)) || {}); } catch { db = defaults(); }
+function persist() { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch { toast('Speichern im Browser nicht möglich'); } }
+
+const now = isoWeek(new Date());
+let cur = { year: now.year, kw: now.kw };
+
+function emptyWeek(y, k) {
+  const days = {};
+  DAYS.forEach(d => days[d] = { frei: (db.templates[d] || '').trim().toLowerCase() === 'arbeitsfrei', lines: [] });
+  return { year: y, kw: k, modul: lastModul(), days, savedAt: null };
+}
+function lastModul() {
+  const keys = Object.keys(db.weeks).sort();
+  return keys.length ? db.weeks[keys[keys.length - 1]].modul || '' : '';
+}
+function week() {
+  const k = keyOf(cur.year, cur.kw);
+  if (!db.weeks[k]) db.weeks[k] = emptyWeek(cur.year, cur.kw);
+  const w = db.weeks[k], n = +db.settings.lines;
+  DAYS.forEach(d => { while (w.days[d].lines.length < n) w.days[d].lines.push({ text: '', hours: '' }); });
+  return w;
+}
+const visibleLines = w => d => w.days[d].lines.slice(0, +db.settings.lines);
+function isComplete(w) {
+  const vis = visibleLines(w);
+  return DAYS.every(d => w.days[d].frei || vis(d).every(l => l.text.trim()));
+}
+
+// ---------- UI: Woche wählen ----------
+function renderYearKw() {
+  $('year').innerHTML = '';
+  for (let y = now.year - 3; y <= now.year + 1; y++) $('year').add(new Option(y, y));
+  $('year').value = cur.year;
+  $('kw').innerHTML = '';
+  for (let k = 1; k <= weeksInYear(cur.year); k++) {
+    const mo = mondayOf(cur.year, k), sa = dayDate(cur.year, k, 5);
+    const saved = db.weeks[keyOf(cur.year, k)]?.savedAt ? '  ✓' : '';
+    $('kw').add(new Option(`KW ${k}  (${fmt(mo)} – ${fmtFull(sa)})${saved}`, k));
+  }
+  $('kw').value = cur.kw;
+  $('pickDate').value = mondayOf(cur.year, cur.kw).toISOString().slice(0, 10);
+}
+function setWeek(y, k) {
+  flushPending();
+  cur = { year: y, kw: Math.min(k, weeksInYear(y)) };
+  renderYearKw(); renderWeek();
+}
+$('year').onchange = () => setWeek(+$('year').value, cur.kw);
+$('kw').onchange = () => setWeek(cur.year, +$('kw').value);
+$('pickDate').onchange = () => {
+  if (!$('pickDate').value) return;
+  const [y, m, d] = $('pickDate').value.split('-').map(Number);
+  const w = isoWeek(new Date(y, m - 1, d));
+  setWeek(w.year, w.kw);
+};
+
+// ---------- UI: Tage ----------
+function renderWeek() {
+  const w = week();
+  $('modul').value = w.modul || '';
+  const box = $('days'); box.innerHTML = '';
+  DAYS.forEach((d, i) => {
+    const day = w.days[d];
+    const el = document.createElement('div');
+    el.className = 'day' + (day.frei ? ' frei' : '');
+    el.innerHTML = `<div class="day-head"><strong>${d}<span class="date">${fmtFull(dayDate(cur.year, cur.kw, i))}</span></strong>
+      <span class="sum"></span>
+      <label><input type="checkbox" ${day.frei ? 'checked' : ''}> arbeitsfrei</label></div>
+      <div class="frei-note">arbeitsfrei</div>`;
+    el.querySelector('input[type=checkbox]').onchange = e => {
+      day.frei = e.target.checked; el.classList.toggle('frei', day.frei); changed();
+    };
+    day.lines.slice(0, +db.settings.lines).forEach((l, j) => {
+      const row = document.createElement('div'); row.className = 'line';
+      const t = document.createElement('input');
+      t.placeholder = `Stichpunkt ${j + 1}`; t.value = l.text; t.className = l.text.trim() ? '' : 'empty';
+      t.setAttribute('aria-label', `${d} Stichpunkt ${j + 1}`);
+      const h = document.createElement('input');
+      h.placeholder = 'Std.'; h.value = l.hours; h.inputMode = 'decimal';
+      h.setAttribute('aria-label', `${d} Stunden ${j + 1}`);
+      t.oninput = () => { l.text = t.value; t.className = t.value.trim() ? '' : 'empty'; changed(); };
+      h.oninput = () => { l.hours = h.value; updateSums(); changed(); };
+      row.append(t, h); el.appendChild(row);
+    });
+    box.appendChild(el);
+  });
+  updateSums(); updateStatus();
+}
+const num = v => parseFloat(String(v).replace(',', '.')) || 0;
+const fmtNum = n => String(Math.round(n * 100) / 100).replace('.', ',');
+function updateSums() {
+  const w = week(), els = $('days').querySelectorAll('.day .sum');
+  DAYS.forEach((d, i) => {
+    const s = visibleLines(w)(d).reduce((a, l) => a + num(l.hours), 0);
+    els[i].textContent = s ? fmtNum(s) + ' Std.' : '';
+  });
+}
+function updateStatus() {
+  const w = week(), vis = visibleLines(w);
+  let open = 0; DAYS.forEach(d => { if (!w.days[d].frei) open += vis(d).filter(l => !l.text.trim()).length; });
+  const s = $('status');
+  if (open === 0) {
+    s.className = 'status done';
+    s.textContent = w.savedAt ? `Vollständig – gespeichert im Log (${new Date(w.savedAt).toLocaleString('de-DE')})` : 'Vollständig';
+  } else {
+    s.className = 'status';
+    s.textContent = `Noch ${open} leere Zeile${open === 1 ? '' : 'n'}. Sobald alle Zeilen voll sind, wird automatisch gespeichert und das PDF erstellt.`;
+  }
+}
+
+// ---------- Auto-Speichern ----------
+let pending = null;
+function changed() {
+  persist(); updateStatus();
+  clearTimeout(pending);
+  // kurz warten, damit nicht mitten im Tippen gespeichert wird
+  pending = setTimeout(() => { pending = null; checkComplete(); }, 2000);
+}
+function flushPending() { if (pending) { clearTimeout(pending); pending = null; checkComplete(); } }
+function checkComplete() {
+  const w = week();
+  if (!isComplete(w)) return;
+  const first = !w.savedAt;
+  w.savedAt = Date.now(); persist();
+  renderLog(); updateStatus(); renderYearKw();
+  if (first) {
+    if (db.settings.autoDl === '1') downloadPdf(w);
+    toast(`KW ${w.kw} vollständig – im Log gespeichert${db.settings.autoDl === '1' ? ' und PDF erstellt' : ''}`);
+  }
+}
+
+$('modul').oninput = () => { week().modul = $('modul').value; changed(); };
+
+// ---------- Automatisch ausfüllen ----------
+function parseBausteine(txt) {
+  return txt.split('\n').map(s => s.trim()).filter(Boolean).map(s => {
+    const [text, hours = ''] = s.split('|').map(x => x.trim());
+    return { text, hours };
+  }).filter(b => b.text);
+}
+function shuffle(a) { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+$('btnFill').onclick = () => {
+  const w = week(), pool = parseBausteine(db.bausteine), n = +db.settings.lines;
+  const anyTemplate = DAYS.some(d => db.templates[d].trim());
+  if (!pool.length && !anyTemplate) { toast('Bitte zuerst rechts unter „Meine Texte“ Texte eintragen'); $('bausteine').focus(); return; }
+  let queue = [];
+  const next = used => {
+    for (let tries = 0; tries < pool.length * 2; tries++) {
+      if (!queue.length) queue = shuffle(pool);
+      const b = queue.shift();
+      if (!used.has(b.text)) return b;
+    }
+    return null;
+  };
+  DAYS.forEach(d => {
+    const day = w.days[d], tpl = parseBausteine(db.templates[d]);
+    if (tpl.length === 1 && tpl[0].text.toLowerCase() === 'arbeitsfrei') { day.frei = true; return; }
+    if (day.frei) return;
+    const used = new Set(day.lines.map(l => l.text.trim()).filter(Boolean));
+    const fixed = tpl.filter(t => !used.has(t.text));
+    day.lines.slice(0, n).forEach(l => {
+      if (l.text.trim()) return;
+      const b = fixed.shift() || (pool.length ? next(used) : null);
+      if (!b) return;
+      l.text = b.text; if (!l.hours) l.hours = b.hours; used.add(b.text);
+    });
+  });
+  persist(); renderWeek();
+  if (!isComplete(w)) toast('Nicht genug verschiedene Texte für alle Zeilen – bitte mehr Texte eintragen oder Zeilen pro Tag reduzieren');
+  clearTimeout(pending); pending = null; checkComplete();
+};
+
+$('btnSave').onclick = () => {
+  const w = week();
+  w.savedAt = w.savedAt || Date.now(); persist();
+  renderLog(); updateStatus(); renderYearKw();
+  downloadPdf(w);
+  if (!isComplete(w)) toast('Gespeichert (noch nicht alle Zeilen voll)');
+};
+$('btnClear').onclick = () => {
+  if (!confirm(`KW ${cur.kw}/${cur.year} wirklich leeren? Der Log-Eintrag dieser Woche wird ebenfalls entfernt.`)) return;
+  delete db.weeks[keyOf(cur.year, cur.kw)]; persist(); renderYearKw(); renderWeek(); renderLog();
+};
+
+// ---------- Einstellungen ----------
+function bindSetting(id, key) {
+  $(id).value = db.settings[key];
+  $(id).oninput = $(id).onchange = () => { db.settings[key] = $(id).value; persist(); if (key === 'lines') renderWeek(); };
+}
+bindSetting('name', 'name'); bindSetting('vorname', 'vorname'); bindSetting('lines', 'lines'); bindSetting('autoDl', 'autoDl');
+$('bausteine').value = db.bausteine;
+$('bausteine').oninput = () => { db.bausteine = $('bausteine').value; persist(); };
+DAYS.forEach(d => {
+  const f = document.createElement('div'); f.className = 'field'; f.style.marginBottom = '8px';
+  f.innerHTML = `<label for="tpl-${d}">${d}</label><textarea id="tpl-${d}" rows="2" style="min-height:44px"></textarea>`;
+  $('templates').appendChild(f);
+  const ta = f.querySelector('textarea'); ta.value = db.templates[d] || '';
+  ta.oninput = () => { db.templates[d] = ta.value; persist(); };
+});
+
+// ---------- Log ----------
+function renderLog() {
+  const box = $('log'); box.innerHTML = '';
+  const list = Object.entries(db.weeks).filter(([, w]) => w.savedAt).sort((a, b) => b[0].localeCompare(a[0]));
+  if (!list.length) { box.innerHTML = '<p class="hint">Noch keine Woche gespeichert.</p>'; return; }
+  list.forEach(([k, w]) => {
+    const el = document.createElement('div'); el.className = 'log-item';
+    el.innerHTML = `<div><div class="t">KW ${w.kw} / ${w.year} ${isComplete(w) ? '✓' : '(unvollständig)'}</div>
+      <div class="s">${fmt(mondayOf(w.year, w.kw))} – ${fmtFull(dayDate(w.year, w.kw, 5))} · ${w.modul ? escapeHtml(w.modul) + ' · ' : ''}gespeichert ${new Date(w.savedAt).toLocaleString('de-DE')}</div></div>
+      <div class="b"><button class="small" data-a="pdf">PDF</button><button class="small" data-a="open">Öffnen</button><button class="small danger" data-a="del">Löschen</button></div>`;
+    el.querySelector('[data-a=pdf]').onclick = () => downloadPdf(w);
+    el.querySelector('[data-a=open]').onclick = () => { setWeek(w.year, w.kw); window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    el.querySelector('[data-a=del]').onclick = () => {
+      if (!confirm(`KW ${w.kw}/${w.year} aus dem Log löschen?`)) return;
+      delete db.weeks[k]; persist(); renderLog(); renderYearKw(); if (k === keyOf(cur.year, cur.kw)) renderWeek();
+    };
+    box.appendChild(el);
+  });
+}
+const escapeHtml = s => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+$('btnExport').onclick = () => {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  saveBlob(blob, `taetigkeitsberichte_backup_${new Date().toISOString().slice(0, 10)}.json`);
+};
+$('btnImport').onclick = () => $('importFile').click();
+$('importFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (!data.weeks) throw new Error();
+    db = Object.assign(defaults(), data); persist(); location.reload();
+  } catch { toast('Datei ist kein gültiges Backup'); }
+};
+
+// ---------- PDF ----------
+function saveBlob(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function buildPdf(w) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const BLUE = [31, 122, 201], LIGHT = [91, 169, 224], INK = [20, 20, 20];
+  const s = db.settings;
+  doc.setDrawColor(...INK); doc.setLineWidth(0.25);
+
+  // Titel
+  doc.setFillColor(...BLUE);
+  doc.rect(22, 17, 95, 8.5, 'F'); doc.rect(22, 27.5, 95, 8.5, 'F');
+  doc.setTextColor(255); doc.setFont('helvetica', 'normal'); doc.setFontSize(17);
+  doc.text('TÄTIGKEITSBERICHT', 25, 23.8); doc.text('MEINE AUSBILDUNG', 25, 34.3);
+
+  // Kopf-Tabelle Name / Vorname / Jahr / KW
+  doc.setTextColor(...INK); doc.setFontSize(8);
+  const hx = 140.5, hw1 = 16, hw2 = 32.5, hy = 16.5, hh = 4.6;
+  [['Name', s.name], ['Vorname', s.vorname], ['Jahr', String(w.year)], ['KW', String(w.kw)]].forEach(([l, v], i) => {
+    const y = hy + i * hh;
+    doc.rect(hx, y, hw1, hh); doc.rect(hx + hw1, y, hw2, hh);
+    doc.text(l, hx + hw1 / 2, y + 3.3, { align: 'center' });
+    doc.setFontSize(9); doc.text(doc.splitTextToSize(v || '', hw2 - 2)[0] || '', hx + hw1 + 1.5, y + 3.4); doc.setFontSize(8);
+  });
+
+  // Haupttabelle
+  const X0 = 22, X1 = 32.5, X2 = 168, X3 = 189;
+  const yMod = 52, yHead = 58, yBody = 67, rowH = 32;
+  doc.setFillColor(...LIGHT); doc.rect(X0, yMod, X3 - X0, yHead - yMod, 'FD');
+  doc.setFillColor(...BLUE); doc.rect(X0, yHead, X3 - X0, yBody - yHead, 'FD');
+  doc.setFontSize(9); doc.setTextColor(...INK);
+  doc.text('Modulthema:', X0 + 1.5, yMod + 4.2);
+  doc.setFont('helvetica', 'bold'); doc.text(doc.splitTextToSize(w.modul || '', X3 - X0 - 25)[0] || '', X0 + 21, yMod + 4.2);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(255);
+  doc.text('Tag', X0 + 1.5, yHead + 5.6);
+  doc.text('Ausgeführte Arbeiten, Unterweisungen, Berufsschulfächer usw. in Stichpunkten', X1 + 1.5, yHead + 3.8);
+  doc.text('Stunden', X2 + 1.5, yHead + 3.8);
+  doc.setFont('helvetica', 'italic'); doc.setFontSize(6.5);
+  doc.text('Freie Tage sind als „arbeitsfrei“ zu kennzeichnen', X1 + 1.5, yHead + 7.2);
+  doc.text('je Stichpunkt', X2 + 1.5, yHead + 7.2);
+  doc.setFont('helvetica', 'normal'); doc.setTextColor(...INK);
+
+  DAYS.forEach((d, i) => {
+    const y = yBody + i * rowH;
+    doc.rect(X0, y, X1 - X0, rowH); doc.rect(X1, y, X2 - X1, rowH); doc.rect(X2, y, X3 - X2, rowH);
+    doc.setFontSize(9); doc.text(d, X0 + 1.5, y + 4.5);
+    doc.setFontSize(6.5); doc.setTextColor(110); doc.text(fmt(dayDate(w.year, w.kw, i)), X0 + 1.5, y + 8);
+    doc.setTextColor(...INK);
+    const day = w.days[d];
+    if (day.frei) { doc.setFontSize(10); doc.setFont('helvetica', 'italic'); doc.text('arbeitsfrei', X1 + 2, y + 5); doc.setFont('helvetica', 'normal'); return; }
+    const items = day.lines.slice(0, +s.lines).filter(l => l.text.trim());
+    // Schriftgröße so wählen, dass alle Stichpunkte in das Feld passen
+    let fs = 9.5, wrapped, lh;
+    for (; fs >= 6; fs -= 0.5) {
+      doc.setFontSize(fs); lh = fs * 0.42;
+      wrapped = items.map(l => doc.splitTextToSize('• ' + l.text.trim(), X2 - X1 - 4));
+      if (wrapped.reduce((a, t) => a + t.length, 0) * lh + 2.5 <= rowH) break;
+    }
+    let ty = y + 2 + lh;
+    items.forEach((l, j) => {
+      wrapped[j].forEach((t, k) => { if (ty < y + rowH - 0.5) doc.text(k ? '   ' + t : t, X1 + 2, ty); if (k === 0 && l.hours && ty < y + rowH - 0.5) doc.text(String(l.hours).replace('.', ','), X3 - 2, ty, { align: 'right' }); ty += lh; });
+    });
+  });
+
+  // Unterschriften
+  const yS = 268;
+  doc.setFontSize(9);
+  doc.text('Datum/Unterschrift', 23, yS); doc.text('Auszubildende:r:', 23, yS + 4.2);
+  doc.text('Datum/Unterschrift', 110.5, yS); doc.text('Ausbilder:in:', 110.5, yS + 4.2);
+  doc.setLineDashPattern([0.4, 0.6], 0);
+  doc.line(53, yS + 5, 101, yS + 5); doc.line(141, yS + 5, 189, yS + 5);
+  doc.setLineDashPattern([], 0);
+  doc.line(22, 281, 189, 281);
+  doc.setFontSize(6); doc.text('Tätigkeitsbericht Auszubildende', 23, 284);
+  return doc;
+}
+function pdfName(w) {
+  const n = (db.settings.name || '').replace(/[^\wäöüÄÖÜß-]+/g, '_');
+  return `Taetigkeitsbericht_${w.year}_KW${String(w.kw).padStart(2, '0')}${n ? '_' + n : ''}.pdf`;
+}
+function downloadPdf(w) {
+  if (!window.jspdf) { toast('PDF-Bibliothek nicht geladen – Internetverbindung prüfen'); return; }
+  saveBlob(buildPdf(w).output('blob'), pdfName(w));
+}
+
+let toastT;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3500); }
+window.addEventListener('beforeunload', flushPending);
+
+renderYearKw(); renderWeek(); renderLog();
+</script>
+</body>
+</html>
