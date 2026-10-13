@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tätigkeitsbericht Generator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root {
@@ -15,12 +16,17 @@
     :root:not([data-theme="light"]) {
       --bg: #12161c; --card: #1b2129; --text: #e6e9ee; --muted: #98a2b3;
       --line: #2d3540; --accent: #5aa8ec; --accent-soft: #1d2d3d;
-      --ok: #4cc283; --ok-soft: #173326; --warn: #e3a64b; --danger: #f97066;
+      --ok: #4cc283; --ok-soft: #173326; --warn: #e3a64b; --danger: #f97066; color-scheme: dark;
     }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12161c; --card: #1b2129; --text: #e6e9ee; --muted: #98a2b3;
+    --line: #2d3540; --accent: #5aa8ec; --accent-soft: #1d2d3d;
+    --ok: #4cc283; --ok-soft: #173326; --warn: #e3a64b; --danger: #f97066; color-scheme: dark;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    font: 15px/1.45 "Source Sans 3", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
   header { background: var(--accent); color: #fff; padding: 14px 16px; }
   header h1 { margin: 0; font-size: 20px; }
   header p { margin: 2px 0 0; opacity: .85; font-size: 13px; }
@@ -70,12 +76,20 @@
     max-width: calc(100% - 32px); }
   .toast.show { opacity: 1; }
   aside { display: flex; flex-direction: column; gap: 16px; }
+  .sync { font-size: 12px; opacity: .85; }
+  .modal { position: fixed; inset: 0; background: rgba(10, 14, 20, .45); display: flex; align-items: center;
+    justify-content: center; padding: 16px; z-index: 10; }
+  [hidden] { display: none !important; }
+  .modal-box { background: var(--card); color: var(--text); border-radius: 10px; padding: 18px; max-width: 400px;
+    width: 100%; display: flex; flex-direction: column; gap: 14px; border: 1px solid var(--line); }
+  .modal-box .row { justify-content: flex-end; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 </style>
 </head>
 <body>
 <header>
   <h1>Tätigkeitsbericht – Meine Ausbildung</h1>
-  <p>Woche wählen · automatisch ausfüllen · fertiges PDF wird gespeichert</p>
+  <p>Woche wählen · automatisch ausfüllen · fertiges PDF wird gespeichert <span class="sync" id="sync"></span></p>
 </header>
 
 <main>
@@ -147,7 +161,11 @@
     </div>
   </aside>
 </main>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status"></div>
+<div class="modal" id="modal" hidden><div class="modal-box" role="dialog" aria-modal="true">
+  <div id="modalText"></div>
+  <div class="row"><button id="modalNo">Abbrechen</button><button class="primary" id="modalYes">Löschen</button></div>
+</div></div>
 
 <script>
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
@@ -181,7 +199,64 @@ function defaults() {
 }
 let db;
 try { db = Object.assign(defaults(), JSON.parse(localStorage.getItem(STORE)) || {}); } catch { db = defaults(); }
-function persist() { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch { toast('Speichern im Browser nicht möglich'); } }
+function persistLocal() { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch { /* nur Cache */ } }
+
+// Online-Speicher (claude.ai Konto). Ohne ihn bleibt alles im Browser.
+let remote = null; const timers = {};
+function remoteWrite(id, fn) {
+  if (!remote) return;
+  clearTimeout(timers[id]);
+  timers[id] = setTimeout(async () => {
+    delete timers[id];
+    try { await fn(remote.doc(id)); setSync('online gespeichert'); }
+    catch (e) { setSync(e && e.code === 'quota_exceeded' ? 'Online-Speicher voll' : 'Online-Speichern fehlgeschlagen'); }
+  }, 800);
+}
+const settingsDoc = () => ({ settings: db.settings, bausteine: db.bausteine, templates: db.templates });
+function persist(weekKey) {
+  persistLocal();
+  const k = weekKey || keyOf(cur.year, cur.kw);
+  const w = db.weeks[k];
+  if (w || weekKey) remoteWrite('w-' + k, d => w ? d.set(JSON.parse(JSON.stringify(w))) : d.delete());
+}
+function persistSettings() { persistLocal(); remoteWrite('settings', d => d.set(settingsDoc())); }
+function setSync(t) { $('sync').textContent = t ? '· ' + t : ''; }
+async function connectRemote() {
+  try {
+    const c = window.claude; if (!c || !c.use) return;
+    const [dbc, user] = await Promise.all([c.use('db'), c.use('user')]);
+    if (!dbc || !user) return;
+    const uid = await user.id(); if (!uid) return;
+    const col = dbc.collection('data/users/' + uid);
+    const snap = await col.get();
+    const docs = snap.docs || [];
+    if (docs.length) {
+      const next = defaults(); next.weeks = {};
+      docs.forEach(d => {
+        const v = d.data(); if (!v) return;
+        if (d.id === 'settings') Object.assign(next, JSON.parse(JSON.stringify(v)));
+        else if (d.id.startsWith('w-')) next.weeks[d.id.slice(2)] = JSON.parse(JSON.stringify(v));
+      });
+      db = next; persistLocal();
+      remote = col;
+    } else {
+      remote = col;
+      // erster Start online: vorhandene Browser-Daten hochladen
+      remoteWrite('settings', d => d.set(settingsDoc()));
+      Object.keys(db.weeks).forEach(k => { const w = db.weeks[k]; remoteWrite('w-' + k, d => d.set(JSON.parse(JSON.stringify(w)))); });
+    }
+    setSync('mit Konto verbunden');
+    loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
+  } catch { setSync('nur in diesem Browser gespeichert'); }
+}
+
+let modalResolve;
+function ask(text, yes = 'Löschen') {
+  $('modalText').textContent = text; $('modalYes').textContent = yes; $('modal').hidden = false; $('modalNo').focus();
+  return new Promise(r => modalResolve = r);
+}
+$('modalYes').onclick = () => { $('modal').hidden = true; modalResolve(true); };
+$('modalNo').onclick = () => { $('modal').hidden = true; modalResolve(false); };
 
 const now = isoWeek(new Date());
 let cur = { year: now.year, kw: now.kw };
@@ -359,26 +434,30 @@ $('btnSave').onclick = () => {
   downloadPdf(w);
   if (!isComplete(w)) toast('Gespeichert (noch nicht alle Zeilen voll)');
 };
-$('btnClear').onclick = () => {
-  if (!confirm(`KW ${cur.kw}/${cur.year} wirklich leeren? Der Log-Eintrag dieser Woche wird ebenfalls entfernt.`)) return;
-  delete db.weeks[keyOf(cur.year, cur.kw)]; persist(); renderYearKw(); renderWeek(); renderLog();
+$('btnClear').onclick = async () => {
+  if (!await ask(`KW ${cur.kw}/${cur.year} wirklich leeren? Der Log-Eintrag dieser Woche wird ebenfalls entfernt.`, 'Leeren')) return;
+  const k = keyOf(cur.year, cur.kw); delete db.weeks[k]; persist(k); renderYearKw(); renderWeek(); renderLog();
 };
 
 // ---------- Einstellungen ----------
 function bindSetting(id, key) {
-  $(id).value = db.settings[key];
-  $(id).oninput = $(id).onchange = () => { db.settings[key] = $(id).value; persist(); if (key === 'lines') renderWeek(); };
+  $(id).oninput = $(id).onchange = () => { db.settings[key] = $(id).value; persistSettings(); if (key === 'lines') renderWeek(); };
 }
 bindSetting('name', 'name'); bindSetting('vorname', 'vorname'); bindSetting('lines', 'lines'); bindSetting('autoDl', 'autoDl');
-$('bausteine').value = db.bausteine;
-$('bausteine').oninput = () => { db.bausteine = $('bausteine').value; persist(); };
+$('bausteine').oninput = () => { db.bausteine = $('bausteine').value; persistSettings(); };
 DAYS.forEach(d => {
   const f = document.createElement('div'); f.className = 'field'; f.style.marginBottom = '8px';
   f.innerHTML = `<label for="tpl-${d}">${d}</label><textarea id="tpl-${d}" rows="2" style="min-height:44px"></textarea>`;
   $('templates').appendChild(f);
-  const ta = f.querySelector('textarea'); ta.value = db.templates[d] || '';
-  ta.oninput = () => { db.templates[d] = ta.value; persist(); };
+  const ta = f.querySelector('textarea');
+  ta.oninput = () => { db.templates[d] = ta.value; persistSettings(); };
 });
+
+function loadSettingsUi() {
+  ['name', 'vorname', 'lines', 'autoDl'].forEach(k => $(k).value = db.settings[k]);
+  $('bausteine').value = db.bausteine;
+  DAYS.forEach(d => $('tpl-' + d).value = db.templates[d] || '');
+}
 
 // ---------- Log ----------
 function renderLog() {
@@ -392,9 +471,9 @@ function renderLog() {
       <div class="b"><button class="small" data-a="pdf">PDF</button><button class="small" data-a="open">Öffnen</button><button class="small danger" data-a="del">Löschen</button></div>`;
     el.querySelector('[data-a=pdf]').onclick = () => downloadPdf(w);
     el.querySelector('[data-a=open]').onclick = () => { setWeek(w.year, w.kw); window.scrollTo({ top: 0, behavior: 'smooth' }); };
-    el.querySelector('[data-a=del]').onclick = () => {
-      if (!confirm(`KW ${w.kw}/${w.year} aus dem Log löschen?`)) return;
-      delete db.weeks[k]; persist(); renderLog(); renderYearKw(); if (k === keyOf(cur.year, cur.kw)) renderWeek();
+    el.querySelector('[data-a=del]').onclick = async () => {
+      if (!await ask(`KW ${w.kw}/${w.year} aus dem Log löschen?`)) return;
+      delete db.weeks[k]; persist(k); renderLog(); renderYearKw(); if (k === keyOf(cur.year, cur.kw)) renderWeek();
     };
     box.appendChild(el);
   });
@@ -411,12 +490,22 @@ $('importFile').onchange = async e => {
   try {
     const data = JSON.parse(await f.text());
     if (!data.weeks) throw new Error();
-    db = Object.assign(defaults(), data); persist(); location.reload();
+    db = Object.assign(defaults(), data); persistLocal();
+    remoteWrite('settings', d => d.set(settingsDoc()));
+    Object.keys(db.weeks).forEach(k => { const w = db.weeks[k]; remoteWrite('w-' + k, d => d.set(JSON.parse(JSON.stringify(w)))); });
+    loadSettingsUi(); renderYearKw(); renderWeek(); renderLog(); toast('Backup importiert');
   } catch { toast('Datei ist kein gültiges Backup'); }
 };
 
 // ---------- PDF ----------
-function saveBlob(blob, name) {
+let dlCap;
+async function saveBlob(blob, name) {
+  if (dlCap === undefined) dlCap = window.claude && window.claude.use ? await window.claude.use('downloads').catch(() => null) : null;
+  if (dlCap) {
+    try { await dlCap.save({ filename: name, data: blob }); toast('Gespeichert: ' + name); }
+    catch (e) { if (e && e.code !== 'declined') toast('Download hier nicht möglich'); }
+    return;
+  }
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
@@ -509,7 +598,8 @@ let toastT;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3500); }
 window.addEventListener('beforeunload', flushPending);
 
-renderYearKw(); renderWeek(); renderLog();
+loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
+connectRemote();
 </script>
 </body>
 </html>
