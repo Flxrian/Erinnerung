@@ -147,7 +147,7 @@
 
 <section class="gate" id="paywall" hidden>
   <div class="card">
-    <h2>Zugang abgelaufen</h2>
+    <h2 id="payTitle">Zugang freischalten</h2>
     <p id="payText"></p>
     <div class="login">
       <a class="btn primary" id="payLink" target="_blank" rel="noopener"></a>
@@ -356,7 +356,7 @@ const ABO = {
   amount: '5.00',                    // Betrag in Euro für PayPal
   paypal: 'florian@kurth-dn.com',    // PayPal-Konto, an das die Zahlungen gehen
   paymentUrl: '',                    // optional: eigener Zahlungslink statt PayPal
-  trialDays: 14          // kostenloser Testzeitraum für neue Konten
+  trialDays: 0           // kostenloser Testzeitraum für neue Konten (0 = Zugang nur mit Zahlung oder Key)
 };
 const ADMIN_FIXED = {"id": "0798fde18d50", "pub": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0L17vckqHPUc7O76HMJ+HK/MM/T+oNTu5Z1yyoa9Is9KkWSZTNaZ2nagSxON0CI53nq4AAGr9OPAxq3UBtqpz+9LTjRKD2M+SR2u1OeulqLjVuNvKGh0T6mxG5+H8sVxJn2VhJPNCwkTYYgktEHQv3V3aJZwmcL1SAkNauFmDti7himyFsOxs4kciISwDPM/ZZt+QnxzI/Y3MvHFKLQMFMzlvBcQyy6vbUElIu/TXhKh8YRlDmQA8TqL0J5vwozWudgoh5OIIWRbY7oUug+LbTlTowDGJ7gTlaEHQi/+6IO2vZInQ6SuSmxkYQvioQbVMlqfELG1Bzc3uHoNZpzOUQIDAQAB", "salt": "rrzOQSrFw77rU/58csPAFQ==", "priv": {"iv": "guk7h/6ZsCHKo74X", "ct": "45hGl9qDbGhWh8DaI+r/JOMAflk3w7ijlpgF0DZ+8fLrbVjG1u9sr662KSZ0l3zy+2M5GSnGN0wIpaLgHwYq8Jlb9U16ZRFsJFMNrHd4kwzfbKWHO3CljrZcwBZQftObEzKjtXuq6XRHCzmzCV8+VuLD3/Y6/UzEFo6F4Qm7upZSY/ES445snShliNxR6mgzEM8+wJRbzbwJY4r6ELZXX/jaGBY+iiMZExqZr3BXrYz2fRmbeiorz4Uc9AQpgP9KwH+R2rbCd3SfwKrXf59qj6EXRz2eaK+JNbnZp3J0KjCKBDl5ukKqOxT3TRANHDIdNfxYPSZg7RNwqSxe5WWhcVdTK1/yQTqh8Ft5S6A4wT8fytwXGwBQ5biQe9wLQTt1Gq9Tq0y0dbKzXb99fBnLvLMadWsN9d4NcozUD/sFaNKqwyAnkR8QbVIrdvw2QPTLUKTj58/P7Hc45mKH/BOnc1Pa8Nw38GnuopkPSmXXswiJSFjIMmfOekOuSNYruKDkKVPKguJrko7qte5JSnf+4t2zHttLkSBhUrRDJO/7HAP6EzPQEWXDjxw+wxEtK8PoSw/Cj18E8vPFkucEKtQxgRH4SsHMHb1gFK5Q212VENAruYoqW1qwC2ns8WQ7/nwTtqYCrhpRuh4QCjIL334OU0ieeY5HB/t0/C7tJTFZgr9V7UBl0r2forX310bWQ7Pg7hFY5cMNBOZpWSrlXmU5U/18XX62VepTftM50LOXOxpPbV/HCcxElMQOQMGqVJcTQjWlQs8ZySsu1L6XTwh8yhPK5vOhNwkOfknsfiCWIi/YiwjE9Yhl5RHE8fpPvBFNglxyI3i7HFQG9nuoJ5gAWytNmahwQDIEuXIC1sOXuy2obP0t5LyOkbH1DYvbczFzirxhuhzqQbFsX/Gv/caEDpZ1U0bPo0KZSFX6Sk95ccDjG8F11oW1zpCTaIgeap8TZXHs4Y60/bfajyn41GH0BmdDRnasZzaBUoneGPKuxZuT5KX387wWb7l7bMbk8hYVutpNVRQT2Cwgt3CynA2uS2WaMSk6rXUODgQ1TJzdJNSXeu1pLgV97LlFSKMZRDsP7s3yhRF6Lh0X+zS6/tAPEry6WQLh6M765Ryts8lNNPpet/6UqYYOVNZZU9rW78BVFYwY6Llvse8uWX51LDg2jE1yb0AXdbnqcuLL+YEYKeh1VkZkH1ysURBP7W2O/qYhk8K+B2D9DYFt6yqTvVqht3suf8hwkhTRlGGrnasjDj0GHesIcFVE/foUfyPWp+TzfaE5fR1SkmTHWBiDN/d7Xd9Kh+R+YqQRNp5urQT8IQjjXcDTFk+v/ChhJLHuj7qDToFu+FPjvhQbaxewnlW5RhENPxjwVPCXAiCeNYCc3ssJWKeQthEH+8UFxuPlC4WCzJdA+avVjcZcnoInFRV8G8dyvt3mFKGplSQMN9nx6V31eizrI4KC24G5NbXY+Ci0qaN2QSANzkugS4d08s4CY3UegTZ48K+pjIPuiylm/0B55uCkc+DLY4DQ+6XVZbHiKbtNAYnsjl2F/R63USeWnGkG0MG7ByFS+pCQdyKgXlbK+OoKX8gbSga1OydE2c+rNCNlXvIaHL5VHSGzLrwldugG+WsfqZNOtiDZn3pZ5X/USg=="}, "sigPub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIzFcBW8Oo5Zgo9TbJboFZ85f2gaQg9x4vD1lyeAiDG6LRLAeqghsXf5qd5/1gElcvrbMX98gTUbRpnuFeOphyA==", "sigSalt": "viBYbbfAgFQDcEOSBdjF5w==", "sigPriv": {"iv": "AsOLJUcAUmOsX4DI", "ct": "tY3UrwvMHSmkKiWhIdMkzH/EfxhuwFTbRMfUSPoO/RAuHRohk39agJCQWpScKvEqMdAYwhO7Q9ragCxmDpjfUeTuiIEGVz8bpt600vfMOJ83aNpwnDANcBH/xPoBH7xSvlUCKXbkU2Fs17RwV7qSb35oOq/sAmERXO4BlsIqe8ZAlf4v5HoY3LEdKa716lXPuAMF58Cdv5w41A=="}};
 try { localStorage.removeItem('tb_admin_v1'); } catch { /* alter, selbst eingerichteter Admin wird nicht mehr verwendet */ }
@@ -492,8 +492,10 @@ async function accessState() {
   if (p && p.u === session.id && (!p.e || p.e >= todayIso())) return { ok: true, text: p.e ? 'Zugang bis ' + isoDe(p.e) : 'unbegrenzter Zugang' };
   const u = readUsers()[session.id] || {};
   const trialEnd = new Date((u.created || Date.now()) + ABO.trialDays * 864e5);
-  if (new Date() < trialEnd) return { ok: true, text: 'Testzeitraum bis ' + trialEnd.toLocaleDateString('de-DE') };
-  return { ok: false, text: p ? `Dein Zugang ist am ${isoDe(p.e)} abgelaufen.` : `Dein kostenloser Testzeitraum (${ABO.trialDays} Tage) ist abgelaufen.` };
+  if (ABO.trialDays > 0 && new Date() < trialEnd) return { ok: true, text: 'Testzeitraum bis ' + trialEnd.toLocaleDateString('de-DE') };
+  if (p) return { ok: false, title: 'Zugang abgelaufen', text: `Dein Zugang ist am ${isoDe(p.e)} abgelaufen.` };
+  if (ABO.trialDays > 0) return { ok: false, title: 'Zugang abgelaufen', text: `Dein kostenloser Testzeitraum (${ABO.trialDays} Tage) ist abgelaufen.` };
+  return { ok: false, title: 'Zugang freischalten', text: 'Dein Konto ist angelegt.' };
 }
 async function redeemKey(raw, msgEl) {
   const p = await verifyKey(raw.trim());
@@ -509,7 +511,8 @@ async function enterApp() {
   if (!st.ok) {
     $('gate').hidden = true; $('app').hidden = true; $('paywall').hidden = false;
     $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = true;
-    $('payText').textContent = st.text + ' Um weiter Berichte zu erstellen, brauchst du ein Abo (' + ABO.price + ') oder einen Zugangskey.';
+    $('payTitle').textContent = st.title;
+    $('payText').textContent = st.text + ' Um Berichte zu erstellen, brauchst du ein Abo (' + ABO.price + ') oder einen Zugangskey.';
     const link = $('payLink'), link2 = $('payLink2');
     link.textContent = 'Abo abschließen – ' + ABO.price;
     link2.hidden = true;
