@@ -1,6 +1,8 @@
 # Tätigkeitsbericht – Meine Ausbildung
 
-Online-Version: https://claude.ai/artifact/FtzQjZG3iMa8vt9CFHSJJi (dort werden Log und Texte im claude.ai-Konto gespeichert).
+Online-Version: https://claude.ai/artifact/FtzQjZG3iMa8vt9CFHSJJi
+
+Online meldet sich jede Person mit ihrem eigenen claude.ai-Konto an. Texte, Einstellungen und gespeicherte Wochen liegen privat in diesem Konto, niemand sonst (auch nicht die Erstellerin bzw. der Ersteller) sieht sie. Damit andere die Seite nutzen und speichern können, über das Teilen-Menü der Seite einladen: im Team-/Enterprise-Plan mindestens als „Contributor“, sonst per E-Mail als „Editor“.
 
 Webseite zum schnellen Ausfüllen des wöchentlichen Tätigkeitsberichts (Mo–Sa) als PDF.
 

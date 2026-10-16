@@ -80,6 +80,13 @@
   .preview.big { position: fixed; inset: 0; margin: auto; width: auto; height: auto; max-width: calc(100% - 32px);
     max-height: calc(100% - 32px); z-index: 20; cursor: zoom-out; box-shadow: 0 0 0 100vmax rgba(10, 14, 20, .6); }
   .sync { font-size: 12px; opacity: .85; }
+  header .who { margin-top: 6px; font-size: 13px; font-weight: 600; opacity: 1; }
+  header .who:empty { display: none; }
+  .gate { max-width: 520px; margin: 32px auto; padding-inline: 16px; }
+  .gate p { margin: 0 0 14px; }
+  .rights { max-width: 1100px; margin: 16px auto 0; padding: 10px 14px; border-radius: 8px; background: var(--accent-soft);
+    color: var(--warn); font-size: 14px; }
+  @media (max-width: 1132px) { .rights { margin-inline: 16px; } }
   .modal { position: fixed; inset: 0; background: rgba(10, 14, 20, .45); display: flex; align-items: center;
     justify-content: center; padding: 16px; z-index: 10; }
   [hidden] { display: none !important; }
@@ -93,9 +100,23 @@
 <header>
   <h1>Tätigkeitsbericht – Meine Ausbildung</h1>
   <p>Woche wählen · automatisch ausfüllen · fertiges PDF wird gespeichert <span class="sync" id="sync"></span></p>
+  <p class="who" id="who"></p>
 </header>
 
-<main>
+<section class="gate" id="gate" hidden>
+  <div class="card">
+    <h2>Anmeldung</h2>
+    <p id="gateText"></p>
+    <button id="gateTry">Ohne Anmeldung ausprobieren</button>
+  </div>
+</section>
+
+<div class="rights" id="rights" hidden>
+  Du kannst die Seite benutzen, aber nichts online speichern. Bitte die Person, die dir den Link geschickt hat, dich als
+  <strong>Bearbeiter:in</strong> einzuladen. PDFs kannst du trotzdem erstellen.
+</div>
+
+<main id="app">
   <section>
     <div class="card">
       <h2>Kalenderwoche</h2>
@@ -160,7 +181,7 @@
     </div>
 
     <div class="card">
-      <h2>Log – gespeicherte Wochen</h2>
+      <h2>Meine gespeicherten Wochen</h2>
       <div id="log"></div>
       <div class="row" style="margin-top:10px">
         <button class="small" id="btnExport">Backup exportieren</button>
@@ -207,9 +228,13 @@ function defaults() {
   const t = {}; DAYS.forEach(d => t[d] = d === 'Sa' ? 'arbeitsfrei' : '');
   return { settings: { name: '', vorname: '', lines: 5, autoDl: '1' }, bausteine: '', templates: t, weeks: {} };
 }
-let db;
-try { db = Object.assign(defaults(), JSON.parse(localStorage.getItem(STORE)) || {}); } catch { db = defaults(); }
-function persistLocal() { try { localStorage.setItem(STORE, JSON.stringify(db)); } catch { /* nur Cache */ } }
+// Online (claude.ai) meldet sich jede Person mit ihrem eigenen Konto an und sieht nur ihre eigenen Wochen.
+// Als lokale Datei gibt es kein Konto: dann bleibt alles in diesem Browser.
+const HOSTED = !!(window.claude && window.claude.use);
+let cacheKey = HOSTED ? null : STORE;   // Browser-Cache je Konto getrennt
+function readCache(k) { try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(k)) || {}); } catch { return defaults(); } }
+let db = cacheKey ? readCache(cacheKey) : defaults();
+function persistLocal() { if (!cacheKey) return; try { localStorage.setItem(cacheKey, JSON.stringify(db)); } catch { /* nur Cache */ } }
 
 // Online-Speicher (claude.ai Konto). Ohne ihn bleibt alles im Browser.
 let remote = null; const timers = {};
@@ -219,7 +244,10 @@ function remoteWrite(id, fn) {
   timers[id] = setTimeout(async () => {
     delete timers[id];
     try { await fn(remote.doc(id)); setSync('online gespeichert'); }
-    catch (e) { setSync(e && e.code === 'quota_exceeded' ? 'Online-Speicher voll' : 'Online-Speichern fehlgeschlagen'); }
+    catch (e) {
+      if (e && e.code === 'invalid_argument') noWriteAccess();
+      else setSync(e && e.code === 'quota_exceeded' ? 'Online-Speicher voll' : 'Online-Speichern fehlgeschlagen');
+    }
   }, 800);
 }
 const settingsDoc = () => ({ settings: db.settings, bausteine: db.bausteine, templates: db.templates });
@@ -231,33 +259,48 @@ function persist(weekKey) {
 }
 function persistSettings() { persistLocal(); remoteWrite('settings', d => d.set(settingsDoc())); }
 function setSync(t) { $('sync').textContent = t ? '· ' + t : ''; }
+function noWriteAccess() {
+  remote = null; setSync('');
+  $('rights').hidden = false;
+}
+function showGate(text) {
+  $('gateText').textContent = text; $('gate').hidden = false; $('app').hidden = true;
+}
+$('gateTry').onclick = () => { $('gate').hidden = true; $('app').hidden = false; $('who').textContent = 'Nicht angemeldet – nichts wird gespeichert'; };
 async function connectRemote() {
+  if (!HOSTED) return;
   try {
-    const c = window.claude; if (!c || !c.use) return;
-    const [dbc, user] = await Promise.all([c.use('db'), c.use('user')]);
-    if (!dbc || !user) return;
-    const uid = await user.id(); if (!uid) return;
+    const [dbc, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+    const uid = dbc && user ? await user.id() : null;
+    if (!uid) { $('gateTry').hidden = false; showGate('Bitte melde dich mit deinem claude.ai-Konto an. Danach siehst du hier nur deine eigenen Berichte.'); return; }
+    const me = await user.me().catch(() => null);
+    const fullName = (me && me.name) || '';
+    $('who').textContent = 'Angemeldet als ' + (fullName || 'du');
+
+    // eigene Daten zuerst aus dem Cache dieses Kontos, dann vom Server
+    cacheKey = STORE + ':' + uid;
+    db = readCache(cacheKey);
     const col = dbc.collection('data/users/' + uid);
     const snap = await col.get();
-    const docs = snap.docs || [];
-    if (docs.length) {
+    if (!snap.empty) {
       const next = defaults(); next.weeks = {};
-      docs.forEach(d => {
+      snap.docs.forEach(d => {
         const v = d.data(); if (!v) return;
         if (d.id === 'settings') Object.assign(next, JSON.parse(JSON.stringify(v)));
         else if (d.id.startsWith('w-')) next.weeks[d.id.slice(2)] = JSON.parse(JSON.stringify(v));
       });
       db = next; persistLocal();
-      remote = col;
-    } else {
-      remote = col;
-      // erster Start online: vorhandene Browser-Daten hochladen
-      remoteWrite('settings', d => d.set(settingsDoc()));
-      Object.keys(db.weeks).forEach(k => { const w = db.weeks[k]; remoteWrite('w-' + k, d => d.set(JSON.parse(JSON.stringify(w)))); });
     }
-    setSync('mit Konto verbunden');
+    // Namen beim ersten Mal aus dem Konto übernehmen
+    if (!db.settings.name && !db.settings.vorname && fullName) {
+      const parts = fullName.trim().split(/\s+/);
+      db.settings.vorname = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
+      db.settings.name = parts.length > 1 ? parts[parts.length - 1] : '';
+    }
+    if (await user.can('data.write') === false) noWriteAccess(); else { remote = col; setSync('in deinem Konto gespeichert'); }
+    $('gate').hidden = true; $('app').hidden = false;
     loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
-  } catch { setSync('nur in diesem Browser gespeichert'); }
+  } catch { setSync('nur in diesem Browser gespeichert'); $('gate').hidden = true; $('app').hidden = false; }
 }
 
 let modalResolve;
@@ -609,6 +652,7 @@ let toastT;
 function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 3500); }
 window.addEventListener('beforeunload', flushPending);
 
+if (HOSTED) { showGate('Anmeldung wird geprüft …'); $('gateTry').hidden = true; }
 loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
 $('preview').onclick = () => $('preview').classList.toggle('big');
 document.fonts && document.fonts.ready.then(schedulePreview);
