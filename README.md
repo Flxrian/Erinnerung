@@ -14,4 +14,6 @@ Webseite zum schnellen Ausfüllen des wöchentlichen Tätigkeitsberichts (Mo–S
 4. Oben **Jahr und KW** im Dropdown wählen oder ein Datum im Kalender anklicken.
 5. **Automatisch ausfüllen** füllt jede leere Zeile. Die **Vorschau** zeigt live das eingescannte Originalformular mit deinen Einträgen. Sobald alle Zeilen voll sind, wird das fertige PDF (Originalformular als Hintergrund) erstellt, die Woche im **Log** gespeichert und das Formular für die nächste KW geleert.
 
+**Login (als HTML-Datei bzw. auf eigener Webseite):** Beim ersten Öffnen ein Konto mit Benutzername und Passwort erstellen. Jedes Konto sieht nur seine eigenen Wochen; die Daten werden mit dem Passwort verschlüsselt (AES-GCM, Schlüssel per PBKDF2) im Browser gespeichert. Konten gelten nur für das Gerät/den Browser, auf dem sie erstellt wurden. Passwort vergessen = Daten nicht mehr lesbar.
+
 Alle Daten bleiben lokal im Browser. Über **Backup exportieren/importieren** lassen sie sich sichern oder auf ein anderes Gerät übertragen. Aus dem Log kann jede Woche erneut geöffnet, bearbeitet oder als PDF geladen werden.

@@ -81,7 +81,16 @@
     max-height: calc(100% - 32px); z-index: 20; cursor: zoom-out; box-shadow: 0 0 0 100vmax rgba(10, 14, 20, .6); }
   .sync { font-size: 12px; opacity: .85; }
   header .who { margin-top: 6px; font-size: 13px; font-weight: 600; opacity: 1; }
+  .who-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+  .who-row .who { margin: 0; }
   header .who:empty { display: none; }
+  #logout { background: transparent; color: #fff; border-color: rgba(255, 255, 255, .6); }
+  .login { display: flex; flex-direction: column; gap: 10px; }
+  .tabs { display: flex; gap: 6px; }
+  .tab { flex: 1; }
+  .tab.active { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
+  .err { color: var(--danger); margin: 0; font-size: 14px; min-height: 1em; }
+  .err:empty { display: none; }
   .gate { max-width: 520px; margin: 32px auto; padding-inline: 16px; }
   .gate p { margin: 0 0 14px; }
   .rights { max-width: 1100px; margin: 16px auto 0; padding: 10px 14px; border-radius: 8px; background: var(--accent-soft);
@@ -100,13 +109,26 @@
 <header>
   <h1>Tätigkeitsbericht – Meine Ausbildung</h1>
   <p>Woche wählen · automatisch ausfüllen · fertiges PDF wird gespeichert <span class="sync" id="sync"></span></p>
-  <p class="who" id="who"></p>
+  <div class="who-row"><p class="who" id="who"></p><button class="small" id="logout" hidden>Abmelden</button></div>
 </header>
 
 <section class="gate" id="gate" hidden>
   <div class="card">
     <h2>Anmeldung</h2>
     <p id="gateText"></p>
+    <form id="loginForm" class="login" hidden>
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" id="tabLogin" role="tab">Anmelden</button>
+        <button type="button" class="tab" id="tabNew" role="tab">Neues Konto</button>
+      </div>
+      <div class="field"><label for="lgUser">Benutzername</label><input id="lgUser" autocomplete="username" required></div>
+      <div class="field"><label for="lgPass">Passwort</label><input id="lgPass" type="password" autocomplete="current-password" required></div>
+      <div class="field" id="lgRepeat" hidden><label for="lgPass2">Passwort wiederholen</label><input id="lgPass2" type="password" autocomplete="new-password"></div>
+      <p class="err" id="lgMsg" role="alert"></p>
+      <button class="primary" id="lgSubmit" type="submit">Anmelden</button>
+      <p class="hint">Jedes Konto sieht nur seine eigenen Wochen. Die Daten werden mit deinem Passwort verschlüsselt in diesem Browser gespeichert.
+        Wer das Passwort vergisst, kommt nicht mehr an seine Daten – sichere sie ab und zu mit „Backup exportieren“.</p>
+    </form>
     <button id="gateTry">Ohne Anmeldung ausprobieren</button>
   </div>
 </section>
@@ -231,10 +253,96 @@ function defaults() {
 // Online (claude.ai) meldet sich jede Person mit ihrem eigenen Konto an und sieht nur ihre eigenen Wochen.
 // Als lokale Datei gibt es kein Konto: dann bleibt alles in diesem Browser.
 const HOSTED = !!(window.claude && window.claude.use);
-let cacheKey = HOSTED ? null : STORE;   // Browser-Cache je Konto getrennt
+let cacheKey = null;   // online: Browser-Cache je claude.ai-Konto
 function readCache(k) { try { return Object.assign(defaults(), JSON.parse(localStorage.getItem(k)) || {}); } catch { return defaults(); } }
-let db = cacheKey ? readCache(cacheKey) : defaults();
-function persistLocal() { if (!cacheKey) return; try { localStorage.setItem(cacheKey, JSON.stringify(db)); } catch { /* nur Cache */ } }
+let db = defaults();
+function persistLocal() {
+  if (!HOSTED) { saveEncrypted(); return; }
+  if (!cacheKey) return; try { localStorage.setItem(cacheKey, JSON.stringify(db)); } catch { /* nur Cache */ }
+}
+
+// ---------- Lokale Konten (ohne claude.ai) ----------
+// Jedes Konto speichert seine Daten AES-verschlüsselt; der Schlüssel entsteht aus dem Passwort (PBKDF2).
+const USERS = 'tb_users_v1', DATA = u => 'tb_data_v1:' + u;
+let session = null, writeChain = Promise.resolve(), newMode = false;
+const te = new TextEncoder(), td = new TextDecoder();
+const toB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const fromB64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
+function readUsers() { try { return JSON.parse(localStorage.getItem(USERS)) || {}; } catch { return {}; } }
+async function deriveKey(pw, salt) {
+  const base = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' }, base,
+    { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+function saveEncrypted() {
+  if (!session) return;
+  const { id, key } = session, plain = JSON.stringify(db);
+  writeChain = writeChain.then(async () => {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, te.encode(plain));
+    localStorage.setItem(DATA(id), JSON.stringify({ iv: toB64(iv), ct: toB64(ct) }));
+  }).catch(() => toast('Speichern im Browser fehlgeschlagen – Speicher voll oder blockiert?'));
+}
+function setNewMode(on) {
+  newMode = on;
+  $('tabLogin').classList.toggle('active', !on); $('tabNew').classList.toggle('active', on);
+  $('lgRepeat').hidden = !on; $('lgSubmit').textContent = on ? 'Konto erstellen' : 'Anmelden';
+  $('lgPass').autocomplete = on ? 'new-password' : 'current-password'; $('lgMsg').textContent = '';
+}
+$('tabLogin').onclick = () => setNewMode(false);
+$('tabNew').onclick = () => setNewMode(true);
+$('loginForm').onsubmit = async e => {
+  e.preventDefault();
+  const name = $('lgUser').value.trim(), pw = $('lgPass').value, id = name.toLowerCase(), msg = $('lgMsg');
+  msg.textContent = '';
+  if (!window.crypto || !crypto.subtle) { msg.textContent = 'Dieser Browser unterstützt keine Verschlüsselung. Bitte die Seite über https oder in Chrome/Firefox/Edge öffnen.'; return; }
+  const users = readUsers();
+  $('lgSubmit').disabled = true;
+  try {
+    if (newMode) {
+      if (!name) { msg.textContent = 'Bitte einen Benutzernamen eingeben.'; return; }
+      if (pw.length < 6) { msg.textContent = 'Das Passwort braucht mindestens 6 Zeichen.'; return; }
+      if (pw !== $('lgPass2').value) { msg.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
+      if (users[id]) { msg.textContent = 'Diesen Benutzernamen gibt es schon. Bitte anmelden oder einen anderen wählen.'; return; }
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      session = { id, name, key: await deriveKey(pw, salt) };
+      db = defaults();
+      // ältere Daten aus der Version ohne Login übernimmt das erste Konto
+      const old = localStorage.getItem(STORE);
+      if (old && !Object.keys(users).length) { db = readCache(STORE); }
+      users[id] = { name, salt: toB64(salt) };
+      localStorage.setItem(USERS, JSON.stringify(users));
+      saveEncrypted(); await writeChain;
+      if (old && localStorage.getItem(DATA(id))) { localStorage.removeItem(STORE); toast('Bisherige Daten wurden in dein Konto übernommen'); }
+    } else {
+      const u = users[id];
+      if (!u) { msg.textContent = 'Benutzername oder Passwort falsch.'; return; }
+      const key = await deriveKey(pw, fromB64(u.salt));
+      const raw = JSON.parse(localStorage.getItem(DATA(id)) || 'null');
+      let data = {};
+      if (raw) {
+        try { data = JSON.parse(td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(raw.iv) }, key, fromB64(raw.ct)))); }
+        catch { msg.textContent = 'Benutzername oder Passwort falsch.'; return; }
+      }
+      session = { id, name: u.name, key };
+      db = Object.assign(defaults(), data);
+    }
+    startSession();
+  } finally { $('lgSubmit').disabled = false; }
+};
+function startSession() {
+  $('lgPass').value = ''; $('lgPass2').value = '';
+  $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = false;
+  $('gate').hidden = true; $('app').hidden = false;
+  cur = { year: now.year, kw: now.kw };
+  loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
+}
+$('logout').onclick = async () => {
+  flushPending(); await writeChain;
+  session = null; db = defaults(); $('who').textContent = ''; $('logout').hidden = true;
+  loadSettingsUi(); renderWeek(); renderLog();
+  showGate('Abgemeldet. Melde dich an oder erstelle ein neues Konto.'); setNewMode(false); $('lgUser').focus();
+};
 
 // Online-Speicher (claude.ai Konto). Ohne ihn bleibt alles im Browser.
 let remote = null; const timers = {};
@@ -653,6 +761,7 @@ function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add
 window.addEventListener('beforeunload', flushPending);
 
 if (HOSTED) { showGate('Anmeldung wird geprüft …'); $('gateTry').hidden = true; }
+else { $('loginForm').hidden = false; $('gateTry').hidden = true; showGate('Melde dich an oder erstelle ein Konto.'); setNewMode(!Object.keys(readUsers()).length); }
 loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
 $('preview').onclick = () => $('preview').classList.toggle('big');
 document.fonts && document.fonts.ready.then(schedulePreview);
