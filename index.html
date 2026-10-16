@@ -501,6 +501,8 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   h3.sub { font-size: 14px; margin: 16px 0 4px; }
   .kl { border-top: 1px solid var(--line); padding: 6px 0; font-size: 13px; display: flex; justify-content: space-between; gap: 8px; }
   .offer { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .paybox ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+  .paybox code { font-family: ui-monospace, Menlo, Consolas, monospace; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; word-break: break-all; }
   .check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; cursor: pointer; }
   .check input { width: auto; margin-top: 3px; flex: none; }
   .legal-foot { max-width: 1100px; margin: 8px auto 24px; padding-inline: 16px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; }
@@ -564,8 +566,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div class="offer" id="offer"></div>
       <label class="check"><input type="checkbox" id="chkAgb"> <span>Ich habe die <a href="#" data-legal="agb">AGB</a> gelesen und akzeptiere sie. Die <a href="#" data-legal="datenschutz">Datenschutzerklärung</a> habe ich zur Kenntnis genommen.</span></label>
       <label class="check"><input type="checkbox" id="chkWiderruf"> <span>Ich verlange ausdrücklich, dass der Zugang sofort, also vor Ablauf der Widerrufsfrist, beginnt. Mir ist bekannt, dass ich bei vollständiger Vertragserfüllung mein <a href="#" data-legal="widerruf">Widerrufsrecht</a> verliere und bei einem Widerruf vorher anteiligen Wertersatz zahle.</span></label>
-      <a class="btn primary" id="payLink" target="_blank" rel="noopener"></a>
-      <a class="btn" id="payLink2" target="_blank" rel="noopener" hidden></a>
+      <div class="offer paybox" id="payBox" hidden>
+        <strong>So bezahlst du</strong>
+        <ol>
+          <li>In der PayPal-App oder auf paypal.com auf „Senden“ gehen.</li>
+          <li>Empfänger: <code id="payTo"></code> <button class="small" data-copy="payTo">Kopieren</button></li>
+          <li>Betrag: <strong id="payAmount"></strong> und die Option <strong>„Freunde und Familie“</strong> wählen.</li>
+          <li>Nachricht: <code id="payRef"></code> <button class="small" data-copy="payRef">Kopieren</button></li>
+        </ol>
+        <a class="btn primary" href="https://www.paypal.com/myaccount/transfer/homepage/pay" target="_blank" rel="noopener">PayPal öffnen</a>
+        <span class="hint">Bei „Freunde und Familie“ gibt es keinen PayPal-Käuferschutz. Der Zugang gilt jeweils einen Monat – zum Verlängern einfach nächsten Monat wieder senden.</span>
+      </div>
+      <p class="hint" id="payLocked">Hake beide Kästchen an, dann siehst du, wie du bezahlst.</p>
       <p class="hint" id="payHint"></p>
       <div class="field"><label for="keyInput">Zugangskey vom Admin</label><textarea id="keyInput" rows="3" placeholder="TB1-…"></textarea></div>
       <p class="err" id="keyMsg" role="alert"></p>
@@ -805,8 +817,7 @@ function legalMissing() {
 const ABO = {
   price: '5 € pro Monat',
   amount: '5.00',                    // Betrag in Euro für PayPal
-  paypal: 'florian@kurth-dn.com',    // PayPal-Konto, an das die Zahlungen gehen
-  paymentUrl: '',                    // optional: eigener Zahlungslink statt PayPal
+  paypal: 'florian@kurth-dn.com',    // PayPal-Konto, an das die Zahlungen gehen (Freunde und Familie)
   trialDays: 0           // kostenloser Testzeitraum für neue Konten (0 = Zugang nur mit Zahlung oder Key)
 };
 const ADMIN_FIXED = {"id": "0798fde18d50", "pub": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0L17vckqHPUc7O76HMJ+HK/MM/T+oNTu5Z1yyoa9Is9KkWSZTNaZ2nagSxON0CI53nq4AAGr9OPAxq3UBtqpz+9LTjRKD2M+SR2u1OeulqLjVuNvKGh0T6mxG5+H8sVxJn2VhJPNCwkTYYgktEHQv3V3aJZwmcL1SAkNauFmDti7himyFsOxs4kciISwDPM/ZZt+QnxzI/Y3MvHFKLQMFMzlvBcQyy6vbUElIu/TXhKh8YRlDmQA8TqL0J5vwozWudgoh5OIIWRbY7oUug+LbTlTowDGJ7gTlaEHQi/+6IO2vZInQ6SuSmxkYQvioQbVMlqfELG1Bzc3uHoNZpzOUQIDAQAB", "salt": "rrzOQSrFw77rU/58csPAFQ==", "priv": {"iv": "guk7h/6ZsCHKo74X", "ct": "45hGl9qDbGhWh8DaI+r/JOMAflk3w7ijlpgF0DZ+8fLrbVjG1u9sr662KSZ0l3zy+2M5GSnGN0wIpaLgHwYq8Jlb9U16ZRFsJFMNrHd4kwzfbKWHO3CljrZcwBZQftObEzKjtXuq6XRHCzmzCV8+VuLD3/Y6/UzEFo6F4Qm7upZSY/ES445snShliNxR6mgzEM8+wJRbzbwJY4r6ELZXX/jaGBY+iiMZExqZr3BXrYz2fRmbeiorz4Uc9AQpgP9KwH+R2rbCd3SfwKrXf59qj6EXRz2eaK+JNbnZp3J0KjCKBDl5ukKqOxT3TRANHDIdNfxYPSZg7RNwqSxe5WWhcVdTK1/yQTqh8Ft5S6A4wT8fytwXGwBQ5biQe9wLQTt1Gq9Tq0y0dbKzXb99fBnLvLMadWsN9d4NcozUD/sFaNKqwyAnkR8QbVIrdvw2QPTLUKTj58/P7Hc45mKH/BOnc1Pa8Nw38GnuopkPSmXXswiJSFjIMmfOekOuSNYruKDkKVPKguJrko7qte5JSnf+4t2zHttLkSBhUrRDJO/7HAP6EzPQEWXDjxw+wxEtK8PoSw/Cj18E8vPFkucEKtQxgRH4SsHMHb1gFK5Q212VENAruYoqW1qwC2ns8WQ7/nwTtqYCrhpRuh4QCjIL334OU0ieeY5HB/t0/C7tJTFZgr9V7UBl0r2forX310bWQ7Pg7hFY5cMNBOZpWSrlXmU5U/18XX62VepTftM50LOXOxpPbV/HCcxElMQOQMGqVJcTQjWlQs8ZySsu1L6XTwh8yhPK5vOhNwkOfknsfiCWIi/YiwjE9Yhl5RHE8fpPvBFNglxyI3i7HFQG9nuoJ5gAWytNmahwQDIEuXIC1sOXuy2obP0t5LyOkbH1DYvbczFzirxhuhzqQbFsX/Gv/caEDpZ1U0bPo0KZSFX6Sk95ccDjG8F11oW1zpCTaIgeap8TZXHs4Y60/bfajyn41GH0BmdDRnasZzaBUoneGPKuxZuT5KX387wWb7l7bMbk8hYVutpNVRQT2Cwgt3CynA2uS2WaMSk6rXUODgQ1TJzdJNSXeu1pLgV97LlFSKMZRDsP7s3yhRF6Lh0X+zS6/tAPEry6WQLh6M765Ryts8lNNPpet/6UqYYOVNZZU9rW78BVFYwY6Llvse8uWX51LDg2jE1yb0AXdbnqcuLL+YEYKeh1VkZkH1ysURBP7W2O/qYhk8K+B2D9DYFt6yqTvVqht3suf8hwkhTRlGGrnasjDj0GHesIcFVE/foUfyPWp+TzfaE5fR1SkmTHWBiDN/d7Xd9Kh+R+YqQRNp5urQT8IQjjXcDTFk+v/ChhJLHuj7qDToFu+FPjvhQbaxewnlW5RhENPxjwVPCXAiCeNYCc3ssJWKeQthEH+8UFxuPlC4WCzJdA+avVjcZcnoInFRV8G8dyvt3mFKGplSQMN9nx6V31eizrI4KC24G5NbXY+Ci0qaN2QSANzkugS4d08s4CY3UegTZ48K+pjIPuiylm/0B55uCkc+DLY4DQ+6XVZbHiKbtNAYnsjl2F/R63USeWnGkG0MG7ByFS+pCQdyKgXlbK+OoKX8gbSga1OydE2c+rNCNlXvIaHL5VHSGzLrwldugG+WsfqZNOtiDZn3pZ5X/USg=="}, "sigPub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIzFcBW8Oo5Zgo9TbJboFZ85f2gaQg9x4vD1lyeAiDG6LRLAeqghsXf5qd5/1gElcvrbMX98gTUbRpnuFeOphyA==", "sigSalt": "viBYbbfAgFQDcEOSBdjF5w==", "sigPriv": {"iv": "AsOLJUcAUmOsX4DI", "ct": "tY3UrwvMHSmkKiWhIdMkzH/EfxhuwFTbRMfUSPoO/RAuHRohk39agJCQWpScKvEqMdAYwhO7Q9ragCxmDpjfUeTuiIEGVz8bpt600vfMOJ83aNpwnDANcBH/xPoBH7xSvlUCKXbkU2Fs17RwV7qSb35oOq/sAmERXO4BlsIqe8ZAlf4v5HoY3LEdKa716lXPuAMF58Cdv5w41A=="}};
@@ -963,28 +974,15 @@ async function enterApp() {
     $('gate').hidden = true; $('app').hidden = true; $('paywall').hidden = false;
     $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = true;
     $('payTitle').textContent = st.title;
-    $('payText').textContent = st.text + ' Um Berichte zu erstellen, brauchst du ein Abo (' + ABO.price + ') oder einen Zugangskey.';
-    const link = $('payLink'), link2 = $('payLink2');
-    link.textContent = 'Zahlungspflichtig abonnieren – ' + ABO.price;
+    $('payText').textContent = st.text + ' Um Berichte zu erstellen, brauchst du einen Monatszugang (' + ABO.price + ') oder einen Zugangskey.';
+    const euro = ABO.amount.replace('.', ',') + ' €';
     $('offer').innerHTML = `<strong>Zugang zum Tätigkeitsbericht-Generator</strong>
-      <span>Abo: ${ABO.amount.replace('.', ',')} € pro Monat, verlängert sich jeden Monat, jederzeit zum Ende des bezahlten Monats kündbar.</span>
-      <span>Einmalzahlung: ${ABO.amount.replace('.', ',')} € für einen Monat, endet automatisch.</span>
-      <span>${LEGAL.kleinunternehmer ? 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.' : 'Preise inkl. gesetzlicher Umsatzsteuer.'} Zahlung über PayPal. Den Zugangskey bekommst du nach Zahlungseingang in der Regel innerhalb von 2 Werktagen per E-Mail.</span>`;
-    $('chkAgb').checked = $('chkWiderruf').checked = false;
-    link2.hidden = true;
-    if (ABO.paymentUrl) { link.href = ABO.paymentUrl; link.removeAttribute('aria-disabled'); }
-    else if (ABO.paypal) {
-      // PayPal: Benutzername steht im Verwendungszweck, damit der Admin weiß, für wen der Key ist
-      const base = 'https://www.paypal.com/cgi-bin/webscr?' + new URLSearchParams({
-        business: ABO.paypal, item_name: `Tätigkeitsbericht Zugang – Benutzer: ${session.id}`,
-        currency_code: 'EUR', no_shipping: '1', lc: 'DE' });
-      link.href = base + '&' + new URLSearchParams({ cmd: '_xclick-subscriptions', a3: ABO.amount, p3: '1', t3: 'M', src: '1' });
-      link2.href = base + '&' + new URLSearchParams({ cmd: '_xclick', amount: ABO.amount });
-      link2.textContent = 'Zahlungspflichtig bestellen – einmalig 1 Monat (' + ABO.amount.replace('.', ',') + ' €)'; link2.hidden = false;
-      updateOrderButtons();
-    } else { link.removeAttribute('href'); link.setAttribute('aria-disabled', 'true'); }
-    $('payHint').textContent = (ABO.paymentUrl || ABO.paypal ? 'Bezahlung über PayPal. Nach der Zahlung' : 'Die Online-Zahlung ist noch nicht eingerichtet. Bitte melde dich beim Admin –')
-      + ` bekommst du vom Admin einen Zugangskey für deinen Benutzernamen „${session.id}“.`;
+      <span>${euro} pro Monat. Jede Zahlung schaltet einen Monat frei und endet danach automatisch – kein Abo, keine Kündigung nötig.</span>
+      <span>${LEGAL.kleinunternehmer ? 'Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.' : 'Preise inkl. gesetzlicher Umsatzsteuer.'} Zahlung per PayPal. Den Zugangskey bekommst du nach Zahlungseingang in der Regel innerhalb von 2 Werktagen.</span>`;
+    $('payTo').textContent = ABO.paypal; $('payAmount').textContent = euro;
+    $('payRef').textContent = 'Tätigkeitsbericht – ' + session.id;
+    $('chkAgb').checked = $('chkWiderruf').checked = false; updateOrderButtons();
+    $('payHint').textContent = `Nach der Zahlung bekommst du vom Admin einen Zugangskey für deinen Benutzernamen „${session.id}“.`;
     $('keyMsg').textContent = ''; $('keyInput').value = '';
     return;
   }
@@ -993,8 +991,14 @@ async function enterApp() {
 }
 function updateOrderButtons() {
   const ok = $('chkAgb').checked && $('chkWiderruf').checked;
-  ['payLink', 'payLink2'].forEach(id => { if (ok && $(id).href) $(id).removeAttribute('aria-disabled'); else $(id).setAttribute('aria-disabled', 'true'); });
+  $('payBox').hidden = !ok; $('payLocked').hidden = ok;
 }
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-copy]'); if (!b) return;
+  const t = $(b.dataset.copy).textContent;
+  try { await navigator.clipboard.writeText(t); toast('Kopiert: ' + t); }
+  catch { const r = document.createRange(); r.selectNodeContents($(b.dataset.copy)); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Markiert – mit Strg+C kopieren'); }
+});
 $('chkAgb').onchange = $('chkWiderruf').onchange = updateOrderButtons;
 $('keyBtn').onclick = async () => { $('keyMsg').textContent = ''; if (await redeemKey($('keyInput').value, $('keyMsg'))) { toast('Key eingelöst'); enterApp(); } };
 $('key2Btn').onclick = async () => {
@@ -1572,7 +1576,7 @@ const LEGAL_PAGES = {
     <h3>3. Bereitstellung der Website</h3>
     <p>${LEGAL.hoster ? `Diese Website wird bei ${esc(LEGAL.hoster)} bereitgestellt. Beim Aufruf verarbeitet der Hoster technisch notwendige Daten (u. a. IP-Adresse, Zeitpunkt, aufgerufene Datei, Browsertyp) in Server-Logdateien, um die Seite auszuliefern und die Sicherheit zu gewährleisten (Art. 6 Abs. 1 lit. f DSGVO). Sofern der Hoster seinen Sitz außerhalb der EU hat, erfolgt die Übermittlung auf Grundlage eines Angemessenheitsbeschlusses bzw. der EU-Standardvertragsklauseln.` : 'Wenn du die Anwendung als Datei auf deinem Gerät öffnest, werden dabei keine Daten übertragen. Wird die Anwendung über einen Webserver bereitgestellt, verarbeitet dessen Betreiber technisch notwendige Zugriffsdaten (u. a. IP-Adresse, Zeitpunkt) zur Auslieferung der Seite (Art. 6 Abs. 1 lit. f DSGVO).'}</p>
     <h3>4. Bezahlung über PayPal</h3>
-    <p>Wenn du ein Abo abschließt oder einmalig bezahlst, wirst du zu PayPal weitergeleitet: PayPal (Europe) S.à r.l. et Cie, S.C.A., 22-24 Boulevard Royal, L-2449 Luxembourg. PayPal verarbeitet dabei deine Zahlungsdaten in eigener Verantwortung, siehe die Datenschutzerklärung von PayPal unter https://www.paypal.com/de/legalhub/privacy-full. Wir erhalten von PayPal deinen Namen, deine E-Mail-Adresse, den Betrag, den Verwendungszweck mit deinem Benutzernamen und den Zahlungsstatus. Diese Daten verwenden wir zur Vertragsabwicklung und um dir deinen Zugangskey zu senden (Art. 6 Abs. 1 lit. b DSGVO). Rechnungs- und Zahlungsdaten bewahren wir wegen gesetzlicher Aufbewahrungspflichten bis zu 10 Jahre auf (Art. 6 Abs. 1 lit. c DSGVO i. V. m. § 147 AO).</p>
+    <p>Wenn du per PayPal bezahlst, nutzt du dafür dein eigenes PayPal-Konto bei PayPal (Europe) S.à r.l. et Cie, S.C.A., 22-24 Boulevard Royal, L-2449 Luxembourg. PayPal verarbeitet dabei deine Zahlungsdaten in eigener Verantwortung, siehe die Datenschutzerklärung von PayPal unter https://www.paypal.com/de/legalhub/privacy-full. Wir erhalten von PayPal deinen Namen, deine E-Mail-Adresse, den Betrag, den Verwendungszweck mit deinem Benutzernamen und den Zahlungsstatus. Diese Daten verwenden wir zur Vertragsabwicklung und um dir deinen Zugangskey zu senden (Art. 6 Abs. 1 lit. b DSGVO). Rechnungs- und Zahlungsdaten bewahren wir wegen gesetzlicher Aufbewahrungspflichten bis zu 10 Jahre auf (Art. 6 Abs. 1 lit. c DSGVO i. V. m. § 147 AO).</p>
     <h3>5. Kontakt per E-Mail</h3>
     <p>Wenn du uns per E-Mail schreibst (z. B. für eine Kündigung oder Support), verarbeiten wir deine Angaben zur Bearbeitung deiner Anfrage (Art. 6 Abs. 1 lit. b bzw. f DSGVO) und löschen sie, sobald sie nicht mehr erforderlich sind und keine Aufbewahrungspflichten bestehen.</p>
     <h3>6. Deine Rechte</h3>
@@ -1586,15 +1590,14 @@ const LEGAL_PAGES = {
     <li>Der Kunde ist für den Inhalt seiner Berichte selbst verantwortlich. Der Anbieter schuldet nicht, dass Berichte von Ausbildungsbetrieb, Berufsschule oder Kammer anerkannt werden.</li>
     <li>Für die Sicherung seiner Daten ist der Kunde selbst verantwortlich (Funktion „Backup exportieren“). Daten gehen verloren, wenn Browserdaten gelöscht werden oder das Gerät verloren geht.</li></ol>
     <h3>§ 3 Vertragsschluss</h3>
-    <ol><li>Die Darstellung in der Anwendung ist kein bindendes Angebot. Mit Klick auf „Zahlungspflichtig abonnieren“ bzw. „Zahlungspflichtig bestellen“ und Abschluss der Zahlung bei PayPal gibt der Kunde ein verbindliches Angebot ab.</li>
+    <ol><li>Die Darstellung in der Anwendung ist kein bindendes Angebot. Mit dem Senden der Zahlung per PayPal unter Angabe seines Benutzernamens gibt der Kunde ein verbindliches Angebot ab.</li>
     <li>Der Vertrag kommt zustande, wenn der Anbieter den Zugangskey an den Kunden sendet, spätestens jedoch mit Zahlungseingang. Der Anbieter sendet den Zugangskey in der Regel innerhalb von 2 Werktagen nach Zahlungseingang an die bei PayPal hinterlegte E-Mail-Adresse.</li>
     <li>Der Vertragstext wird nicht gesondert gespeichert. Diese AGB sind jederzeit in der Anwendung abrufbar. Vertragssprache ist Deutsch.</li></ol>
     <h3>§ 4 Preise und Zahlung</h3>
-    <p>Das Abo kostet ${ABO.amount.replace('.', ',')} € pro Monat, die Einmalzahlung ${ABO.amount.replace('.', ',')} € für einen Monat. ${LEGAL.kleinunternehmer ? 'Als Kleinunternehmer gemäß § 19 UStG berechnet der Anbieter keine Umsatzsteuer.' : 'Alle Preise enthalten die gesetzliche Umsatzsteuer.'} Die Zahlung erfolgt über PayPal; beim Abo jeweils monatlich im Voraus.</p>
+    <p>Ein Monat Zugang kostet ${ABO.amount.replace('.', ',')} €. ${LEGAL.kleinunternehmer ? 'Als Kleinunternehmer gemäß § 19 UStG berechnet der Anbieter keine Umsatzsteuer.' : 'Alle Preise enthalten die gesetzliche Umsatzsteuer.'} Die Zahlung erfolgt im Voraus per PayPal an ${esc(ABO.paypal)}. Wählt der Kunde dabei „Freunde und Familie“, besteht kein PayPal-Käuferschutz; die gesetzlichen Rechte des Kunden gegenüber dem Anbieter bleiben unberührt.</p>
     <h3>§ 5 Laufzeit und Kündigung</h3>
-    <ol><li>Das Abo läuft jeweils einen Monat und verlängert sich automatisch um einen weiteren Monat, wenn es nicht gekündigt wird. Es kann jederzeit ohne Frist zum Ende des bereits bezahlten Monats gekündigt werden.</li>
-    <li>Die Kündigung ist möglich über die Schaltfläche „Verträge hier kündigen“, per E-Mail an ${L('email', 'E-Mail')} oder durch Beenden der automatischen Zahlung im PayPal-Konto.</li>
-    <li>Die Einmalzahlung gilt für einen Monat ab Ausstellung des Zugangskeys und endet automatisch, ohne dass es einer Kündigung bedarf.</li>
+    <ol><li>Jede Zahlung schaltet den Zugang für einen Monat ab Ausstellung des Zugangskeys frei. Der Zugang endet danach automatisch, ohne dass es einer Kündigung bedarf; eine automatische Verlängerung findet nicht statt.</li>
+    <li>Zur Verlängerung zahlt der Kunde erneut. Wer vorzeitig beenden möchte, kann dies über „Verträge hier kündigen“ oder per E-Mail an ${L('email', 'E-Mail')} mitteilen.</li>
     <li>Das Recht zur außerordentlichen Kündigung aus wichtigem Grund bleibt unberührt.</li></ol>
     <h3>§ 6 Zugangskey</h3>
     <p>Der Zugangskey gilt nur für den Benutzernamen, für den er ausgestellt wurde, und ist nicht übertragbar. Der Kunde darf die Anwendung nur für eigene Zwecke nutzen.</p>
@@ -1627,7 +1630,7 @@ const LEGAL_PAGES = {
     Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier): ______<br>Datum: ______</p>
     <p>(*) Unzutreffendes streichen.</p>`],
   kuendigen: ['Verträge hier kündigen', () => `
-    <p>Hier kannst du dein Abo kündigen. Pflichtfelder sind mit * markiert.</p>
+    <p>Hier kannst du deinen Vertrag kündigen. Der Zugang endet ohnehin nach dem bezahlten Monat automatisch. Pflichtfelder sind mit * markiert.</p>
     <form id="kuendForm" class="login">
       <div class="field"><label for="kdName">Vor- und Nachname *</label><input id="kdName" required autocomplete="name"></div>
       <div class="field"><label for="kdUser">Benutzername in der Anwendung *</label><input id="kdUser" required></div>
@@ -1664,14 +1667,14 @@ function wireKuendigung() {
     const when = new Date().toLocaleString('de-DE');
     const text = `Kündigung – Tätigkeitsbericht-Generator\n\nEingang: ${when}\nName: ${v('kdName')}\nBenutzername: ${v('kdUser')}\nE-Mail: ${v('kdMail')}\n`
       + (v('kdPaypal') ? `PayPal-E-Mail: ${v('kdPaypal')}\n` : '') + `Art: ${$('kdArt').value}\n` + (v('kdGrund') ? `Grund: ${v('kdGrund')}\n` : '')
-      + `\nHiermit kündige ich mein Abo zum Tätigkeitsbericht-Generator.\n`;
+      + `\nHiermit kündige ich meinen Vertrag zum Tätigkeitsbericht-Generator.\n`;
     const mail = 'mailto:' + LEGAL.email + '?subject=' + encodeURIComponent('Kündigung Tätigkeitsbericht – ' + v('kdUser')) + '&body=' + encodeURIComponent(text);
     $('kuendForm').hidden = true; const done = $('kuendDone'); done.hidden = false;
     done.innerHTML = `<p><strong>Deine Kündigung ist erstellt (${esc(when)}).</strong> Damit sie bei uns ankommt, sende sie bitte jetzt mit dem Knopf unten per E-Mail ab, falls sich dein E-Mail-Programm nicht von selbst geöffnet hat. Speichere dir außerdem die Bestätigung.</p>
       <pre style="white-space:pre-wrap;border:1px solid var(--line);border-radius:6px;padding:10px;margin:0">${esc(text)}</pre>
       <a class="btn primary" href="${esc(mail)}">Kündigung per E-Mail senden</a>
       <button id="kdSave">Bestätigung speichern</button>
-      <p class="hint">Falls du per PayPal-Abo zahlst, kannst du die automatische Zahlung zusätzlich in deinem PayPal-Konto unter „Einstellungen → Zahlungen → Automatische Zahlungen“ beenden. Wir bestätigen dir den Eingang der Kündigung per E-Mail.</p>`;
+      <p class="hint">Wir bestätigen dir den Eingang der Kündigung per E-Mail.</p>`;
     $('kdSave').onclick = () => saveBlob(new Blob([text], { type: 'text/plain' }), 'Kuendigung_Taetigkeitsbericht.txt');
     try { location.href = mail; } catch { /* E-Mail-Programm nicht verfügbar */ }
   };
