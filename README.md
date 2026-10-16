@@ -27,3 +27,11 @@ Alle Daten bleiben lokal im Browser. Über **Backup exportieren/importieren** la
 - Einlösen: auf der Sperrseite oder später unter „Meine Daten → Zugangskey eingeben“.
 - Bezahlt wird per PayPal an florian@kurth-dn.com: als monatliches Abo oder einmalig für einen Monat. Der Benutzername steht automatisch im Verwendungszweck. Einstellungen oben im Skript im Objekt `ABO` (`paypal`, `amount`, `price`, `trialDays`, optional `paymentUrl`).
 - Grenzen: Ohne Server prüft nur der Browser. Wer die HTML-Datei bearbeitet oder die Systemuhr zurückstellt, kann die Sperre umgehen. Zahlungen werden nicht automatisch erkannt: nach Zahlungseingang erstellt der Admin den Key von Hand.
+
+## Rechtliches
+
+- Impressum, Datenschutzerklärung, AGB, Widerrufsbelehrung und „Verträge hier kündigen“ (§ 312k BGB) sind über die Fußzeile auf jeder Seite erreichbar.
+- Die Anbieterangaben stehen oben im Skript im Objekt `LEGAL`. Fehlende Angaben werden in den Texten gelb markiert und im Admin-Bereich angezeigt.
+- Vor der Bezahlung müssen AGB und die Zustimmung zum sofortigen Leistungsbeginn (Widerrufsrecht) angehakt werden; die Bestellknöpfe heißen „zahlungspflichtig …“.
+- Die Seite lädt keine externen Ressourcen (keine Google Fonts, jsPDF ist eingebettet).
+- Die Texte sind Vorlagen und keine Rechtsberatung.
