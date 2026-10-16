@@ -346,17 +346,22 @@ $('logout').onclick = async () => {
 
 // Online-Speicher (claude.ai Konto). Ohne ihn bleibt alles im Browser.
 let remote = null; const timers = {};
+function flushRemote() { Object.keys(timers).forEach(id => { clearTimeout(timers[id].t); timers[id].run(); }); }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { flushPending(); flushRemote(); } });
+window.addEventListener('pagehide', () => { flushPending(); flushRemote(); });
 function remoteWrite(id, fn) {
   if (!remote) return;
-  clearTimeout(timers[id]);
-  timers[id] = setTimeout(async () => {
+  if (timers[id]) clearTimeout(timers[id].t);
+  const run = async () => {
+    if (!timers[id] || timers[id].run !== run) return;
     delete timers[id];
     try { await fn(remote.doc(id)); setSync('online gespeichert'); }
     catch (e) {
       if (e && e.code === 'invalid_argument') noWriteAccess();
       else setSync(e && e.code === 'quota_exceeded' ? 'Online-Speicher voll' : 'Online-Speichern fehlgeschlagen');
     }
-  }, 800);
+  };
+  timers[id] = { run, t: setTimeout(run, 800) };
 }
 const settingsDoc = () => ({ settings: db.settings, bausteine: db.bausteine, templates: db.templates });
 function persist(weekKey) {
