@@ -784,19 +784,20 @@ const USERS = 'tb_users_v1', DATA = u => 'tb_data_v1:' + u, ADMIN_LOCAL = 'tb_ad
 // ---------- Rechtliches ----------
 // Diese Angaben erscheinen in Impressum, Datenschutzerklärung, AGB und Widerrufsbelehrung.
 const LEGAL = {
-  name: '',                            // Vor- und Nachname (bei Firma: Firmenname + Rechtsform)
-  street: '',                          // Straße und Hausnummer (keine Postfachadresse)
-  city: '',                            // PLZ und Ort
+  name: 'Florian Kurth',               // Vor- und Nachname (bei Firma: Firmenname + Rechtsform)
+  street: 'Kastanienweg 17',           // Straße und Hausnummer (keine Postfachadresse)
+  zip: '',                             // Postleitzahl
+  city: 'Düren',                       // Ort
   country: 'Deutschland',
   email: 'florian@kurth-dn.com',
   phone: '',                           // Telefonnummer (zweiter schneller Kontaktweg)
   kleinunternehmer: true,              // true = Kleinunternehmer nach § 19 UStG, keine Umsatzsteuer
   ustId: '',                           // USt-IdNr., falls vorhanden
-  hoster: '',                          // Webhoster, z. B. 'GitHub Inc., 88 Colin P. Kelly Jr. St., San Francisco, CA 94107, USA'
+  hoster: 'Netlify, Inc., San Francisco, Kalifornien, USA',   // Webhoster
   stand: 'Oktober 2026'
 };
 function legalMissing() {
-  return [['name', 'Name'], ['street', 'Straße'], ['city', 'PLZ/Ort'], ['email', 'E-Mail'], ['phone', 'Telefon']]
+  return [['name', 'Name'], ['street', 'Straße'], ['zip', 'Postleitzahl'], ['city', 'Ort'], ['email', 'E-Mail'], ['phone', 'Telefon']]
     .filter(([k]) => !LEGAL[k]).map(([, l]) => l);
 }
 
@@ -1549,7 +1550,10 @@ function downloadPdf(w) {
 
 // ---------- Rechtstexte ----------
 const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-const L = (k, label) => LEGAL[k] ? esc(LEGAL[k]) : `<mark class="todo">[${label} fehlt]</mark>`;
+const L = (k, label) => {
+  if (k === 'city') return `${LEGAL.zip ? esc(LEGAL.zip) : '<mark class="todo">[PLZ fehlt]</mark>'} ${LEGAL.city ? esc(LEGAL.city) : '<mark class="todo">[Ort fehlt]</mark>'}`;
+  return LEGAL[k] ? esc(LEGAL[k]) : `<mark class="todo">[${label} fehlt]</mark>`;
+};
 const anbieter = () => `${L('name', 'Name')}<br>${L('street', 'Straße und Hausnummer')}<br>${L('city', 'PLZ und Ort')}<br>${esc(LEGAL.country)}`;
 const LEGAL_PAGES = {
   impressum: ['Impressum', () => `
