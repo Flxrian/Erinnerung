@@ -14,6 +14,8 @@ Webseite zum schnellen Ausfüllen des wöchentlichen Tätigkeitsberichts (Mo–S
 4. Oben **Jahr und KW** im Dropdown wählen oder ein Datum im Kalender anklicken.
 5. **Automatisch ausfüllen** füllt jede leere Zeile. Die **Vorschau** zeigt live das eingescannte Originalformular mit deinen Einträgen. Sobald alle Zeilen voll sind, wird das fertige PDF (Originalformular als Hintergrund) erstellt, die Woche im **Log** gespeichert und das Formular für die nächste KW geleert.
 
-**Login (als HTML-Datei bzw. auf eigener Webseite):** Beim ersten Öffnen ein Konto mit Benutzername und Passwort erstellen. Jedes Konto sieht nur seine eigenen Wochen; die Daten werden mit dem Passwort verschlüsselt (AES-GCM, Schlüssel per PBKDF2) im Browser gespeichert. Konten gelten nur für das Gerät/den Browser, auf dem sie erstellt wurden. Passwort vergessen = Daten nicht mehr lesbar.
+**Login (als HTML-Datei bzw. auf eigener Webseite):** Beim ersten Öffnen ein Konto mit Benutzername und Passwort erstellen. Jedes Konto sieht nur seine eigenen Wochen; die Daten werden mit dem Passwort verschlüsselt (AES-GCM, Schlüssel per PBKDF2) im Browser gespeichert. Konten gelten nur für das Gerät/den Browser, auf dem sie erstellt wurden.
+
+**Admin:** Im Login-Fenster unter „Admin“ einmalig ein Admin-Passwort festlegen. Der Admin sieht alle Benutzer, kann vergessene Passwörter neu setzen (die Wochen bleiben erhalten), Konten löschen und das Admin-Passwort ändern. Technisch: Jeder Benutzer hat einen zufälligen Datenschlüssel, der zusätzlich mit dem öffentlichen RSA-Schlüssel des Admins gesichert ist. Konten, die vor dem Admin existierten, werden beim nächsten Login des Benutzers zurücksetzbar. Benutzer können ihr Passwort unter „Meine Daten“ selbst ändern.
 
 Alle Daten bleiben lokal im Browser. Über **Backup exportieren/importieren** lassen sie sich sichern oder auf ein anderes Gerät übertragen. Aus dem Log kann jede Woche erneut geöffnet, bearbeitet oder als PDF geladen werden.

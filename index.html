@@ -91,6 +91,12 @@
   .tab.active { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
   .err { color: var(--danger); margin: 0; font-size: 14px; min-height: 1em; }
   .err:empty { display: none; }
+  .au { border-top: 1px solid var(--line); padding: 10px 0; display: flex; flex-direction: column; gap: 8px; }
+  .au-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .au .st { font-size: 12px; color: var(--muted); }
+  .au .st.warn { color: var(--warn); }
+  .au-reset { display: flex; gap: 6px; flex-wrap: wrap; }
+  .au-reset input { flex: 1 1 160px; width: auto; }
   .gate { max-width: 520px; margin: 32px auto; padding-inline: 16px; }
   .gate p { margin: 0 0 14px; }
   .rights { max-width: 1100px; margin: 16px auto 0; padding: 10px 14px; border-radius: 8px; background: var(--accent-soft);
@@ -120,16 +126,34 @@
       <div class="tabs" role="tablist">
         <button type="button" class="tab active" id="tabLogin" role="tab">Anmelden</button>
         <button type="button" class="tab" id="tabNew" role="tab">Neues Konto</button>
+        <button type="button" class="tab" id="tabAdmin" role="tab">Admin</button>
       </div>
-      <div class="field"><label for="lgUser">Benutzername</label><input id="lgUser" autocomplete="username" required></div>
-      <div class="field"><label for="lgPass">Passwort</label><input id="lgPass" type="password" autocomplete="current-password" required></div>
+      <div class="field" id="lgUserField"><label for="lgUser">Benutzername</label><input id="lgUser" autocomplete="username"></div>
+      <div class="field"><label for="lgPass">Passwort</label><input id="lgPass" type="password" autocomplete="current-password"></div>
       <div class="field" id="lgRepeat" hidden><label for="lgPass2">Passwort wiederholen</label><input id="lgPass2" type="password" autocomplete="new-password"></div>
       <p class="err" id="lgMsg" role="alert"></p>
       <button class="primary" id="lgSubmit" type="submit">Anmelden</button>
-      <p class="hint">Jedes Konto sieht nur seine eigenen Wochen. Die Daten werden mit deinem Passwort verschlüsselt in diesem Browser gespeichert.
-        Wer das Passwort vergisst, kommt nicht mehr an seine Daten – sichere sie ab und zu mit „Backup exportieren“.</p>
+      <p class="hint" id="lgHint"></p>
     </form>
     <button id="gateTry">Ohne Anmeldung ausprobieren</button>
+  </div>
+</section>
+
+<section class="gate" id="admin" hidden>
+  <div class="card">
+    <h2>Admin – Benutzer</h2>
+    <p class="hint" style="margin-top:0">Hier kannst du Passwörter zurücksetzen. Die Wochen der Person bleiben dabei erhalten.
+      Gib ihr das neue Passwort, sie kann es danach unter „Meine Daten“ selbst ändern.</p>
+    <div id="adminUsers"></div>
+    <details style="margin-top:14px">
+      <summary>Admin-Passwort ändern</summary>
+      <div class="login">
+        <div class="field"><label for="adPw1">Neues Admin-Passwort</label><input id="adPw1" type="password" autocomplete="new-password"></div>
+        <div class="field"><label for="adPw2">Wiederholen</label><input id="adPw2" type="password" autocomplete="new-password"></div>
+        <button id="adPwBtn">Admin-Passwort speichern</button>
+      </div>
+    </details>
+    <div class="row" style="margin-top:14px"><button class="primary" id="adLogout">Admin abmelden</button></div>
   </div>
 </section>
 
@@ -181,6 +205,14 @@
         <div class="field grow"><label for="autoDl">Wenn alles voll ist</label>
           <select id="autoDl"><option value="1">PDF automatisch laden</option><option value="0">nur im Log speichern</option></select></div>
       </div>
+      <details id="pwChange" style="margin-top:10px" hidden>
+        <summary>Passwort ändern</summary>
+        <div class="login">
+          <div class="field"><label for="myPw1">Neues Passwort</label><input id="myPw1" type="password" autocomplete="new-password"></div>
+          <div class="field"><label for="myPw2">Wiederholen</label><input id="myPw2" type="password" autocomplete="new-password"></div>
+          <button id="myPwBtn">Passwort speichern</button>
+        </div>
+      </details>
     </div>
 
     <div class="card">
@@ -262,35 +294,66 @@ function persistLocal() {
 }
 
 // ---------- Lokale Konten (ohne claude.ai) ----------
-// Jedes Konto speichert seine Daten AES-verschlüsselt; der Schlüssel entsteht aus dem Passwort (PBKDF2).
-const USERS = 'tb_users_v1', DATA = u => 'tb_data_v1:' + u;
-let session = null, writeChain = Promise.resolve(), newMode = false;
+// Jedes Konto hat einen zufälligen Datenschlüssel (AES-256). Dieser liegt zweimal gespeichert:
+//  1. verschlüsselt mit dem Passwort des Kontos (PBKDF2),
+//  2. verschlüsselt mit dem öffentlichen Admin-Schlüssel (RSA-OAEP).
+// So kann der Admin ein neues Passwort setzen, ohne dass die Daten verloren gehen.
+const USERS = 'tb_users_v1', DATA = u => 'tb_data_v1:' + u, ADMIN = 'tb_admin_v1';
+const RSA = { name: 'RSA-OAEP', hash: 'SHA-256' };
+let session = null, adminSession = null, writeChain = Promise.resolve(), mode = 'login';
 const te = new TextEncoder(), td = new TextDecoder();
-const toB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const toB64 = buf => { let s = ''; new Uint8Array(buf).forEach(b => s += String.fromCharCode(b)); return btoa(s); };
 const fromB64 = str => Uint8Array.from(atob(str), c => c.charCodeAt(0));
 function readUsers() { try { return JSON.parse(localStorage.getItem(USERS)) || {}; } catch { return {}; } }
+function readAdmin() { try { return JSON.parse(localStorage.getItem(ADMIN)); } catch { return null; } }
+const writeUsers = u => localStorage.setItem(USERS, JSON.stringify(u));
 async function deriveKey(pw, salt) {
   const base = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 250000, hash: 'SHA-256' }, base,
     { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
 }
+async function aesEnc(key, bytes) {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  return { iv: toB64(iv), ct: toB64(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, bytes)) };
+}
+async function aesDec(key, o) { return new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(o.iv) }, key, fromB64(o.ct))); }
+const importDek = raw => crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+async function wrapForAdmin(raw) {
+  const a = readAdmin(); if (!a) return null;
+  const pub = await crypto.subtle.importKey('spki', fromB64(a.pub), RSA, false, ['encrypt']);
+  return toB64(await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, pub, raw));
+}
+// Datenschlüssel mit (neuem) Passwort sichern; Admin-Kopie anlegen, falls noch keine da ist
+async function setUserPassword(users, id, pw, raw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const u = users[id];
+  u.salt = toB64(salt); u.wrapPw = await aesEnc(await deriveKey(pw, salt), raw); u.v = 2;
+  if (!u.wrapAdmin) u.wrapAdmin = await wrapForAdmin(raw);
+}
 function saveEncrypted() {
   if (!session) return;
   const { id, key } = session, plain = JSON.stringify(db);
   writeChain = writeChain.then(async () => {
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, te.encode(plain));
-    localStorage.setItem(DATA(id), JSON.stringify({ iv: toB64(iv), ct: toB64(ct) }));
+    localStorage.setItem(DATA(id), JSON.stringify(await aesEnc(key, te.encode(plain))));
   }).catch(() => toast('Speichern im Browser fehlgeschlagen – Speicher voll oder blockiert?'));
 }
-function setNewMode(on) {
-  newMode = on;
-  $('tabLogin').classList.toggle('active', !on); $('tabNew').classList.toggle('active', on);
-  $('lgRepeat').hidden = !on; $('lgSubmit').textContent = on ? 'Konto erstellen' : 'Anmelden';
-  $('lgPass').autocomplete = on ? 'new-password' : 'current-password'; $('lgMsg').textContent = '';
+function setMode(m) {
+  mode = m; const hasAdmin = !!readAdmin();
+  ['Login', 'New', 'Admin'].forEach(t => $('tab' + t).classList.toggle('active', m === t.toLowerCase() || (m === 'new' && t === 'New')));
+  $('lgUserField').hidden = m === 'admin';
+  $('lgRepeat').hidden = !(m === 'new' || (m === 'admin' && !hasAdmin));
+  $('lgSubmit').textContent = m === 'new' ? 'Konto erstellen' : m === 'admin' ? (hasAdmin ? 'Als Admin anmelden' : 'Admin einrichten') : 'Anmelden';
+  $('lgPass').autocomplete = $('lgRepeat').hidden ? 'current-password' : 'new-password';
+  $('lgHint').textContent = m === 'admin'
+    ? (hasAdmin ? 'Der Admin kann vergessene Passwörter zurücksetzen.'
+      : 'Noch kein Admin eingerichtet. Wer jetzt ein Admin-Passwort festlegt, kann später die Passwörter aller Benutzer zurücksetzen.')
+    : 'Jedes Konto sieht nur seine eigenen Wochen. Die Daten werden verschlüsselt in diesem Browser gespeichert.'
+      + (hasAdmin ? ' Passwort vergessen? Der Admin kann ein neues setzen.' : ' Solange kein Admin eingerichtet ist, kann ein vergessenes Passwort nicht zurückgesetzt werden.');
+  $('lgMsg').textContent = '';
 }
-$('tabLogin').onclick = () => setNewMode(false);
-$('tabNew').onclick = () => setNewMode(true);
+$('tabLogin').onclick = () => setMode('login');
+$('tabNew').onclick = () => setMode('new');
+$('tabAdmin').onclick = () => setMode('admin');
 $('loginForm').onsubmit = async e => {
   e.preventDefault();
   const name = $('lgUser').value.trim(), pw = $('lgPass').value, id = name.toLowerCase(), msg = $('lgMsg');
@@ -299,50 +362,144 @@ $('loginForm').onsubmit = async e => {
   const users = readUsers();
   $('lgSubmit').disabled = true;
   try {
-    if (newMode) {
-      if (!name) { msg.textContent = 'Bitte einen Benutzernamen eingeben.'; return; }
+    if (mode === 'admin') { await adminLogin(pw, msg); return; }
+    if (!name) { msg.textContent = 'Bitte einen Benutzernamen eingeben.'; return; }
+    if (mode === 'new') {
       if (pw.length < 6) { msg.textContent = 'Das Passwort braucht mindestens 6 Zeichen.'; return; }
       if (pw !== $('lgPass2').value) { msg.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
       if (users[id]) { msg.textContent = 'Diesen Benutzernamen gibt es schon. Bitte anmelden oder einen anderen wählen.'; return; }
-      const salt = crypto.getRandomValues(new Uint8Array(16));
-      session = { id, name, key: await deriveKey(pw, salt) };
+      const raw = crypto.getRandomValues(new Uint8Array(32));
+      users[id] = { name };
+      await setUserPassword(users, id, pw, raw);
+      writeUsers(users);
+      session = { id, name, key: await importDek(raw), raw };
       db = defaults();
       // ältere Daten aus der Version ohne Login übernimmt das erste Konto
       const old = localStorage.getItem(STORE);
-      if (old && !Object.keys(users).length) { db = readCache(STORE); }
-      users[id] = { name, salt: toB64(salt) };
-      localStorage.setItem(USERS, JSON.stringify(users));
+      if (old && Object.keys(users).length === 1) db = readCache(STORE);
       saveEncrypted(); await writeChain;
-      if (old && localStorage.getItem(DATA(id))) { localStorage.removeItem(STORE); toast('Bisherige Daten wurden in dein Konto übernommen'); }
+      if (old && Object.keys(users).length === 1 && localStorage.getItem(DATA(id))) { localStorage.removeItem(STORE); toast('Bisherige Daten wurden in dein Konto übernommen'); }
     } else {
       const u = users[id];
       if (!u) { msg.textContent = 'Benutzername oder Passwort falsch.'; return; }
-      const key = await deriveKey(pw, fromB64(u.salt));
-      const raw = JSON.parse(localStorage.getItem(DATA(id)) || 'null');
-      let data = {};
-      if (raw) {
-        try { data = JSON.parse(td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(raw.iv) }, key, fromB64(raw.ct)))); }
-        catch { msg.textContent = 'Benutzername oder Passwort falsch.'; return; }
+      const pwKey = await deriveKey(pw, fromB64(u.salt));
+      const stored = JSON.parse(localStorage.getItem(DATA(id)) || 'null');
+      let raw, data = {};
+      if (u.v === 2) {
+        try { raw = await aesDec(pwKey, u.wrapPw); } catch { msg.textContent = 'Benutzername oder Passwort falsch.'; return; }
+        const key = await importDek(raw);
+        if (stored) {
+          try { data = JSON.parse(td.decode(await aesDec(key, stored))); }
+          catch { data = JSON.parse(td.decode(await aesDec(pwKey, stored))); } // halb umgestelltes Konto
+        }
+        if (!u.wrapAdmin && readAdmin()) { u.wrapAdmin = await wrapForAdmin(raw); writeUsers(users); }
+      } else {
+        // Konto aus der Version ohne Admin: Daten waren direkt mit dem Passwort verschlüsselt
+        if (stored) {
+          try { data = JSON.parse(td.decode(await aesDec(pwKey, stored))); }
+          catch { msg.textContent = 'Benutzername oder Passwort falsch.'; return; }
+        }
+        raw = crypto.getRandomValues(new Uint8Array(32));
+        await setUserPassword(users, id, pw, raw); writeUsers(users);
       }
-      session = { id, name: u.name, key };
+      session = { id, name: u.name, key: await importDek(raw), raw };
       db = Object.assign(defaults(), data);
+      saveEncrypted(); await writeChain;
     }
     startSession();
   } finally { $('lgSubmit').disabled = false; }
 };
 function startSession() {
   $('lgPass').value = ''; $('lgPass2').value = '';
-  $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = false;
+  $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = false; $('pwChange').hidden = false;
   $('gate').hidden = true; $('app').hidden = false;
   cur = { year: now.year, kw: now.kw };
   loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
 }
+function backToLogin(text) {
+  $('who').textContent = ''; $('logout').hidden = true; $('pwChange').hidden = true; $('admin').hidden = true;
+  showGate(text); setMode('login'); $('lgUser').focus();
+}
 $('logout').onclick = async () => {
   flushPending(); await writeChain;
-  session = null; db = defaults(); $('who').textContent = ''; $('logout').hidden = true;
+  session = null; db = defaults();
   loadSettingsUi(); renderWeek(); renderLog();
-  showGate('Abgemeldet. Melde dich an oder erstelle ein neues Konto.'); setNewMode(false); $('lgUser').focus();
+  backToLogin('Abgemeldet. Melde dich an oder erstelle ein neues Konto.');
 };
+$('myPwBtn').onclick = async () => {
+  const a = $('myPw1').value;
+  if (a.length < 6) { toast('Das Passwort braucht mindestens 6 Zeichen.'); return; }
+  if (a !== $('myPw2').value) { toast('Die Passwörter stimmen nicht überein.'); return; }
+  const users = readUsers();
+  await setUserPassword(users, session.id, a, session.raw); writeUsers(users);
+  $('myPw1').value = $('myPw2').value = ''; $('pwChange').open = false; toast('Passwort geändert');
+};
+
+// ---------- Admin ----------
+async function adminLogin(pw, msg) {
+  let a = readAdmin();
+  if (!a) {
+    if (pw.length < 8) { msg.textContent = 'Das Admin-Passwort braucht mindestens 8 Zeichen.'; return; }
+    if (pw !== $('lgPass2').value) { msg.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
+    const kp = await crypto.subtle.generateKey({ ...RSA, modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]) }, true, ['encrypt', 'decrypt']);
+    const pkcs8 = new Uint8Array(await crypto.subtle.exportKey('pkcs8', kp.privateKey));
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    a = { pub: toB64(await crypto.subtle.exportKey('spki', kp.publicKey)), salt: toB64(salt), priv: await aesEnc(await deriveKey(pw, salt), pkcs8) };
+    localStorage.setItem(ADMIN, JSON.stringify(a));
+    adminSession = { priv: kp.privateKey, pkcs8 };
+    toast('Admin eingerichtet');
+  } else {
+    let pkcs8;
+    try { pkcs8 = await aesDec(await deriveKey(pw, fromB64(a.salt)), a.priv); }
+    catch { msg.textContent = 'Admin-Passwort falsch.'; return; }
+    adminSession = { priv: await crypto.subtle.importKey('pkcs8', pkcs8, RSA, false, ['decrypt']), pkcs8 };
+  }
+  $('lgPass').value = ''; $('lgPass2').value = '';
+  $('gate').hidden = true; $('app').hidden = true; $('admin').hidden = false;
+  $('who').textContent = 'Angemeldet als Admin';
+  renderAdmin();
+}
+function renderAdmin() {
+  const users = readUsers(), box = $('adminUsers'); box.innerHTML = '';
+  const ids = Object.keys(users).sort();
+  if (!ids.length) { box.innerHTML = '<p class="hint">Noch keine Benutzer angelegt.</p>'; return; }
+  ids.forEach(id => {
+    const u = users[id], el = document.createElement('div'); el.className = 'au';
+    const ok = !!u.wrapAdmin;
+    el.innerHTML = `<div class="au-head"><div><strong></strong><div class="st ${ok ? '' : 'warn'}">${ok
+      ? 'Passwort kann zurückgesetzt werden'
+      : 'Noch nicht zurücksetzbar – die Person muss sich einmal anmelden, seit es den Admin gibt'}</div></div>
+      <div class="row"><button class="small" data-a="reset" ${ok ? '' : 'disabled'}>Passwort zurücksetzen</button><button class="small danger" data-a="del">Löschen</button></div></div>
+      <div class="au-reset" hidden><input type="text" placeholder="Neues Passwort (mind. 6 Zeichen)" aria-label="Neues Passwort für ${escapeHtml(u.name)}"><button class="small primary" data-a="save">Setzen</button></div>`;
+    el.querySelector('strong').textContent = u.name;
+    const form = el.querySelector('.au-reset'), inp = form.querySelector('input');
+    el.querySelector('[data-a=reset]').onclick = () => { form.hidden = !form.hidden; if (!form.hidden) inp.focus(); };
+    el.querySelector('[data-a=save]').onclick = async () => {
+      if (inp.value.length < 6) { toast('Das Passwort braucht mindestens 6 Zeichen.'); return; }
+      try {
+        const all = readUsers();
+        const raw = new Uint8Array(await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, adminSession.priv, fromB64(all[id].wrapAdmin)));
+        await setUserPassword(all, id, inp.value, raw); writeUsers(all);
+        toast(`Neues Passwort für ${u.name} gesetzt`); inp.value = ''; form.hidden = true;
+      } catch { toast('Zurücksetzen fehlgeschlagen'); }
+    };
+    el.querySelector('[data-a=del]').onclick = async () => {
+      if (!await ask(`Konto „${u.name}“ mit allen gespeicherten Wochen endgültig löschen?`)) return;
+      const all = readUsers(); delete all[id]; writeUsers(all); localStorage.removeItem(DATA(id)); renderAdmin();
+    };
+    box.appendChild(el);
+  });
+}
+$('adPwBtn').onclick = async () => {
+  const a = $('adPw1').value;
+  if (a.length < 8) { toast('Das Admin-Passwort braucht mindestens 8 Zeichen.'); return; }
+  if (a !== $('adPw2').value) { toast('Die Passwörter stimmen nicht überein.'); return; }
+  const adm = readAdmin(), salt = crypto.getRandomValues(new Uint8Array(16));
+  adm.salt = toB64(salt); adm.priv = await aesEnc(await deriveKey(a, salt), adminSession.pkcs8);
+  localStorage.setItem(ADMIN, JSON.stringify(adm));
+  $('adPw1').value = $('adPw2').value = ''; toast('Admin-Passwort geändert');
+};
+$('adLogout').onclick = () => { adminSession = null; backToLogin('Admin abgemeldet.'); };
 
 // Online-Speicher (claude.ai Konto). Ohne ihn bleibt alles im Browser.
 let remote = null; const timers = {};
@@ -766,7 +923,7 @@ function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add
 window.addEventListener('beforeunload', flushPending);
 
 if (HOSTED) { showGate('Anmeldung wird geprüft …'); $('gateTry').hidden = true; }
-else { $('loginForm').hidden = false; $('gateTry').hidden = true; showGate('Melde dich an oder erstelle ein Konto.'); setNewMode(!Object.keys(readUsers()).length); }
+else { $('loginForm').hidden = false; $('gateTry').hidden = true; showGate('Melde dich an oder erstelle ein Konto.'); setMode(Object.keys(readUsers()).length ? 'login' : 'new'); }
 loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
 $('preview').onclick = () => $('preview').classList.toggle('big');
 document.fonts && document.fonts.ready.then(schedulePreview);
