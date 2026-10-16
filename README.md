@@ -25,5 +25,5 @@ Alle Daten bleiben lokal im Browser. Über **Backup exportieren/importieren** la
 - Neue Konten haben 14 Tage kostenlosen Testzeitraum. Danach braucht man ein Abo (5 € pro Monat) oder einen Zugangskey.
 - Der Admin erstellt Zugangskeys im Admin-Bereich unter „Zugangskeys“: Benutzername + Laufzeit (1, 3, 6, 12 Monate oder unbegrenzt). Keys sind mit dem Admin-Schlüssel signiert (ECDSA P-256), gelten nur für den angegebenen Benutzernamen und können nicht gefälscht werden.
 - Einlösen: auf der Sperrseite oder später unter „Meine Daten → Zugangskey eingeben“.
-- Zahlungslink, Preis und Testzeitraum stehen oben im Skript im Objekt `ABO` (`paymentUrl`, `price`, `trialDays`). Ohne Zahlungslink ist der Abo-Knopf ausgegraut.
+- Bezahlt wird per PayPal an florian@kurth-dn.com: als monatliches Abo oder einmalig für einen Monat. Der Benutzername steht automatisch im Verwendungszweck. Einstellungen oben im Skript im Objekt `ABO` (`paypal`, `amount`, `price`, `trialDays`, optional `paymentUrl`).
 - Grenzen: Ohne Server prüft nur der Browser. Wer die HTML-Datei bearbeitet oder die Systemuhr zurückstellt, kann die Sperre umgehen. Zahlungen werden nicht automatisch erkannt: nach Zahlungseingang erstellt der Admin den Key von Hand.
