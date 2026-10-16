@@ -97,6 +97,12 @@
   .au .st.warn { color: var(--warn); }
   .au-reset { display: flex; gap: 6px; flex-wrap: wrap; }
   .au-reset input { flex: 1 1 160px; width: auto; }
+  a.btn { display: block; text-align: center; text-decoration: none; padding: 9px 12px; border-radius: 6px; border: 1px solid var(--line); color: var(--text); }
+  a.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  a.btn[aria-disabled="true"] { opacity: .5; pointer-events: none; }
+  h3.sub { font-size: 14px; margin: 16px 0 4px; }
+  .kl { border-top: 1px solid var(--line); padding: 6px 0; font-size: 13px; display: flex; justify-content: space-between; gap: 8px; }
+  #kOut, #keyInput, #key2Input { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; word-break: break-all; }
   .gate { max-width: 520px; margin: 32px auto; padding-inline: 16px; }
   .gate p { margin: 0 0 14px; }
   .rights { max-width: 1100px; margin: 16px auto 0; padding: 10px 14px; border-radius: 8px; background: var(--accent-soft);
@@ -115,7 +121,7 @@
 <header>
   <h1>Tätigkeitsbericht – Meine Ausbildung</h1>
   <p>Woche wählen · automatisch ausfüllen · fertiges PDF wird gespeichert <span class="sync" id="sync"></span></p>
-  <div class="who-row"><p class="who" id="who"></p><button class="small" id="logout" hidden>Abmelden</button></div>
+  <div class="who-row"><p class="who" id="who"></p><span class="sync" id="access"></span><button class="small" id="logout" hidden>Abmelden</button></div>
 </header>
 
 <section class="gate" id="gate" hidden>
@@ -139,12 +145,46 @@
   </div>
 </section>
 
+<section class="gate" id="paywall" hidden>
+  <div class="card">
+    <h2>Zugang abgelaufen</h2>
+    <p id="payText"></p>
+    <div class="login">
+      <a class="btn primary" id="payLink" target="_blank" rel="noopener"></a>
+      <p class="hint" id="payHint"></p>
+      <div class="field"><label for="keyInput">Zugangskey vom Admin</label><textarea id="keyInput" rows="3" placeholder="TB1-…"></textarea></div>
+      <p class="err" id="keyMsg" role="alert"></p>
+      <button class="primary" id="keyBtn">Key einlösen</button>
+      <button id="payLogout">Abmelden</button>
+    </div>
+  </div>
+</section>
+
 <section class="gate" id="admin" hidden>
   <div class="card">
     <h2>Admin – Benutzer</h2>
     <p class="hint" style="margin-top:0">Hier kannst du Passwörter zurücksetzen. Die Wochen der Person bleiben dabei erhalten.
       Gib ihr das neue Passwort, sie kann es danach unter „Meine Daten“ selbst ändern.</p>
     <div id="adminUsers"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Zugangskeys</h2>
+    <p class="hint" style="margin-top:0">Erstelle einen Key, z. B. nach einer Zahlung oder als kostenlosen Zugang.
+      Der Key gilt nur für den angegebenen Benutzernamen.</p>
+    <div class="login">
+      <div class="row">
+        <div class="field grow"><label for="kUser">Benutzername</label><input id="kUser" list="kUsers" autocomplete="off"><datalist id="kUsers"></datalist></div>
+        <div class="field"><label for="kDur">Laufzeit</label>
+          <select id="kDur"><option value="1">1 Monat</option><option value="3">3 Monate</option><option value="6">6 Monate</option><option value="12">12 Monate</option><option value="0">unbegrenzt (kostenlos)</option></select></div>
+      </div>
+      <button class="primary" id="kBtn">Key erstellen</button>
+      <div id="kResult" hidden class="login">
+        <textarea id="kOut" rows="3" readonly aria-label="Erstellter Zugangskey"></textarea>
+        <button id="kCopy">Key kopieren</button>
+      </div>
+    </div>
+    <h3 class="sub">Erstellte Keys</h3>
+    <div id="kList"></div>
     <details style="margin-top:14px">
       <summary>Admin-Passwort ändern (nur in diesem Browser)</summary>
       <div class="login">
@@ -205,6 +245,13 @@
         <div class="field grow"><label for="autoDl">Wenn alles voll ist</label>
           <select id="autoDl"><option value="1">PDF automatisch laden</option><option value="0">nur im Log speichern</option></select></div>
       </div>
+      <details id="keyRenew" style="margin-top:10px" hidden>
+        <summary>Zugangskey eingeben</summary>
+        <div class="login">
+          <div class="field"><label for="key2Input">Neuer Zugangskey</label><textarea id="key2Input" rows="3" placeholder="TB1-…"></textarea></div>
+          <button id="key2Btn">Key einlösen</button>
+        </div>
+      </details>
       <details id="pwChange" style="margin-top:10px" hidden>
         <summary>Passwort ändern</summary>
         <div class="login">
@@ -300,8 +347,15 @@ function persistLocal() {
 // So kann der Admin ein neues Passwort setzen, ohne dass die Daten verloren gehen.
 const USERS = 'tb_users_v1', DATA = u => 'tb_data_v1:' + u, ADMIN_LOCAL = 'tb_admin_v2';
 // Fest eingebauter Admin-Schlüssel: nur wer das Admin-Passwort kennt, kann den privaten Schlüssel entschlüsseln.
-// Eine Admin-Einrichtung durch andere gibt es deshalb nicht.
-const ADMIN_FIXED = {"id": "0798fde18d50", "pub": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0L17vckqHPUc7O76HMJ+HK/MM/T+oNTu5Z1yyoa9Is9KkWSZTNaZ2nagSxON0CI53nq4AAGr9OPAxq3UBtqpz+9LTjRKD2M+SR2u1OeulqLjVuNvKGh0T6mxG5+H8sVxJn2VhJPNCwkTYYgktEHQv3V3aJZwmcL1SAkNauFmDti7himyFsOxs4kciISwDPM/ZZt+QnxzI/Y3MvHFKLQMFMzlvBcQyy6vbUElIu/TXhKh8YRlDmQA8TqL0J5vwozWudgoh5OIIWRbY7oUug+LbTlTowDGJ7gTlaEHQi/+6IO2vZInQ6SuSmxkYQvioQbVMlqfELG1Bzc3uHoNZpzOUQIDAQAB", "salt": "rrzOQSrFw77rU/58csPAFQ==", "priv": {"iv": "guk7h/6ZsCHKo74X", "ct": "45hGl9qDbGhWh8DaI+r/JOMAflk3w7ijlpgF0DZ+8fLrbVjG1u9sr662KSZ0l3zy+2M5GSnGN0wIpaLgHwYq8Jlb9U16ZRFsJFMNrHd4kwzfbKWHO3CljrZcwBZQftObEzKjtXuq6XRHCzmzCV8+VuLD3/Y6/UzEFo6F4Qm7upZSY/ES445snShliNxR6mgzEM8+wJRbzbwJY4r6ELZXX/jaGBY+iiMZExqZr3BXrYz2fRmbeiorz4Uc9AQpgP9KwH+R2rbCd3SfwKrXf59qj6EXRz2eaK+JNbnZp3J0KjCKBDl5ukKqOxT3TRANHDIdNfxYPSZg7RNwqSxe5WWhcVdTK1/yQTqh8Ft5S6A4wT8fytwXGwBQ5biQe9wLQTt1Gq9Tq0y0dbKzXb99fBnLvLMadWsN9d4NcozUD/sFaNKqwyAnkR8QbVIrdvw2QPTLUKTj58/P7Hc45mKH/BOnc1Pa8Nw38GnuopkPSmXXswiJSFjIMmfOekOuSNYruKDkKVPKguJrko7qte5JSnf+4t2zHttLkSBhUrRDJO/7HAP6EzPQEWXDjxw+wxEtK8PoSw/Cj18E8vPFkucEKtQxgRH4SsHMHb1gFK5Q212VENAruYoqW1qwC2ns8WQ7/nwTtqYCrhpRuh4QCjIL334OU0ieeY5HB/t0/C7tJTFZgr9V7UBl0r2forX310bWQ7Pg7hFY5cMNBOZpWSrlXmU5U/18XX62VepTftM50LOXOxpPbV/HCcxElMQOQMGqVJcTQjWlQs8ZySsu1L6XTwh8yhPK5vOhNwkOfknsfiCWIi/YiwjE9Yhl5RHE8fpPvBFNglxyI3i7HFQG9nuoJ5gAWytNmahwQDIEuXIC1sOXuy2obP0t5LyOkbH1DYvbczFzirxhuhzqQbFsX/Gv/caEDpZ1U0bPo0KZSFX6Sk95ccDjG8F11oW1zpCTaIgeap8TZXHs4Y60/bfajyn41GH0BmdDRnasZzaBUoneGPKuxZuT5KX387wWb7l7bMbk8hYVutpNVRQT2Cwgt3CynA2uS2WaMSk6rXUODgQ1TJzdJNSXeu1pLgV97LlFSKMZRDsP7s3yhRF6Lh0X+zS6/tAPEry6WQLh6M765Ryts8lNNPpet/6UqYYOVNZZU9rW78BVFYwY6Llvse8uWX51LDg2jE1yb0AXdbnqcuLL+YEYKeh1VkZkH1ysURBP7W2O/qYhk8K+B2D9DYFt6yqTvVqht3suf8hwkhTRlGGrnasjDj0GHesIcFVE/foUfyPWp+TzfaE5fR1SkmTHWBiDN/d7Xd9Kh+R+YqQRNp5urQT8IQjjXcDTFk+v/ChhJLHuj7qDToFu+FPjvhQbaxewnlW5RhENPxjwVPCXAiCeNYCc3ssJWKeQthEH+8UFxuPlC4WCzJdA+avVjcZcnoInFRV8G8dyvt3mFKGplSQMN9nx6V31eizrI4KC24G5NbXY+Ci0qaN2QSANzkugS4d08s4CY3UegTZ48K+pjIPuiylm/0B55uCkc+DLY4DQ+6XVZbHiKbtNAYnsjl2F/R63USeWnGkG0MG7ByFS+pCQdyKgXlbK+OoKX8gbSga1OydE2c+rNCNlXvIaHL5VHSGzLrwldugG+WsfqZNOtiDZn3pZ5X/USg=="}};
+// Eine Admin-Einrichtung durch andere gibt es deshalb nicht. Mit dem Signaturschlüssel (ECDSA) erstellt der Admin Zugangskeys.
+
+// ---------- Abo ----------
+const ABO = {
+  price: '5 € pro Monat',
+  paymentUrl: '',        // hier den Zahlungslink eintragen (z. B. PayPal- oder Stripe-Link)
+  trialDays: 14          // kostenloser Testzeitraum für neue Konten
+};
+const ADMIN_FIXED = {"id": "0798fde18d50", "pub": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA0L17vckqHPUc7O76HMJ+HK/MM/T+oNTu5Z1yyoa9Is9KkWSZTNaZ2nagSxON0CI53nq4AAGr9OPAxq3UBtqpz+9LTjRKD2M+SR2u1OeulqLjVuNvKGh0T6mxG5+H8sVxJn2VhJPNCwkTYYgktEHQv3V3aJZwmcL1SAkNauFmDti7himyFsOxs4kciISwDPM/ZZt+QnxzI/Y3MvHFKLQMFMzlvBcQyy6vbUElIu/TXhKh8YRlDmQA8TqL0J5vwozWudgoh5OIIWRbY7oUug+LbTlTowDGJ7gTlaEHQi/+6IO2vZInQ6SuSmxkYQvioQbVMlqfELG1Bzc3uHoNZpzOUQIDAQAB", "salt": "rrzOQSrFw77rU/58csPAFQ==", "priv": {"iv": "guk7h/6ZsCHKo74X", "ct": "45hGl9qDbGhWh8DaI+r/JOMAflk3w7ijlpgF0DZ+8fLrbVjG1u9sr662KSZ0l3zy+2M5GSnGN0wIpaLgHwYq8Jlb9U16ZRFsJFMNrHd4kwzfbKWHO3CljrZcwBZQftObEzKjtXuq6XRHCzmzCV8+VuLD3/Y6/UzEFo6F4Qm7upZSY/ES445snShliNxR6mgzEM8+wJRbzbwJY4r6ELZXX/jaGBY+iiMZExqZr3BXrYz2fRmbeiorz4Uc9AQpgP9KwH+R2rbCd3SfwKrXf59qj6EXRz2eaK+JNbnZp3J0KjCKBDl5ukKqOxT3TRANHDIdNfxYPSZg7RNwqSxe5WWhcVdTK1/yQTqh8Ft5S6A4wT8fytwXGwBQ5biQe9wLQTt1Gq9Tq0y0dbKzXb99fBnLvLMadWsN9d4NcozUD/sFaNKqwyAnkR8QbVIrdvw2QPTLUKTj58/P7Hc45mKH/BOnc1Pa8Nw38GnuopkPSmXXswiJSFjIMmfOekOuSNYruKDkKVPKguJrko7qte5JSnf+4t2zHttLkSBhUrRDJO/7HAP6EzPQEWXDjxw+wxEtK8PoSw/Cj18E8vPFkucEKtQxgRH4SsHMHb1gFK5Q212VENAruYoqW1qwC2ns8WQ7/nwTtqYCrhpRuh4QCjIL334OU0ieeY5HB/t0/C7tJTFZgr9V7UBl0r2forX310bWQ7Pg7hFY5cMNBOZpWSrlXmU5U/18XX62VepTftM50LOXOxpPbV/HCcxElMQOQMGqVJcTQjWlQs8ZySsu1L6XTwh8yhPK5vOhNwkOfknsfiCWIi/YiwjE9Yhl5RHE8fpPvBFNglxyI3i7HFQG9nuoJ5gAWytNmahwQDIEuXIC1sOXuy2obP0t5LyOkbH1DYvbczFzirxhuhzqQbFsX/Gv/caEDpZ1U0bPo0KZSFX6Sk95ccDjG8F11oW1zpCTaIgeap8TZXHs4Y60/bfajyn41GH0BmdDRnasZzaBUoneGPKuxZuT5KX387wWb7l7bMbk8hYVutpNVRQT2Cwgt3CynA2uS2WaMSk6rXUODgQ1TJzdJNSXeu1pLgV97LlFSKMZRDsP7s3yhRF6Lh0X+zS6/tAPEry6WQLh6M765Ryts8lNNPpet/6UqYYOVNZZU9rW78BVFYwY6Llvse8uWX51LDg2jE1yb0AXdbnqcuLL+YEYKeh1VkZkH1ysURBP7W2O/qYhk8K+B2D9DYFt6yqTvVqht3suf8hwkhTRlGGrnasjDj0GHesIcFVE/foUfyPWp+TzfaE5fR1SkmTHWBiDN/d7Xd9Kh+R+YqQRNp5urQT8IQjjXcDTFk+v/ChhJLHuj7qDToFu+FPjvhQbaxewnlW5RhENPxjwVPCXAiCeNYCc3ssJWKeQthEH+8UFxuPlC4WCzJdA+avVjcZcnoInFRV8G8dyvt3mFKGplSQMN9nx6V31eizrI4KC24G5NbXY+Ci0qaN2QSANzkugS4d08s4CY3UegTZ48K+pjIPuiylm/0B55uCkc+DLY4DQ+6XVZbHiKbtNAYnsjl2F/R63USeWnGkG0MG7ByFS+pCQdyKgXlbK+OoKX8gbSga1OydE2c+rNCNlXvIaHL5VHSGzLrwldugG+WsfqZNOtiDZn3pZ5X/USg=="}, "sigPub": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEIzFcBW8Oo5Zgo9TbJboFZ85f2gaQg9x4vD1lyeAiDG6LRLAeqghsXf5qd5/1gElcvrbMX98gTUbRpnuFeOphyA==", "sigSalt": "viBYbbfAgFQDcEOSBdjF5w==", "sigPriv": {"iv": "AsOLJUcAUmOsX4DI", "ct": "tY3UrwvMHSmkKiWhIdMkzH/EfxhuwFTbRMfUSPoO/RAuHRohk39agJCQWpScKvEqMdAYwhO7Q9ragCxmDpjfUeTuiIEGVz8bpt600vfMOJ83aNpwnDANcBH/xPoBH7xSvlUCKXbkU2Fs17RwV7qSb35oOq/sAmERXO4BlsIqe8ZAlf4v5HoY3LEdKa716lXPuAMF58Cdv5w41A=="}};
 try { localStorage.removeItem('tb_admin_v1'); } catch { /* alter, selbst eingerichteter Admin wird nicht mehr verwendet */ }
 const RSA = { name: 'RSA-OAEP', hash: 'SHA-256' };
 let session = null, adminSession = null, writeChain = Promise.resolve(), mode = 'login';
@@ -371,7 +425,7 @@ $('loginForm').onsubmit = async e => {
       if (pw !== $('lgPass2').value) { msg.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
       if (users[id]) { msg.textContent = 'Diesen Benutzernamen gibt es schon. Bitte anmelden oder einen anderen wählen.'; return; }
       const raw = crypto.getRandomValues(new Uint8Array(32));
-      users[id] = { name };
+      users[id] = { name, created: Date.now() };
       await setUserPassword(users, id, pw, raw);
       writeUsers(users);
       session = { id, name, key: await importDek(raw), raw };
@@ -408,18 +462,79 @@ $('loginForm').onsubmit = async e => {
       db = Object.assign(defaults(), data);
       saveEncrypted(); await writeChain;
     }
-    startSession();
+    const all = readUsers();
+    if (all[session.id] && !all[session.id].created) { all[session.id].created = Date.now(); writeUsers(all); }
+    $('lgPass').value = ''; $('lgPass2').value = '';
+    await enterApp();
   } finally { $('lgSubmit').disabled = false; }
 };
-function startSession() {
+// Zugangskey: "TB1-" + base64url(JSON {u, e, i}) + "." + base64url(ECDSA-Signatur)
+const b64u = bytes => toB64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const fromB64u = str => fromB64(str.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - str.length % 4) % 4));
+const ECDSA = { name: 'ECDSA', namedCurve: 'P-256' }, SIG = { name: 'ECDSA', hash: 'SHA-256' };
+const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const isoDe = iso => iso.split('-').reverse().join('.');
+async function verifyKey(key) {
+  try {
+    const m = /^TB1-([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/.exec(key.replace(/\s+/g, ''));
+    if (!m) return null;
+    const pub = await crypto.subtle.importKey('spki', fromB64(ADMIN_FIXED.sigPub), ECDSA, false, ['verify']);
+    if (!await crypto.subtle.verify(SIG, pub, fromB64u(m[2]), te.encode(m[1]))) return null;
+    return JSON.parse(td.decode(fromB64u(m[1])));
+  } catch { return null; }
+}
+// {ok, text} für das angemeldete Konto
+async function accessState() {
+  const p = db.access && db.access.key ? await verifyKey(db.access.key) : null;
+  if (p && p.u === session.id && (!p.e || p.e >= todayIso())) return { ok: true, text: p.e ? 'Zugang bis ' + isoDe(p.e) : 'unbegrenzter Zugang' };
+  const u = readUsers()[session.id] || {};
+  const trialEnd = new Date((u.created || Date.now()) + ABO.trialDays * 864e5);
+  if (new Date() < trialEnd) return { ok: true, text: 'Testzeitraum bis ' + trialEnd.toLocaleDateString('de-DE') };
+  return { ok: false, text: p ? `Dein Zugang ist am ${isoDe(p.e)} abgelaufen.` : `Dein kostenloser Testzeitraum (${ABO.trialDays} Tage) ist abgelaufen.` };
+}
+async function redeemKey(raw, msgEl) {
+  const p = await verifyKey(raw.trim());
+  const say = t => { if (msgEl) msgEl.textContent = t; else toast(t); };
+  if (!p) { say('Dieser Key ist ungültig. Bitte genau so einfügen, wie du ihn bekommen hast.'); return false; }
+  if (p.u !== session.id) { say(`Dieser Key gehört zum Benutzernamen „${p.u}“, nicht zu „${session.id}“.`); return false; }
+  if (p.e && p.e < todayIso()) { say(`Dieser Key ist am ${isoDe(p.e)} abgelaufen.`); return false; }
+  db.access = { key: raw.trim() }; persistLocal(); await writeChain;
+  return true;
+}
+async function enterApp() {
+  const st = await accessState();
+  if (!st.ok) {
+    $('gate').hidden = true; $('app').hidden = true; $('paywall').hidden = false;
+    $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = true;
+    $('payText').textContent = st.text + ' Um weiter Berichte zu erstellen, brauchst du ein Abo (' + ABO.price + ') oder einen Zugangskey.';
+    const link = $('payLink');
+    link.textContent = 'Abo abschließen – ' + ABO.price;
+    if (ABO.paymentUrl) { link.href = ABO.paymentUrl; link.removeAttribute('aria-disabled'); } else { link.removeAttribute('href'); link.setAttribute('aria-disabled', 'true'); }
+    $('payHint').textContent = (ABO.paymentUrl ? 'Nach der Zahlung' : 'Die Online-Zahlung ist noch nicht eingerichtet. Bitte melde dich beim Admin –')
+      + ` du bekommst dann vom Admin einen Zugangskey für deinen Benutzernamen „${session.id}“.`;
+    $('keyMsg').textContent = ''; $('keyInput').value = '';
+    return;
+  }
+  $('paywall').hidden = true;
+  startSession(st.text);
+}
+$('keyBtn').onclick = async () => { $('keyMsg').textContent = ''; if (await redeemKey($('keyInput').value, $('keyMsg'))) { toast('Key eingelöst'); enterApp(); } };
+$('key2Btn').onclick = async () => {
+  if (await redeemKey($('key2Input').value)) { $('key2Input').value = ''; $('keyRenew').open = false; toast('Key eingelöst'); $('access').textContent = (await accessState()).text; }
+};
+$('payLogout').onclick = () => { session = null; db = defaults(); $('paywall').hidden = true; backToLogin('Abgemeldet.'); };
+
+function startSession(accessText) {
   $('lgPass').value = ''; $('lgPass2').value = '';
-  $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = false; $('pwChange').hidden = false;
+  $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = false; $('pwChange').hidden = false; $('keyRenew').hidden = false;
+  $('access').textContent = accessText || '';
   $('gate').hidden = true; $('app').hidden = false;
   cur = { year: now.year, kw: now.kw };
   loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
 }
 function backToLogin(text) {
-  $('who').textContent = ''; $('logout').hidden = true; $('pwChange').hidden = true; $('admin').hidden = true;
+  $('who').textContent = ''; $('access').textContent = ''; $('logout').hidden = true; $('pwChange').hidden = true; $('keyRenew').hidden = true;
+  $('admin').hidden = true; $('paywall').hidden = true;
   showGate(text); setMode('login'); $('lgUser').focus();
 }
 $('logout').onclick = async () => {
@@ -439,19 +554,56 @@ $('myPwBtn').onclick = async () => {
 
 // ---------- Admin ----------
 async function adminLogin(pw, msg) {
-  let pkcs8 = null;
+  let pkcs8 = null, sigPkcs8 = null;
   for (const a of [readAdminLocal(), ADMIN_FIXED]) {
     if (!a) continue;
-    try { pkcs8 = await aesDec(await deriveKey(pw, fromB64(a.salt)), a.priv); break; } catch { /* nächstes probieren */ }
+    try {
+      pkcs8 = await aesDec(await deriveKey(pw, fromB64(a.salt)), a.priv);
+      if (a.sigPriv) sigPkcs8 = await aesDec(await deriveKey(pw, fromB64(a.sigSalt)), a.sigPriv);
+      break;
+    } catch { /* nächstes probieren */ }
   }
   if (!pkcs8) { msg.textContent = 'Admin-Passwort falsch.'; return; }
-  adminSession = { priv: await crypto.subtle.importKey('pkcs8', pkcs8, RSA, false, ['decrypt']), pkcs8 };
+  adminSession = { priv: await crypto.subtle.importKey('pkcs8', pkcs8, RSA, false, ['decrypt']), pkcs8, sigPkcs8,
+    sig: sigPkcs8 ? await crypto.subtle.importKey('pkcs8', sigPkcs8, ECDSA, false, ['sign']) : null };
   $('lgPass').value = ''; $('lgPass2').value = '';
   $('gate').hidden = true; $('app').hidden = true; $('admin').hidden = false;
   $('who').textContent = 'Angemeldet als Admin';
   renderAdmin();
 }
+const ISSUED = 'tb_keys_issued_v1';
+function readIssued() { try { return JSON.parse(localStorage.getItem(ISSUED)) || []; } catch { return []; } }
+function renderKeys() {
+  $('kUsers').innerHTML = '';
+  Object.keys(readUsers()).sort().forEach(id => $('kUsers').appendChild(new Option(id)));
+  const box = $('kList'); box.innerHTML = '';
+  const list = readIssued();
+  if (!list.length) { box.innerHTML = '<p class="hint">Noch keine Keys erstellt.</p>'; return; }
+  list.slice().reverse().forEach(k => {
+    const el = document.createElement('div'); el.className = 'kl';
+    const a = document.createElement('span'); a.textContent = k.u;
+    const b = document.createElement('span'); b.textContent = (k.e ? 'bis ' + isoDe(k.e) : 'unbegrenzt') + ' · erstellt ' + isoDe(k.i);
+    el.append(a, b); box.appendChild(el);
+  });
+}
+$('kBtn').onclick = async () => {
+  const u = $('kUser').value.trim().toLowerCase(), months = +$('kDur').value;
+  if (!u) { toast('Bitte einen Benutzernamen eingeben.'); return; }
+  if (!adminSession.sig) { toast('Bitte einmal mit dem ursprünglichen Admin-Passwort anmelden.'); return; }
+  let e = null;
+  if (months) { const d = new Date(); d.setMonth(d.getMonth() + months); e = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+  const payload = b64u(te.encode(JSON.stringify({ u, e, i: todayIso() })));
+  const sig = await crypto.subtle.sign(SIG, adminSession.sig, te.encode(payload));
+  $('kOut').value = 'TB1-' + payload + '.' + b64u(sig); $('kResult').hidden = false;
+  const list = readIssued(); list.push({ u, e, i: todayIso() }); localStorage.setItem(ISSUED, JSON.stringify(list));
+  renderKeys();
+};
+$('kCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText($('kOut').value); toast('Key kopiert'); }
+  catch { $('kOut').select(); toast('Key markiert – mit Strg+C kopieren'); }
+};
 function renderAdmin() {
+  renderKeys(); $('kResult').hidden = true;
   const users = readUsers(), box = $('adminUsers'); box.innerHTML = '';
   const ids = Object.keys(users).sort();
   if (!ids.length) { box.innerHTML = '<p class="hint">Noch keine Benutzer angelegt.</p>'; return; }
@@ -488,6 +640,10 @@ $('adPwBtn').onclick = async () => {
   if (a !== $('adPw2').value) { toast('Die Passwörter stimmen nicht überein.'); return; }
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const adm = { id: ADMIN_FIXED.id, salt: toB64(salt), priv: await aesEnc(await deriveKey(a, salt), adminSession.pkcs8) };
+  if (adminSession.sigPkcs8) {
+    const s2 = crypto.getRandomValues(new Uint8Array(16));
+    adm.sigSalt = toB64(s2); adm.sigPriv = await aesEnc(await deriveKey(a, s2), adminSession.sigPkcs8);
+  }
   localStorage.setItem(ADMIN_LOCAL, JSON.stringify(adm));
   $('adPw1').value = $('adPw2').value = ''; toast('Admin-Passwort geändert');
 };

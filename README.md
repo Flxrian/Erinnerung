@@ -19,3 +19,11 @@ Webseite zum schnellen Ausfüllen des wöchentlichen Tätigkeitsberichts (Mo–S
 **Admin:** Es gibt genau einen fest eingebauten Admin (Login-Reiter „Admin“, nur mit dem Admin-Passwort). Niemand kann sich selbst zum Admin machen. Der Admin sieht alle Benutzer, kann vergessene Passwörter neu setzen (die Wochen bleiben erhalten), Konten löschen und das Admin-Passwort ändern. Technisch: Jeder Benutzer hat einen zufälligen Datenschlüssel, der zusätzlich mit dem öffentlichen RSA-Schlüssel des Admins gesichert ist. Ältere Konten werden beim nächsten Login des Benutzers zurücksetzbar. Ein geändertes Admin-Passwort gilt im jeweiligen Browser; das ursprüngliche Admin-Passwort funktioniert immer. Benutzer können ihr Passwort unter „Meine Daten“ selbst ändern.
 
 Alle Daten bleiben lokal im Browser. Über **Backup exportieren/importieren** lassen sie sich sichern oder auf ein anderes Gerät übertragen. Aus dem Log kann jede Woche erneut geöffnet, bearbeitet oder als PDF geladen werden.
+
+## Abo und Zugangskeys (HTML-Version)
+
+- Neue Konten haben 14 Tage kostenlosen Testzeitraum. Danach braucht man ein Abo (5 € pro Monat) oder einen Zugangskey.
+- Der Admin erstellt Zugangskeys im Admin-Bereich unter „Zugangskeys“: Benutzername + Laufzeit (1, 3, 6, 12 Monate oder unbegrenzt). Keys sind mit dem Admin-Schlüssel signiert (ECDSA P-256), gelten nur für den angegebenen Benutzernamen und können nicht gefälscht werden.
+- Einlösen: auf der Sperrseite oder später unter „Meine Daten → Zugangskey eingeben“.
+- Zahlungslink, Preis und Testzeitraum stehen oben im Skript im Objekt `ABO` (`paymentUrl`, `price`, `trialDays`). Ohne Zahlungslink ist der Abo-Knopf ausgegraut.
+- Grenzen: Ohne Server prüft nur der Browser. Wer die HTML-Datei bearbeitet oder die Systemuhr zurückstellt, kann die Sperre umgehen. Zahlungen werden nicht automatisch erkannt: nach Zahlungseingang erstellt der Admin den Key von Hand.
