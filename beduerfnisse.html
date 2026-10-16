@@ -1,0 +1,147 @@
+<title>Arten der Bedürfnisse</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
+<style>
+/* Layout: Mindmap auf Karopapier – Kernbegriff in der Mitte, drei Einteilungen außen, Linien per SVG */
+:root {
+  --bg: #f7f8fb;
+  --grid: #e3e6ef;
+  --ink: #1d2236;
+  --muted: #5c637a;
+  --card: #ffffff;
+  --line: #9aa1b8;
+  --core: #e0446a;   --core-soft: #fde7ed;
+  --art: #1592b0;    --art-soft: #e0f3f8;
+  --dring: #2f9a46;  --dring-soft: #e3f4e6;
+  --gegen: #7048c9;  --gegen-soft: #ece6fa;
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #13151d; --grid: #1e2230; --ink: #e9ebf3; --muted: #a2a8bd; --card: #1a1d28; --line: #4b5168;
+  --core: #ff7393; --core-soft: #3a1c26; --art: #4cc3e0; --art-soft: #132d36;
+  --dring: #5fcf76; --dring-soft: #16301d; --gegen: #a789ff; --gegen-soft: #261e3d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #13151d; --grid: #1e2230; --ink: #e9ebf3; --muted: #a2a8bd; --card: #1a1d28; --line: #4b5168;
+  --core: #ff7393; --core-soft: #3a1c26; --art: #4cc3e0; --art-soft: #132d36;
+  --dring: #5fcf76; --dring-soft: #16301d; --gegen: #a789ff; --gegen-soft: #261e3d; color-scheme: dark }
+
+body {
+  background: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.wrap {
+  max-width: 1080px; margin: 0 auto;
+  padding-block: 32px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+.eyebrow { font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.date { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+
+.map { position: relative; display: grid; grid-template-columns: 1fr 1.15fr 1fr; grid-template-areas: "art . dring" "core core core" "gegen gegen gegen"; gap: 44px 28px; }
+.map svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.map svg path { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 5 5; }
+
+.node { position: relative; z-index: 1; background: var(--card); border: 2px solid var(--c); border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 0 var(--grid), 0 6px 18px -12px var(--c); min-width: 0; }
+.node h2 { margin: 0 0 12px; font-family: var(--f-display); font-weight: 600; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--c); }
+.node h2 span { color: var(--ink); text-transform: none; letter-spacing: 0; font-size: 19px; display: block; margin-top: 2px; text-wrap: balance; }
+.node ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.node li { display: grid; gap: 1px; }
+.term { font-weight: 700; }
+.term mark { background: linear-gradient(transparent 55%, var(--soft) 55%); color: inherit; padding: 0 2px; }
+.ex { color: var(--muted); font-size: 14.5px; }
+.ex::before { content: "z. B. "; font-style: italic; }
+
+.art { grid-area: art; --c: var(--art); --soft: var(--art-soft); }
+.dring { grid-area: dring; --c: var(--dring); --soft: var(--dring-soft); }
+.gegen { grid-area: gegen; --c: var(--gegen); --soft: var(--gegen-soft); justify-self: center; width: min(100%, 560px); }
+.gegen ul { grid-template-columns: 1fr 1fr; gap: 10px 24px; }
+
+.core { grid-area: core; justify-self: center; width: min(100%, 460px); --c: var(--core); background: var(--core-soft); text-align: center; padding: 26px 28px; border-width: 2.5px; }
+.core h1 { margin: 0 0 10px; font-family: var(--f-display); font-weight: 800; font-size: clamp(30px, 5vw, 42px); line-height: 1.05; color: var(--core); letter-spacing: -.01em; }
+.core p { margin: 0 auto; max-width: 34ch; text-wrap: balance; }
+.core p b { font-weight: 700; }
+
+.dring ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: d; }
+.dring ol li { display: grid; grid-template-columns: 22px 1fr; column-gap: 8px; counter-increment: d; }
+.dring ol li::before { content: counter(d); grid-row: span 2; width: 22px; height: 22px; border-radius: 50%; background: var(--dring-soft); color: var(--dring); font-weight: 700; font-size: 13px; display: grid; place-items: center; margin-top: 1px; }
+.hint { margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+@media (max-width: 760px) {
+  .map { grid-template-columns: 1fr; grid-template-areas: "core" "art" "dring" "gegen"; gap: 18px; }
+  .map svg { display: none; }
+  .gegen ul { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Wirtschaft · Mindmap</span>
+    <span class="date">16.10.26</span>
+  </header>
+
+  <div class="map" id="map">
+    <svg aria-hidden="true" id="links"></svg>
+
+    <section class="node art" id="n-art">
+      <h2>Einteilung <span>nach Art</span></h2>
+      <ul>
+        <li><span class="term"><mark>Individualbedürfnisse</mark></span><span class="ex">Auto</span></li>
+        <li><span class="term"><mark>Kollektivbedürfnisse</mark></span><span class="ex">Schulen</span></li>
+      </ul>
+    </section>
+
+    <section class="node dring" id="n-dring">
+      <h2>Einteilung <span>nach Dringlichkeit</span></h2>
+      <ol>
+        <li><span class="term"><mark>Existenzbedürfnisse</mark></span><span class="ex">Nahrung, Kleidung</span></li>
+        <li><span class="term"><mark>Kulturbedürfnisse</mark></span><span class="ex">Hobbys, Bildung</span></li>
+        <li><span class="term"><mark>Luxusbedürfnisse</mark></span><span class="ex">Sportwagen, Yacht</span></li>
+      </ol>
+      <div class="hint">von lebensnotwendig zu verzichtbar</div>
+    </section>
+
+    <section class="node core" id="n-core">
+      <h1>Bedürfnisse</h1>
+      <p>= <b>Wunsch</b> oder <b>Mangelempfinden</b>; grundlegender Antrieb für jegliches wirtschaftliche Handeln</p>
+    </section>
+
+    <section class="node gegen" id="n-gegen">
+      <h2>Einteilung <span>nach Gegenstand der Bedürfnisbefriedigung</span></h2>
+      <ul>
+        <li><span class="term"><mark>materielle Bedürfnisse</mark></span><span class="ex">Kleidung, Handy</span></li>
+        <li><span class="term"><mark>immaterielle Bedürfnisse</mark></span><span class="ex">Anerkennung, Kinobesuch</span></li>
+      </ul>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  const map = document.getElementById('map'), svg = document.getElementById('links');
+  const get = id => document.getElementById(id).getBoundingClientRect();
+  function draw() {
+    const m = map.getBoundingClientRect(), c = get('n-core');
+    const cx = c.left + c.width / 2 - m.left, cy = c.top + c.height / 2 - m.top;
+    let d = '';
+    ['n-art', 'n-dring'].forEach(id => {
+      const r = get(id), x = r.left + r.width / 2 - m.left, y = r.bottom - m.top;
+      const tx = cx + (x < cx ? -c.width / 4 : c.width / 4), ty = c.top - m.top;
+      d += `M${x},${y} C${x},${(y + ty) / 2} ${tx},${(y + ty) / 2} ${tx},${ty} `;
+    });
+    const g = get('n-gegen');
+    d += `M${cx},${c.bottom - m.top} L${cx},${g.top - m.top}`;
+    svg.innerHTML = `<path d="${d}"/>`;
+  }
+  draw();
+  addEventListener('resize', draw);
+  if (document.fonts) document.fonts.ready.then(draw);
+})();
+</script>
