@@ -579,7 +579,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </div>
       <p class="hint" id="payLocked">Hake beide Kästchen an, dann siehst du, wie du bezahlst.</p>
       <p class="hint" id="payHint"></p>
-      <div class="field"><label for="keyInput">Zugangskey vom Admin</label><textarea id="keyInput" rows="3" placeholder="TB1-…"></textarea></div>
+      <div class="field"><label for="keyInput">Zugangskey vom Admin</label><textarea id="keyInput" rows="3" placeholder="TB2-…"></textarea></div>
       <p class="err" id="keyMsg" role="alert"></p>
       <button class="primary" id="keyBtn">Key einlösen</button>
       <button id="payLogout">Abmelden</button>
@@ -598,11 +598,10 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   <div class="card" style="margin-top:16px">
     <h2>Zugangskeys</h2>
     <p class="hint" style="margin-top:0">Erstelle einen Key, z. B. nach einer Zahlung oder als kostenlosen Zugang.
-      Der Key gilt nur für den angegebenen Benutzernamen.</p>
+      Jeder Key kann nur einmal eingelöst werden. Die Laufzeit beginnt beim Einlösen.</p>
     <div class="login">
       <div class="row">
-        <div class="field grow"><label for="kUser">Benutzername</label><input id="kUser" list="kUsers" autocomplete="off"><datalist id="kUsers"></datalist></div>
-        <div class="field"><label for="kDur">Laufzeit</label>
+        <div class="field grow"><label for="kDur">Laufzeit</label>
           <select id="kDur"><option value="1">1 Monat</option><option value="3">3 Monate</option><option value="6">6 Monate</option><option value="12">12 Monate</option><option value="0">unbegrenzt (kostenlos)</option></select></div>
       </div>
       <button class="primary" id="kBtn">Key erstellen</button>
@@ -676,7 +675,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <details id="keyRenew" style="margin-top:10px" hidden>
         <summary>Zugangskey eingeben</summary>
         <div class="login">
-          <div class="field"><label for="key2Input">Neuer Zugangskey</label><textarea id="key2Input" rows="3" placeholder="TB1-…"></textarea></div>
+          <div class="field"><label for="key2Input">Neuer Zugangskey</label><textarea id="key2Input" rows="3" placeholder="TB2-…"></textarea></div>
           <button id="key2Btn">Key einlösen</button>
         </div>
       </details>
@@ -933,7 +932,14 @@ $('loginForm').onsubmit = async e => {
     await enterApp();
   } finally { $('lgSubmit').disabled = false; }
 };
-// Zugangskey: "TB1-" + base64url(JSON {u, e, i}) + "." + base64url(ECDSA-Signatur)
+// Zugangskey: "TB2-" + base64url(JSON {n: Key-Nr., m: Monate (0 = unbegrenzt), d: erstellt}) + "." + base64url(ECDSA-Signatur)
+// (ältere "TB1-"-Keys mit Benutzername {u, e, i} werden weiter akzeptiert)
+const USED_KEYS = 'tb_used_keys_v1';   // in diesem Browser bereits eingelöste Keys
+function readUsed() { try { return JSON.parse(localStorage.getItem(USED_KEYS)) || []; } catch { return []; } }
+function addMonths(iso, m) {
+  const [y, mo, d] = iso.split('-').map(Number), x = new Date(y, mo - 1 + m, d);
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`;
+}
 const b64u = bytes => toB64(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 const fromB64u = str => fromB64(str.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - str.length % 4) % 4));
 const ECDSA = { name: 'ECDSA', namedCurve: 'P-256' }, SIG = { name: 'ECDSA', hash: 'SHA-256' };
@@ -941,7 +947,7 @@ const todayIso = () => { const d = new Date(); return `${d.getFullYear()}-${Stri
 const isoDe = iso => iso.split('-').reverse().join('.');
 async function verifyKey(key) {
   try {
-    const m = /^TB1-([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/.exec(key.replace(/\s+/g, ''));
+    const m = /^TB[12]-([A-Za-z0-9_-]+)\.([A-Za-z0-9_-]+)$/.exec(key.replace(/\s+/g, ''));
     if (!m) return null;
     const pub = await crypto.subtle.importKey('spki', fromB64(ADMIN_FIXED.sigPub), ECDSA, false, ['verify']);
     if (!await crypto.subtle.verify(SIG, pub, fromB64u(m[2]), te.encode(m[1]))) return null;
@@ -951,6 +957,11 @@ async function verifyKey(key) {
 // {ok, text} für das angemeldete Konto
 async function accessState() {
   const p = db.access && db.access.key ? await verifyKey(db.access.key) : null;
+  if (p && p.n) {   // Einmal-Key: Ablaufdatum wurde beim Einlösen berechnet
+    const until = db.access.until;
+    if (!until || until >= todayIso()) return { ok: true, text: until ? 'Zugang bis ' + isoDe(until) : 'unbegrenzter Zugang' };
+    return { ok: false, title: 'Zugang abgelaufen', text: `Dein Zugang ist am ${isoDe(until)} abgelaufen.` };
+  }
   if (p && p.u === session.id && (!p.e || p.e >= todayIso())) return { ok: true, text: p.e ? 'Zugang bis ' + isoDe(p.e) : 'unbegrenzter Zugang' };
   const u = readUsers()[session.id] || {};
   const trialEnd = new Date((u.created || Date.now()) + ABO.trialDays * 864e5);
@@ -963,6 +974,18 @@ async function redeemKey(raw, msgEl) {
   const p = await verifyKey(raw.trim());
   const say = t => { if (msgEl) msgEl.textContent = t; else toast(t); };
   if (!p) { say('Dieser Key ist ungültig. Bitte genau so einfügen, wie du ihn bekommen hast.'); return false; }
+  if (p.n) {
+    const used = readUsed();
+    if (used.includes(p.n)) { say('Dieser Key wurde bereits eingelöst und kann nicht noch einmal verwendet werden.'); return false; }
+    const cur = db.access && db.access.key && db.access.n ? db.access : null;
+    let until;
+    if (cur && !cur.until) until = null;                                   // schon unbegrenzt
+    else if (!p.m) until = null;                                           // unbegrenzter Key
+    else until = addMonths(cur && cur.until >= todayIso() ? cur.until : todayIso(), p.m);   // verlängert ab Ende des laufenden Zugangs
+    used.push(p.n); localStorage.setItem(USED_KEYS, JSON.stringify(used));
+    db.access = { key: raw.trim(), n: p.n, until }; persistLocal(); await writeChain;
+    return true;
+  }
   if (p.u !== session.id) { say(`Dieser Key gehört zum Benutzernamen „${p.u}“, nicht zu „${session.id}“.`); return false; }
   if (p.e && p.e < todayIso()) { say(`Dieser Key ist am ${isoDe(p.e)} abgelaufen.`); return false; }
   db.access = { key: raw.trim() }; persistLocal(); await writeChain;
@@ -1055,29 +1078,29 @@ async function adminLogin(pw, msg) {
 }
 const ISSUED = 'tb_keys_issued_v1';
 function readIssued() { try { return JSON.parse(localStorage.getItem(ISSUED)) || []; } catch { return []; } }
+const durText = m => m ? (m === 1 ? '1 Monat' : m + ' Monate') : 'unbegrenzt';
 function renderKeys() {
-  $('kUsers').innerHTML = '';
-  Object.keys(readUsers()).sort().forEach(id => $('kUsers').appendChild(new Option(id)));
+  const used = readUsed();
   const box = $('kList'); box.innerHTML = '';
   const list = readIssued();
   if (!list.length) { box.innerHTML = '<p class="hint">Noch keine Keys erstellt.</p>'; return; }
   list.slice().reverse().forEach(k => {
     const el = document.createElement('div'); el.className = 'kl';
-    const a = document.createElement('span'); a.textContent = k.u;
-    const b = document.createElement('span'); b.textContent = (k.e ? 'bis ' + isoDe(k.e) : 'unbegrenzt') + ' · erstellt ' + isoDe(k.i);
+    const a = document.createElement('span');
+    a.textContent = k.n ? 'Key ' + k.n + (used.includes(k.n) ? ' · in diesem Browser eingelöst' : '') : k.u;
+    const b = document.createElement('span');
+    b.textContent = (k.n ? durText(k.m) : (k.e ? 'bis ' + isoDe(k.e) : 'unbegrenzt')) + ' · erstellt ' + isoDe(k.i);
     el.append(a, b); box.appendChild(el);
   });
 }
 $('kBtn').onclick = async () => {
-  const u = $('kUser').value.trim().toLowerCase(), months = +$('kDur').value;
-  if (!u) { toast('Bitte einen Benutzernamen eingeben.'); return; }
+  const months = +$('kDur').value;
   if (!adminSession.sig) { toast('Bitte einmal mit dem ursprünglichen Admin-Passwort anmelden.'); return; }
-  let e = null;
-  if (months) { const d = new Date(); d.setMonth(d.getMonth() + months); e = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
-  const payload = b64u(te.encode(JSON.stringify({ u, e, i: todayIso() })));
+  const n = b64u(crypto.getRandomValues(new Uint8Array(6)));   // eindeutige Key-Nummer
+  const payload = b64u(te.encode(JSON.stringify({ n, m: months, d: todayIso() })));
   const sig = await crypto.subtle.sign(SIG, adminSession.sig, te.encode(payload));
-  $('kOut').value = 'TB1-' + payload + '.' + b64u(sig); $('kResult').hidden = false;
-  const list = readIssued(); list.push({ u, e, i: todayIso() }); localStorage.setItem(ISSUED, JSON.stringify(list));
+  $('kOut').value = 'TB2-' + payload + '.' + b64u(sig); $('kResult').hidden = false;
+  const list = readIssued(); list.push({ n, m: months, i: todayIso() }); localStorage.setItem(ISSUED, JSON.stringify(list));
   renderKeys();
 };
 $('kCopy').onclick = async () => {

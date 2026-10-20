@@ -23,7 +23,7 @@ Alle Daten bleiben lokal im Browser. Über **Backup exportieren/importieren** la
 ## Abo und Zugangskeys (HTML-Version)
 
 - Zugang nur mit Abo (5 € pro Monat) oder Zugangskey vom Admin. Neue Konten sehen nach der Registrierung sofort die Bezahlseite (einstellbarer Testzeitraum `trialDays`, Standard 0).
-- Der Admin erstellt Zugangskeys im Admin-Bereich unter „Zugangskeys“: Benutzername + Laufzeit (1, 3, 6, 12 Monate oder unbegrenzt). Keys sind mit dem Admin-Schlüssel signiert (ECDSA P-256), gelten nur für den angegebenen Benutzernamen und können nicht gefälscht werden.
+- Der Admin erstellt Zugangskeys im Admin-Bereich unter „Zugangskeys“, nur mit Laufzeit (1, 3, 6, 12 Monate oder unbegrenzt), ohne Benutzernamen. Keys sind mit dem Admin-Schlüssel signiert (ECDSA P-256) und können nicht gefälscht werden. Die Laufzeit beginnt beim Einlösen; ein weiterer Key verlängert ab dem Ende des laufenden Zugangs. Jeder Key ist nur einmal einlösbar – ohne Server wird das allerdings nur im jeweiligen Browser geprüft.
 - Einlösen: auf der Sperrseite oder später unter „Meine Daten → Zugangskey eingeben“.
 - Bezahlt wird per PayPal („Senden“, Option „Freunde und Familie“) an florian@kurth-dn.com mit dem Benutzernamen in der Nachricht. Jede Zahlung schaltet einen Monat frei, kein automatisches Abo. Einstellungen oben im Skript im Objekt `ABO` (`paypal`, `amount`, `price`, `trialDays`).
 - Grenzen: Ohne Server prüft nur der Browser. Wer die HTML-Datei bearbeitet oder die Systemuhr zurückstellt, kann die Sperre umgehen. Zahlungen werden nicht automatisch erkannt: nach Zahlungseingang erstellt der Admin den Key von Hand.
