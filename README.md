@@ -35,3 +35,14 @@ Alle Daten bleiben lokal im Browser. Über **Backup exportieren/importieren** la
 - Vor der Bezahlung müssen AGB und die Zustimmung zum sofortigen Leistungsbeginn (Widerrufsrecht) angehakt werden; die Zahlungsanleitung erscheint erst danach.
 - Die Seite lädt keine externen Ressourcen (keine Google Fonts, jsPDF ist eingebettet).
 - Die Texte sind Vorlagen und keine Rechtsberatung.
+
+## Aus eigenen Berichten lernen
+
+- Ab 12 gespeicherten Wochen (ca. 3 Monate) erscheint „Aus meinen Berichten erstellen“: nur die Arbeitstage anhaken, der Rest wird „arbeitsfrei“.
+- Die Einträge entstehen aus den eigenen gespeicherten Wochen des angemeldeten Kontos: Tätigkeiten je Wochentag, gewichtet nach Häufigkeit; neuere Wochen zählen stärker (Halbwertszeit 8 Wochen). Die Stunden sind jeweils die häufigsten Stunden dieser Tätigkeit.
+- Läuft vollständig im Browser, es werden keine Daten verschickt. Mindestanzahl: `LEARN_MIN_WEEKS` im Skript.
+
+## Log
+
+- Jedes Konto sieht nur seine eigenen Wochen (getrennt verschlüsselt gespeichert, zusätzlich mit Besitzer-Kennung gefiltert).
+- „Ansehen“ zeigt den ausgefüllten Bericht direkt auf der Seite, „PDF“ lädt ihn herunter, „Bearbeiten“ öffnet die Woche.

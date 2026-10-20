@@ -500,6 +500,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
   a.btn[aria-disabled="true"] { opacity: .5; pointer-events: none; }
   h3.sub { font-size: 14px; margin: 16px 0 4px; }
   .kl { border-top: 1px solid var(--line); padding: 6px 0; font-size: 13px; display: flex; justify-content: space-between; gap: 8px; }
+  .meter { height: 8px; border-radius: 4px; background: var(--accent-soft); overflow: hidden; margin: 8px 0 4px; }
+  .meter span { display: block; height: 100%; background: var(--accent); width: 0; }
+  .daypick { display: flex; flex-wrap: wrap; gap: 8px; }
+  .daypick label { display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+  .daypick input { width: auto; }
   .offer { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; display: flex; flex-direction: column; gap: 4px; }
   .paybox ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
   .paybox code { font-family: ui-monospace, Menlo, Consolas, monospace; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; word-break: break-all; }
@@ -649,6 +654,17 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       <div id="status" class="status"></div>
     </div>
 
+    <div class="card" style="margin-top:16px" id="learnCard">
+      <h2>Aus meinen Berichten erstellen</h2>
+      <p class="hint" style="margin-top:0" id="learnInfo"></p>
+      <div class="meter" id="learnMeter" aria-hidden="true"><span id="learnBar"></span></div>
+      <div id="learnReady" hidden class="login">
+        <span class="lbl">An welchen Tagen hast du gearbeitet?</span>
+        <div class="daypick" id="learnDays"></div>
+        <button class="primary" id="btnLearn">Woche aus meinen Berichten erstellen</button>
+      </div>
+    </div>
+
     <div class="card" style="margin-top:16px">
       <h2>Einträge der Woche</h2>
       <div id="days"></div>
@@ -733,6 +749,14 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <div><button id="legalClose">← Zurück</button></div>
     <h2 id="legalTitle"></h2>
     <div id="legalBody" class="inner" style="padding:0"></div>
+  </div>
+</div>
+
+<div class="legal-page" id="pdfView" hidden role="dialog" aria-modal="true" aria-labelledby="pdfViewTitle">
+  <div class="inner">
+    <div class="row"><button id="pdfViewClose">← Zurück</button><button class="primary" id="pdfViewDl">PDF herunterladen</button></div>
+    <h2 id="pdfViewTitle"></h2>
+    <img id="pdfViewImg" alt="Ausgefüllter Tätigkeitsbericht" style="width:100%;height:auto;border:1px solid var(--line);border-radius:4px;background:#fff">
   </div>
 </div>
 
@@ -1198,6 +1222,7 @@ async function connectRemote() {
   try {
     const [dbc, user] = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
     const uid = dbc && user ? await user.id() : null;
+    hostedUid = uid;
     if (!uid) { $('gateTry').hidden = false; showGate('Bitte melde dich mit deinem claude.ai-Konto an. Danach siehst du hier nur deine eigenen Berichte.'); return; }
     const me = await user.me().catch(() => null);
     const fullName = (me && me.name) || '';
@@ -1243,11 +1268,15 @@ let cur = { year: now.year, kw: now.kw };
 function emptyWeek(y, k) {
   const days = {};
   DAYS.forEach(d => days[d] = { frei: (db.templates[d] || '').trim().toLowerCase() === 'arbeitsfrei', lines: [] });
-  return { year: y, kw: k, modul: lastModul(), days, savedAt: null };
+  return { year: y, kw: k, modul: lastModul(), days, savedAt: null, owner: ownerId() };
 }
+// Konto, dem eine Woche gehört (zusätzliche Sicherung neben der getrennten, verschlüsselten Speicherung)
+let hostedUid = null;
+function ownerId() { return session ? session.id : hostedUid; }
+const ownWeek = w => !w.owner || w.owner === ownerId();
 function lastModul() {
-  const keys = Object.keys(db.weeks).sort();
-  return keys.length ? db.weeks[keys[keys.length - 1]].modul || '' : '';
+  const keys = Object.keys(db.weeks).filter(k => ownWeek(db.weeks[k]) && db.weeks[k].modul).sort();
+  return keys.length ? db.weeks[keys[keys.length - 1]].modul : '';
 }
 function week() {
   const k = keyOf(cur.year, cur.kw);
@@ -1372,6 +1401,94 @@ function checkComplete() {
 $('modul').oninput = () => { week().modul = $('modul').value; changed(); };
 
 // ---------- Automatisch ausfüllen ----------
+// ---------- Aus eigenen Berichten lernen ----------
+// Wertet die gespeicherten Wochen des angemeldeten Kontos aus: welche Tätigkeiten an welchem Wochentag
+// wie oft vorkamen, mit welchen Stunden und wie viele Stichpunkte pro Tag üblich sind.
+// Neuere Wochen zählen stärker (Halbwertszeit 8 Wochen).
+const LEARN_MIN_WEEKS = 12;   // ca. 3 Monate
+function learnSource() {
+  const curKey = keyOf(cur.year, cur.kw);
+  return Object.entries(db.weeks)
+    .filter(([k, w]) => k !== curKey && w.savedAt && ownWeek(w) && isComplete(w) && DAYS.some(d => !w.days[d].frei))
+    .map(([, w]) => w);
+}
+function buildModel() {
+  const now0 = mondayOf(cur.year, cur.kw).getTime();
+  const perDay = {}, all = new Map();
+  DAYS.forEach(d => perDay[d] = { texts: new Map() });
+  const add = (map, text, hours, wt) => {
+    const key = text.toLowerCase();
+    const e = map.get(key) || { text, score: 0, hours: new Map() };
+    e.score += wt; if (hours) e.hours.set(hours, (e.hours.get(hours) || 0) + wt);
+    map.set(key, e);
+  };
+  learnSource().forEach(w => {
+    const ageWeeks = Math.max(0, (now0 - mondayOf(w.year, w.kw).getTime()) / (7 * 864e5));
+    const wt = Math.pow(0.5, ageWeeks / 8);
+    DAYS.forEach(d => {
+      const day = w.days[d]; if (day.frei) return;
+      const lines = day.lines.filter(l => l.text.trim());
+      lines.forEach(l => { add(perDay[d].texts, l.text.trim(), String(l.hours || '').trim(), wt); add(all, l.text.trim(), String(l.hours || '').trim(), wt); });
+    });
+  });
+  return { perDay, all };
+}
+function pickWeighted(entries) {
+  const total = entries.reduce((a, e) => a + e.score, 0);
+  let r = Math.random() * total;
+  for (const e of entries) { r -= e.score; if (r <= 0) return e; }
+  return entries[entries.length - 1];
+}
+const topHours = e => [...e.hours.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || '';
+function generateDay(model, d, n) {
+  const own = [...model.perDay[d].texts.values()], used = new Set(), out = [];
+  for (let i = 0; i < n; i++) {
+    let pool = own.filter(e => !used.has(e.text.toLowerCase()));
+    if (!pool.length) pool = [...model.all.values()].filter(e => !used.has(e.text.toLowerCase()));
+    if (!pool.length) break;
+    const e = pickWeighted(pool); used.add(e.text.toLowerCase());
+    out.push({ text: e.text, hours: topHours(e), score: own.includes(e) ? e.score : 0 });
+  }
+  // häufigste Tätigkeiten zuerst
+  return out.sort((x, y) => y.score - x.score).map(({ text, hours }) => ({ text, hours }));
+}
+function renderLearn() {
+  if (!$('learnCard')) return;
+  const n = learnSource().length, ready = n >= LEARN_MIN_WEEKS;
+  $('learnBar').style.width = Math.min(100, n / LEARN_MIN_WEEKS * 100) + '%';
+  $('learnMeter').hidden = ready; $('learnReady').hidden = !ready;
+  $('learnInfo').textContent = ready
+    ? `Gelernt aus ${n} deiner gespeicherten Wochen. Wähle die Tage, an denen du gearbeitet hast – die Einträge entstehen aus dem, was du an diesen Wochentagen üblicherweise gemacht hast.`
+    : `Lernt aus deinen eigenen Berichten. Verfügbar ab ${LEARN_MIN_WEEKS} gespeicherten Wochen (ca. 3 Monate) – bisher ${n} von ${LEARN_MIN_WEEKS}.`;
+  if (ready && !$('learnDays').children.length) {
+    DAYS.forEach(d => {
+      const l = document.createElement('label');
+      l.innerHTML = `<input type="checkbox" value="${d}" ${d === 'Sa' ? '' : 'checked'}> ${d}`;
+      $('learnDays').appendChild(l);
+    });
+  }
+}
+$('btnLearn').onclick = async () => {
+  const w = week();
+  const worked = new Set([...$('learnDays').querySelectorAll('input:checked')].map(i => i.value));
+  if (!worked.size) { toast('Bitte mindestens einen Arbeitstag anhaken.'); return; }
+  const hasText = DAYS.some(d => w.days[d].lines.some(l => l.text.trim()));
+  if (hasText && !await ask(`KW ${w.kw} enthält schon Einträge. Durch neue Einträge aus deinen Berichten ersetzen?`, 'Ersetzen')) return;
+  const model = buildModel(), max = +db.settings.lines;
+  if (!w.modul) w.modul = lastModul();
+  DAYS.forEach(d => {
+    const day = w.days[d];
+    if (!worked.has(d)) { day.frei = true; return; }
+    day.frei = false;
+    const items = generateDay(model, d, max);
+    day.lines = Array.from({ length: max }, (_, i) => items[i] ? { ...items[i] } : { text: '', hours: '' });
+  });
+  persist(); renderWeek();
+  clearTimeout(pending); pending = null;
+  if (!isComplete(w)) { toast('Für manche Zeilen gibt es noch zu wenige verschiedene Tätigkeiten – bitte die leeren Zeilen selbst ausfüllen.'); return; }
+  checkComplete();   // wie beim normalen Ausfüllen: PDF, Log, nächste Woche
+};
+
 function parseBausteine(txt) {
   return txt.split('\n').map(s => s.trim()).filter(Boolean).map(s => {
     const [text, hours = ''] = s.split('|').map(x => x.trim());
@@ -1443,16 +1560,27 @@ function loadSettingsUi() {
 }
 
 // ---------- Log ----------
+let viewing = null;
+function viewPdf(w) {
+  viewing = w;
+  $('pdfViewTitle').textContent = `Tätigkeitsbericht KW ${w.kw} / ${w.year}`;
+  $('pdfViewImg').src = renderPage(w, document.createElement('canvas')).toDataURL('image/jpeg', 0.85);
+  $('pdfView').hidden = false; $('pdfViewClose').focus();
+}
+$('pdfViewClose').onclick = () => { $('pdfView').hidden = true; $('pdfViewImg').removeAttribute('src'); viewing = null; };
+$('pdfViewDl').onclick = () => { if (viewing) downloadPdf(viewing); };
 function renderLog() {
+  renderLearn();
   const box = $('log'); box.innerHTML = '';
-  const list = Object.entries(db.weeks).filter(([, w]) => w.savedAt).sort((a, b) => b[0].localeCompare(a[0]));
+  const list = Object.entries(db.weeks).filter(([, w]) => w.savedAt && ownWeek(w)).sort((a, b) => b[0].localeCompare(a[0]));
   if (!list.length) { box.innerHTML = '<p class="hint">Noch keine Woche gespeichert.</p>'; return; }
   list.forEach(([k, w]) => {
     const el = document.createElement('div'); el.className = 'log-item';
     el.innerHTML = `<div><div class="t">KW ${w.kw} / ${w.year} ${isComplete(w) ? '✓' : '(unvollständig)'}</div>
       <div class="s">${fmt(mondayOf(w.year, w.kw))} – ${fmtFull(dayDate(w.year, w.kw, 5))} · ${w.modul ? escapeHtml(w.modul) + ' · ' : ''}gespeichert ${new Date(w.savedAt).toLocaleString('de-DE')}</div></div>
-      <div class="b"><button class="small" data-a="pdf">PDF</button><button class="small" data-a="open">Öffnen</button><button class="small danger" data-a="del">Löschen</button></div>`;
+      <div class="b"><button class="small" data-a="view">Ansehen</button><button class="small" data-a="pdf">PDF</button><button class="small" data-a="open">Bearbeiten</button><button class="small danger" data-a="del">Löschen</button></div>`;
     el.querySelector('[data-a=pdf]').onclick = () => downloadPdf(w);
+    el.querySelector('[data-a=view]').onclick = () => viewPdf(w);
     el.querySelector('[data-a=open]').onclick = () => { setWeek(w.year, w.kw); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     el.querySelector('[data-a=del]').onclick = async () => {
       if (!await ask(`KW ${w.kw}/${w.year} aus dem Log löschen?`)) return;
