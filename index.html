@@ -703,6 +703,11 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           <button id="myPwBtn">Passwort speichern</button>
         </div>
       </details>
+      <details id="delMe" style="margin-top:10px" hidden>
+        <summary>Konto löschen</summary>
+        <div class="login"><p class="hint" style="margin:0">Löscht dein Konto und alle gespeicherten Wochen endgültig.</p>
+          <button class="danger" id="myDelBtn">Konto endgültig löschen</button></div>
+      </details>
     </div>
 
     <div class="card">
@@ -878,10 +883,143 @@ async function setUserPassword(users, id, pw, raw) {
 }
 function saveEncrypted() {
   if (!session) return;
+  db.updated = Date.now();
   const { id, key } = session, plain = JSON.stringify(db);
   writeChain = writeChain.then(async () => {
+    // lokale Kopie (bei Server-Konten als Zwischenspeicher, falls die Verbindung kurz weg ist)
     localStorage.setItem(DATA(id), JSON.stringify(await aesEnc(key, te.encode(plain))));
-  }).catch(() => toast('Speichern im Browser fehlgeschlagen – Speicher voll oder blockiert?'));
+  }).catch(() => { if (!session.server) toast('Speichern im Browser fehlgeschlagen – Speicher voll oder blockiert?'); });
+  if (session.server) scheduleServerSave();
+}
+
+// ---------- Datenbank auf dem Server (Netlify) ----------
+// Ist die Seite über Netlify mit dem Server-Teil erreichbar, liegen Konten, verschlüsselte Berichte und
+// Zugangskeys zentral. Sonst (z. B. als Datei geöffnet) bleibt alles wie bisher im Browser.
+let SERVER = false;
+async function api(name, body, opts = {}) {
+  const payload = JSON.stringify(body || {});
+  const r = await fetch('/api/' + name, { method: 'POST', headers: { 'content-type': 'application/json' }, body: payload,
+    cache: 'no-store', keepalive: !!opts.keepalive && payload.length < 60000 });
+  const j = await r.json().catch(() => ({ error: 'server' }));
+  if (!r.ok) { const e = new Error(j.error || 'server'); e.status = r.status; e.info = j; throw e; }
+  return j;
+}
+async function detectServer() {
+  if (HOSTED || !/^https?:$/.test(location.protocol)) return false;
+  try {
+    const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 6000);
+    const r = await fetch('/api/health', { signal: ctl.signal, cache: 'no-store' }); clearTimeout(t);
+    return !!(r.ok && (await r.json()).ok);
+  } catch { return false; }
+}
+// Anmelde-Prüfwert: aus Passwort + Salt abgeleitet, getrennt vom Schlüssel für die Daten.
+// Der Server speichert davon nur einen Hash und erfährt so weder Passwort noch Datenschlüssel.
+async function deriveAuth(pw, salt) {
+  const base = await crypto.subtle.importKey('raw', te.encode(pw), 'PBKDF2', false, ['deriveBits']);
+  const s2 = new Uint8Array([...salt, ...te.encode('|auth')]);
+  return toB64(await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: s2, iterations: 250000, hash: 'SHA-256' }, base, 256));
+}
+async function decryptDb(key, cipher) { return Object.assign(defaults(), JSON.parse(td.decode(await aesDec(key, cipher)))); }
+// Zwei Stände zusammenführen (z. B. Handy und PC): je Woche gewinnt die zuletzt geänderte, gelöschte Wochen bleiben gelöscht
+function mergeDb(a, b) {
+  const newer = (b.updated || 0) > (a.updated || 0) ? b : a;
+  const out = Object.assign(defaults(), JSON.parse(JSON.stringify(newer)));
+  out.weeks = {}; out.deleted = {};
+  const keys = new Set([...Object.keys(a.weeks || {}), ...Object.keys(b.weeks || {}), ...Object.keys(a.deleted || {}), ...Object.keys(b.deleted || {})]);
+  const ts = w => w ? (w.updated || w.savedAt || 0) : -1;
+  keys.forEach(k => {
+    const del = Math.max((a.deleted || {})[k] || 0, (b.deleted || {})[k] || 0);
+    const wa = (a.weeks || {})[k], wb = (b.weeks || {})[k], pick = ts(wb) > ts(wa) ? wb : wa;
+    if (pick && ts(pick) >= del) out.weeks[k] = JSON.parse(JSON.stringify(pick)); else if (del) out.deleted[k] = del;
+  });
+  out.updated = Math.max(a.updated || 0, b.updated || 0);
+  return out;
+}
+let srvTimer = null, srvBusy = false, srvAgain = false;
+function scheduleServerSave(delay = 1200) { clearTimeout(srvTimer); srvTimer = setTimeout(serverSave, delay); }
+async function serverSave(keepalive = false) {
+  if (!session || !session.server) return;
+  if (srvBusy) { srvAgain = true; return; }
+  srvBusy = true; clearTimeout(srvTimer); srvTimer = null;
+  const s0 = session;
+  try {
+    const data = await aesEnc(s0.key, te.encode(JSON.stringify(db)));
+    try {
+      const r = await api('save', { u: s0.id, auth: s0.auth, data, rev: s0.rev }, { keepalive });
+      s0.rev = r.rev; setSync('gespeichert');
+    } catch (e) {
+      if (e.status === 409 && e.info && 'rev' in e.info) {
+        // anderes Gerät hat zwischendurch gespeichert: Stände zusammenführen und erneut speichern
+        if (e.info.data) { db = mergeDb(db, await decryptDb(s0.key, e.info.data)); renderLog(); renderYearKw(); }
+        s0.rev = e.info.rev; srvAgain = true;
+      } else if (e.status === 401) { setSync('Sitzung abgelaufen – bitte neu anmelden'); }
+      else { setSync('nicht gespeichert – keine Verbindung, neuer Versuch …'); scheduleServerSave(15000); }
+    }
+  } finally { srvBusy = false; if (srvAgain && session === s0) { srvAgain = false; scheduleServerSave(300); } }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && srvTimer) serverSave(true); });
+
+// Konto auf dem Server anlegen (neu oder aus einem Konto, das bisher nur in diesem Browser lag)
+async function serverRegister(id, name, pw, from) {
+  const raw = from ? from.raw : crypto.getRandomValues(new Uint8Array(32));
+  const salt = from ? fromB64(from.u.salt) : crypto.getRandomValues(new Uint8Array(16));
+  const wrapPw = from ? from.u.wrapPw : await aesEnc(await deriveKey(pw, salt), raw);
+  const key = await importDek(raw), auth = await deriveAuth(pw, salt);
+  const data0 = from ? from.data : defaults();
+  const created = (from && from.u.created) || Date.now();
+  await api('register', { u: id, name, salt: toB64(salt), wrapPw, wrapAdmin: await wrapForAdmin(raw), adminId: ADMIN_FIXED.id, auth,
+    data: await aesEnc(key, te.encode(JSON.stringify(data0))), created });
+  session = { id, name, key, raw, auth, rev: 1, server: true, access: null, created };
+  db = Object.assign(defaults(), data0);
+  if (from && from.data.access && from.data.access.key) {   // im Browser eingelösten Key übernehmen, falls er noch frei ist
+    try { session.access = (await api('redeem', { u: id, auth, key: from.data.access.key })).access; } catch { /* schon verwendet */ }
+  }
+}
+async function serverLogin(id, pw, msg) {
+  let s0 = await api('salt', { u: id });
+  if (!s0.exists) {
+    const local = readUsers()[id] ? await localUnlock(id, pw) : null;
+    if (!local) { msg.textContent = 'Benutzername oder Passwort falsch.'; return false; }
+    await serverRegister(id, local.u.name, pw, local);
+    toast('Dein Konto wurde in die Online-Datenbank übertragen – du kannst dich jetzt auf jedem Gerät anmelden.');
+    return true;
+  }
+  const salt = fromB64(s0.salt);
+  const [pwKey, auth] = await Promise.all([deriveKey(pw, salt), deriveAuth(pw, salt)]);
+  let r;
+  try { r = await api('login', { u: id, auth }); }
+  catch (e) {
+    msg.textContent = e.status === 429 ? 'Zu viele Fehlversuche. Bitte in 15 Minuten erneut versuchen.'
+      : e.status === 401 ? 'Benutzername oder Passwort falsch.' : 'Keine Verbindung zur Datenbank. Bitte später erneut versuchen.';
+    return false;
+  }
+  const raw = await aesDec(pwKey, r.wrapPw), key = await importDek(raw);
+  let srvDb = r.data ? await decryptDb(key, r.data) : defaults();
+  // lokale Kopie dieses Geräts einbeziehen (z. B. wenn beim letzten Mal die Verbindung weg war)
+  const cached = JSON.parse(localStorage.getItem(DATA(id)) || 'null');
+  let localNewer = false;
+  if (cached) { try { const l = await decryptDb(key, cached); localNewer = (l.updated || 0) > (srvDb.updated || 0); srvDb = mergeDb(srvDb, l); } catch { /* fremde/alte Kopie */ } }
+  session = { id, name: r.name, key, raw, auth, rev: r.rev, server: true, access: r.access, created: r.created };
+  db = srvDb;
+  if (r.adminId !== ADMIN_FIXED.id) { try { await api('meta', { u: id, auth, wrapAdmin: await wrapForAdmin(raw), adminId: ADMIN_FIXED.id }); } catch { /* beim nächsten Mal */ } }
+  if (localNewer) scheduleServerSave(500);
+  return true;
+}
+// Konto, das nur in diesem Browser liegt, mit Passwort entsperren → {u, raw, data} oder null
+async function localUnlock(id, pw) {
+  const u = readUsers()[id]; if (!u) return null;
+  const pwKey = await deriveKey(pw, fromB64(u.salt));
+  const stored = JSON.parse(localStorage.getItem(DATA(id)) || 'null');
+  let raw, data = {};
+  if (u.v === 2) {
+    try { raw = await aesDec(pwKey, u.wrapPw); } catch { return null; }
+    if (stored) { try { data = JSON.parse(td.decode(await aesDec(await importDek(raw), stored))); } catch { try { data = JSON.parse(td.decode(await aesDec(pwKey, stored))); } catch { /* leer */ } } }
+    return { u, raw, data };
+  }
+  if (stored) { try { data = JSON.parse(td.decode(await aesDec(pwKey, stored))); } catch { return null; } }
+  raw = crypto.getRandomValues(new Uint8Array(32));
+  const users = readUsers(); await setUserPassword(users, id, pw, raw);
+  return { u: users[id], raw, data };
 }
 function setMode(m) {
   mode = m;
@@ -892,7 +1030,9 @@ function setMode(m) {
   $('lgPass').autocomplete = $('lgRepeat').hidden ? 'current-password' : 'new-password';
   $('lgHint').textContent = m === 'admin'
     ? 'Nur für den Admin. Der Admin kann vergessene Passwörter zurücksetzen.'
-    : 'Jedes Konto sieht nur seine eigenen Wochen. Die Daten werden verschlüsselt in diesem Browser gespeichert. Passwort vergessen? Der Admin kann ein neues setzen.';
+    : SERVER
+      ? 'Jedes Konto sieht nur seine eigenen Wochen. Deine Berichte werden verschlüsselt, bevor sie gespeichert werden. Passwort vergessen? Der Admin kann ein neues setzen.'
+      : 'Jedes Konto sieht nur seine eigenen Wochen. Die Daten werden verschlüsselt in diesem Browser gespeichert. Passwort vergessen? Der Admin kann ein neues setzen.';
   $('lgMsg').textContent = '';
 }
 $('tabLogin').onclick = () => setMode('login');
@@ -908,6 +1048,24 @@ $('loginForm').onsubmit = async e => {
   try {
     if (mode === 'admin') { await adminLogin(pw, msg); return; }
     if (!name) { msg.textContent = 'Bitte einen Benutzernamen eingeben.'; return; }
+    if (SERVER) {
+      if (mode === 'new') {
+        if (pw.length < 6) { msg.textContent = 'Das Passwort braucht mindestens 6 Zeichen.'; return; }
+        if (pw !== $('lgPass2').value) { msg.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
+        if (id.length > 60 || /[\/\\]/.test(id)) { msg.textContent = 'Der Benutzername darf höchstens 60 Zeichen und keine Schrägstriche enthalten.'; return; }
+        try {
+          if ((await api('salt', { u: id })).exists || readUsers()[id]) { msg.textContent = 'Diesen Benutzernamen gibt es schon. Bitte anmelden oder einen anderen wählen.'; return; }
+          await serverRegister(id, name, pw, null);
+        } catch (err) {
+          msg.textContent = err.status === 409 ? 'Diesen Benutzernamen gibt es schon. Bitte anmelden oder einen anderen wählen.' : 'Keine Verbindung zur Datenbank. Bitte später erneut versuchen.';
+          return;
+        }
+      } else if (!await serverLogin(id, pw, msg)) return;
+      persistLocal();
+      $('lgPass').value = ''; $('lgPass2').value = '';
+      await enterApp();
+      return;
+    }
     if (mode === 'new') {
       if (pw.length < 6) { msg.textContent = 'Das Passwort braucht mindestens 6 Zeichen.'; return; }
       if (pw !== $('lgPass2').value) { msg.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
@@ -980,6 +1138,14 @@ async function verifyKey(key) {
 }
 // {ok, text} für das angemeldete Konto
 async function accessState() {
+  if (session.server) {
+    const a = session.access;
+    if (a && (a.until === null || a.until >= todayIso())) return { ok: true, text: a.until ? 'Zugang bis ' + isoDe(a.until) : 'unbegrenzter Zugang' };
+    const trialEnd = new Date((session.created || Date.now()) + ABO.trialDays * 864e5);
+    if (ABO.trialDays > 0 && new Date() < trialEnd) return { ok: true, text: 'Testzeitraum bis ' + trialEnd.toLocaleDateString('de-DE') };
+    if (a && a.until) return { ok: false, title: 'Zugang abgelaufen', text: `Dein Zugang ist am ${isoDe(a.until)} abgelaufen.` };
+    return { ok: false, title: 'Zugang freischalten', text: 'Dein Konto ist angelegt.' };
+  }
   const p = db.access && db.access.key ? await verifyKey(db.access.key) : null;
   if (p && p.n) {   // Einmal-Key: Ablaufdatum wurde beim Einlösen berechnet
     const until = db.access.until;
@@ -995,8 +1161,19 @@ async function accessState() {
   return { ok: false, title: 'Zugang freischalten', text: 'Dein Konto ist angelegt.' };
 }
 async function redeemKey(raw, msgEl) {
-  const p = await verifyKey(raw.trim());
   const say = t => { if (msgEl) msgEl.textContent = t; else toast(t); };
+  if (session.server) {
+    try { session.access = (await api('redeem', { u: session.id, auth: session.auth, key: raw.trim() })).access; return true; }
+    catch (e) {
+      const i = e.info || {};
+      say({ key_invalid: 'Dieser Key ist ungültig. Bitte genau so einfügen, wie du ihn bekommen hast.',
+        key_used: 'Dieser Key wurde bereits eingelöst und kann nicht noch einmal verwendet werden.',
+        key_other_user: `Dieser Key gehört zum Benutzernamen „${i.owner}“.`,
+        key_expired: `Dieser Key ist am ${i.until ? isoDe(i.until) : '?'} abgelaufen.` }[e.message] || 'Keine Verbindung zur Datenbank. Bitte später erneut versuchen.');
+      return false;
+    }
+  }
+  const p = await verifyKey(raw.trim());
   if (!p) { say('Dieser Key ist ungültig. Bitte genau so einfügen, wie du ihn bekommen hast.'); return false; }
   if (p.n) {
     const used = readUsed();
@@ -1055,19 +1232,20 @@ $('payLogout').onclick = () => { session = null; db = defaults(); $('paywall').h
 
 function startSession(accessText) {
   $('lgPass').value = ''; $('lgPass2').value = '';
-  $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = false; $('pwChange').hidden = false; $('keyRenew').hidden = false;
+  $('who').textContent = 'Angemeldet als ' + session.name; $('logout').hidden = false; $('pwChange').hidden = false; $('keyRenew').hidden = false; $('delMe').hidden = false;
   $('access').textContent = accessText || '';
   $('gate').hidden = true; $('app').hidden = false;
   cur = { year: now.year, kw: now.kw };
   loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
 }
 function backToLogin(text) {
-  $('who').textContent = ''; $('access').textContent = ''; $('logout').hidden = true; $('pwChange').hidden = true; $('keyRenew').hidden = true;
+  $('who').textContent = ''; $('access').textContent = ''; $('logout').hidden = true; $('pwChange').hidden = true; $('keyRenew').hidden = true; $('delMe').hidden = true;
   $('admin').hidden = true; $('paywall').hidden = true;
   showGate(text); setMode('login'); $('lgUser').focus();
 }
 $('logout').onclick = async () => {
   flushPending(); await writeChain;
+  if (session && session.server && (srvTimer || srvBusy)) { await serverSave(); }
   session = null; db = defaults();
   loadSettingsUi(); renderWeek(); renderLog();
   backToLogin('Abgemeldet. Melde dich an oder erstelle ein neues Konto.');
@@ -1076,9 +1254,29 @@ $('myPwBtn').onclick = async () => {
   const a = $('myPw1').value;
   if (a.length < 6) { toast('Das Passwort braucht mindestens 6 Zeichen.'); return; }
   if (a !== $('myPw2').value) { toast('Die Passwörter stimmen nicht überein.'); return; }
-  const users = readUsers();
-  await setUserPassword(users, session.id, a, session.raw); writeUsers(users);
+  if (session.server) {
+    try {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const newAuth = await deriveAuth(a, salt);
+      await api('password', { u: session.id, auth: session.auth, salt: toB64(salt), wrapPw: await aesEnc(await deriveKey(a, salt), session.raw), newAuth });
+      session.auth = newAuth;
+    } catch { toast('Passwort konnte nicht geändert werden – keine Verbindung?'); return; }
+  } else {
+    const users = readUsers();
+    await setUserPassword(users, session.id, a, session.raw); writeUsers(users);
+  }
   $('myPw1').value = $('myPw2').value = ''; $('pwChange').open = false; toast('Passwort geändert');
+};
+$('myDelBtn').onclick = async () => {
+  if (!await ask('Dein Konto mit allen gespeicherten Wochen endgültig löschen? Das kann nicht rückgängig gemacht werden.', 'Konto löschen')) return;
+  try {
+    if (session.server) await api('deleteMe', { u: session.id, auth: session.auth });
+    else { const all = readUsers(); delete all[session.id]; writeUsers(all); }
+    localStorage.removeItem(DATA(session.id));
+  } catch { toast('Löschen fehlgeschlagen – keine Verbindung?'); return; }
+  clearTimeout(srvTimer); srvTimer = null; session = null; db = defaults();
+  loadSettingsUi(); renderWeek(); renderLog();
+  backToLogin('Dein Konto wurde gelöscht.');
 };
 
 // ---------- Admin ----------
@@ -1104,8 +1302,19 @@ const ISSUED = 'tb_keys_issued_v1';
 function readIssued() { try { return JSON.parse(localStorage.getItem(ISSUED)) || []; } catch { return []; } }
 const durText = m => m ? (m === 1 ? '1 Monat' : m + ' Monate') : 'unbegrenzt';
 function renderKeys() {
-  const used = readUsed();
   const box = $('kList'); box.innerHTML = '';
+  if (SERVER) {
+    const keys = (adminData && adminData.keys || []).slice().sort((a, b) => (b.d || '').localeCompare(a.d || ''));
+    if (!keys.length) { box.innerHTML = '<p class="hint">Noch keine Keys erstellt.</p>'; return; }
+    keys.forEach(k => {
+      const el = document.createElement('div'); el.className = 'kl';
+      const a = document.createElement('span'); a.textContent = 'Key ' + k.n + (k.usedBy ? ` · eingelöst von ${k.usedBy} am ${new Date(k.usedAt).toLocaleDateString('de-DE')}` : ' · noch frei');
+      const b = document.createElement('span'); b.textContent = durText(k.m) + (k.d ? ' · erstellt ' + isoDe(k.d) : '');
+      el.append(a, b); box.appendChild(el);
+    });
+    return;
+  }
+  const used = readUsed();
   const list = readIssued();
   if (!list.length) { box.innerHTML = '<p class="hint">Noch keine Keys erstellt.</p>'; return; }
   list.slice().reverse().forEach(k => {
@@ -1117,12 +1326,28 @@ function renderKeys() {
     el.append(a, b); box.appendChild(el);
   });
 }
+async function adminCall(action, body) {
+  if (!adminSession.sig) throw Object.assign(new Error('no_sig'), { status: 0 });
+  const msg = JSON.stringify({ action, ts: Date.now(), body: body || {} });
+  const sig = b64u(await crypto.subtle.sign(SIG, adminSession.sig, te.encode(msg)));
+  return api('admin', { msg, sig });
+}
+let adminData = null;
+async function loadAdminData() {
+  try { adminData = await adminCall('list'); }
+  catch (e) { adminData = null; toast(e.message === 'no_sig' ? 'Bitte einmal mit dem ursprünglichen Admin-Passwort anmelden.' : 'Keine Verbindung zur Datenbank.'); }
+}
 $('kBtn').onclick = async () => {
   const months = +$('kDur').value;
   if (!adminSession.sig) { toast('Bitte einmal mit dem ursprünglichen Admin-Passwort anmelden.'); return; }
   const n = b64u(crypto.getRandomValues(new Uint8Array(6)));   // eindeutige Key-Nummer
   const payload = b64u(te.encode(JSON.stringify({ n, m: months, d: todayIso() })));
   const sig = await crypto.subtle.sign(SIG, adminSession.sig, te.encode(payload));
+  if (SERVER) {
+    try { await adminCall('issue', { n, m: months, d: todayIso() }); } catch { toast('Key konnte nicht in der Datenbank vermerkt werden.'); return; }
+    $('kOut').value = 'TB2-' + payload + '.' + b64u(sig); $('kResult').hidden = false;
+    await loadAdminData(); renderKeys(); return;
+  }
   $('kOut').value = 'TB2-' + payload + '.' + b64u(sig); $('kResult').hidden = false;
   const list = readIssued(); list.push({ n, m: months, i: todayIso() }); localStorage.setItem(ISSUED, JSON.stringify(list));
   renderKeys();
@@ -1131,11 +1356,13 @@ $('kCopy').onclick = async () => {
   try { await navigator.clipboard.writeText($('kOut').value); toast('Key kopiert'); }
   catch { $('kOut').select(); toast('Key markiert – mit Strg+C kopieren'); }
 };
-function renderAdmin() {
+async function renderAdmin() {
+  if (SERVER) { $('adminUsers').innerHTML = '<p class="hint">Lade Benutzer …</p>'; await loadAdminData(); }
   renderKeys(); $('kResult').hidden = true;
   const missing = legalMissing();
   $('legalWarn').hidden = !missing.length;
   $('legalWarn').textContent = 'Rechtliche Angaben fehlen: ' + missing.join(', ') + '. Ohne vollständiges Impressum bitte noch nichts verkaufen. Die Angaben stehen oben im Skript im Objekt LEGAL.';
+  if (SERVER) { renderServerUsers(); return; }
   const users = readUsers(), box = $('adminUsers'); box.innerHTML = '';
   const ids = Object.keys(users).sort();
   if (!ids.length) { box.innerHTML = '<p class="hint">Noch keine Benutzer angelegt.</p>'; return; }
@@ -1162,6 +1389,41 @@ function renderAdmin() {
     el.querySelector('[data-a=del]').onclick = async () => {
       if (!await ask(`Konto „${u.name}“ mit allen gespeicherten Wochen endgültig löschen?`)) return;
       const all = readUsers(); delete all[id]; writeUsers(all); localStorage.removeItem(DATA(id)); renderAdmin();
+    };
+    box.appendChild(el);
+  });
+}
+function renderServerUsers() {
+  const box = $('adminUsers'); box.innerHTML = '';
+  const users = (adminData && adminData.users || []).slice().sort((a, b) => a.id.localeCompare(b.id));
+  if (!users.length) { box.innerHTML = '<p class="hint">' + (adminData ? 'Noch keine Benutzer angelegt.' : 'Benutzer konnten nicht geladen werden.') + '</p>'; return; }
+  users.forEach(u => {
+    const el = document.createElement('div'); el.className = 'au';
+    const acc = u.access ? (u.access.until ? (u.access.until >= todayIso() ? 'Zugang bis ' + isoDe(u.access.until) : 'Zugang abgelaufen am ' + isoDe(u.access.until)) : 'unbegrenzter Zugang') : 'kein Zugang';
+    el.innerHTML = `<div class="au-head"><div><strong></strong> <span class="st"></span><div class="st"></div><div class="st ${u.resettable ? '' : 'warn'}"></div></div>
+      <div class="row"><button class="small" data-a="reset" ${u.resettable ? '' : 'disabled'}>Passwort zurücksetzen</button><button class="small danger" data-a="del">Löschen</button></div></div>
+      <div class="au-reset" hidden><input type="text" placeholder="Neues Passwort (mind. 6 Zeichen)"><button class="small primary" data-a="save">Setzen</button></div>`;
+    const sts = el.querySelectorAll('.st');
+    el.querySelector('strong').textContent = u.name;
+    sts[0].textContent = '(' + u.id + ')';
+    sts[1].textContent = acc + ' · angemeldet zuletzt ' + (u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('de-DE') : '–') + (u.locked ? ' · gesperrt wegen Fehlversuchen' : '');
+    sts[2].textContent = u.resettable ? 'Passwort kann zurückgesetzt werden' : 'Noch nicht zurücksetzbar – die Person muss sich einmal mit der aktuellen Version anmelden';
+    const form = el.querySelector('.au-reset'), inp = form.querySelector('input');
+    inp.setAttribute('aria-label', 'Neues Passwort für ' + u.name);
+    el.querySelector('[data-a=reset]').onclick = () => { form.hidden = !form.hidden; if (!form.hidden) inp.focus(); };
+    el.querySelector('[data-a=save]').onclick = async () => {
+      if (inp.value.length < 6) { toast('Das Passwort braucht mindestens 6 Zeichen.'); return; }
+      try {
+        const w = await adminCall('wrap', { u: u.id });
+        const raw = new Uint8Array(await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, adminSession.priv, fromB64(w.wrapAdmin)));
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        await adminCall('reset', { u: u.id, salt: toB64(salt), wrapPw: await aesEnc(await deriveKey(inp.value, salt), raw), auth: await deriveAuth(inp.value, salt) });
+        toast(`Neues Passwort für ${u.name} gesetzt`); inp.value = ''; form.hidden = true; renderAdmin();
+      } catch { toast('Zurücksetzen fehlgeschlagen'); }
+    };
+    el.querySelector('[data-a=del]').onclick = async () => {
+      if (!await ask(`Konto „${u.name}“ mit allen gespeicherten Wochen endgültig löschen?`)) return;
+      try { await adminCall('delete', { u: u.id }); renderAdmin(); } catch { toast('Löschen fehlgeschlagen'); }
     };
     box.appendChild(el);
   });
@@ -1202,9 +1464,10 @@ function remoteWrite(id, fn) {
 }
 const settingsDoc = () => ({ settings: db.settings, bausteine: db.bausteine, templates: db.templates });
 function persist(weekKey) {
-  persistLocal();
   const k = weekKey || keyOf(cur.year, cur.kw);
   const w = db.weeks[k];
+  if (w) { w.updated = Date.now(); if (db.deleted) delete db.deleted[k]; }
+  persistLocal();
   if (w || weekKey) remoteWrite('w-' + k, d => w ? d.set(JSON.parse(JSON.stringify(w))) : d.delete());
 }
 function persistSettings() { persistLocal(); remoteWrite('settings', d => d.set(settingsDoc())); }
@@ -1536,7 +1799,7 @@ $('btnSave').onclick = () => {
 };
 $('btnClear').onclick = async () => {
   if (!await ask(`KW ${cur.kw}/${cur.year} wirklich leeren? Der Log-Eintrag dieser Woche wird ebenfalls entfernt.`, 'Leeren')) return;
-  const k = keyOf(cur.year, cur.kw); delete db.weeks[k]; persist(k); renderYearKw(); renderWeek(); renderLog();
+  const k = keyOf(cur.year, cur.kw); delete db.weeks[k]; (db.deleted = db.deleted || {})[k] = Date.now(); persist(k); renderYearKw(); renderWeek(); renderLog();
 };
 
 // ---------- Einstellungen ----------
@@ -1584,7 +1847,7 @@ function renderLog() {
     el.querySelector('[data-a=open]').onclick = () => { setWeek(w.year, w.kw); window.scrollTo({ top: 0, behavior: 'smooth' }); };
     el.querySelector('[data-a=del]').onclick = async () => {
       if (!await ask(`KW ${w.kw}/${w.year} aus dem Log löschen?`)) return;
-      delete db.weeks[k]; persist(k); renderLog(); renderYearKw(); if (k === keyOf(cur.year, cur.kw)) renderWeek();
+      delete db.weeks[k]; (db.deleted = db.deleted || {})[k] = Date.now(); persist(k); renderLog(); renderYearKw(); if (k === keyOf(cur.year, cur.kw)) renderWeek();
     };
     box.appendChild(el);
   });
@@ -1720,12 +1983,16 @@ const LEGAL_PAGES = {
     <h3>Hinweis zum Formular</h3><p>Das verwendete Formular „Tätigkeitsbericht – Meine Ausbildung“ einschließlich enthaltener Logos und Marken ist Eigentum des jeweiligen Rechteinhabers. Dieses Angebot steht in keiner Verbindung zu diesem Rechteinhaber.</p>`],
   datenschutz: ['Datenschutzerklärung', () => `
     <h3>1. Verantwortlicher</h3><p>${anbieter()}<br>E-Mail: ${L('email', 'E-Mail')}</p>
-    <h3>2. Grundsatz: Deine Berichte bleiben auf deinem Gerät</h3>
+    ${SERVER ? `<h3>2. Konto und Berichte</h3>
+    <p>Damit du dich auf jedem Gerät anmelden kannst, speichern wir dein Konto in einer Datenbank bei unserem Hoster (siehe Abschnitt 3). Gespeichert werden: dein Benutzername und Anzeigename, Zeitpunkt der Registrierung und der letzten Anmeldung, die Zahl fehlgeschlagener Anmeldeversuche (für eine kurze Sperre zum Schutz vor dem Erraten von Passwörtern), dein Zugangsstatus mit eingelösten Zugangskeys sowie ein Prüfwert, der aus deinem Passwort berechnet wird. Dein Passwort selbst wird nicht übertragen und nicht gespeichert.</p>
+    <p>Deine Berichte, Texte und Einstellungen werden in deinem Browser mit einem nur deinem Konto bekannten Schlüssel verschlüsselt (AES-256), bevor sie übertragen werden. Auf dem Server liegen sie nur verschlüsselt. Für die Funktion „Passwort zurücksetzen“ ist dieser Schlüssel zusätzlich mit dem Schlüssel des Admins gesichert. Der Admin könnte damit technisch auf deine Berichte zugreifen; er nutzt dies nur, um auf deinen Wunsch ein neues Passwort zu setzen.</p>
+    <p>Zusätzlich liegt auf deinem Gerät eine verschlüsselte Kopie im lokalen Speicher des Browsers (localStorage), damit nichts verloren geht, wenn die Verbindung kurz weg ist. Cookies, Analyse- oder Tracking-Werkzeuge sowie Schriftarten oder Bibliotheken von fremden Servern werden nicht verwendet.</p>
+    <p>Rechtsgrundlage ist die Erfüllung des Nutzungsvertrags (Art. 6 Abs. 1 lit. b DSGVO; § 25 Abs. 2 Nr. 2 TDDDG für den lokalen Speicher). Die Daten bleiben gespeichert, bis du dein Konto löschst („Meine Daten → Konto löschen“) oder uns um Löschung bittest. Danach werden Konto und Berichte sofort aus der Datenbank entfernt; Angaben zu Zahlungen bewahren wir wegen gesetzlicher Pflichten weiter auf (Abschnitt 4).</p>` : `<h3>2. Grundsatz: Deine Berichte bleiben auf deinem Gerät</h3>
     <p>Diese Anwendung läuft vollständig in deinem Browser. Benutzername, Passwort-Prüfwerte, Einstellungen, Texte und Wochenberichte werden ausschließlich im lokalen Speicher deines Browsers (localStorage) gespeichert, die Berichte verschlüsselt (AES-256). Wir erhalten diese Daten nicht und können sie nicht einsehen. Es werden keine Cookies, keine Analyse- oder Tracking-Werkzeuge und keine Schriftarten oder Programmbibliotheken von fremden Servern verwendet.</p>
     <p>Die Speicherung ist für die Funktion der Anwendung unbedingt erforderlich (§ 25 Abs. 2 Nr. 2 TDDDG; Art. 6 Abs. 1 lit. b DSGVO). Du kannst die Daten jederzeit löschen, indem du die Websitedaten in deinem Browser löschst.</p>
-    <p>Für die Funktion „Passwort zurücksetzen“ wird der Schlüssel deiner Daten zusätzlich mit einem Admin-Schlüssel verschlüsselt auf deinem Gerät abgelegt. Ein Zurücksetzen ist nur am selben Gerät durch den Admin möglich.</p>
+    <p>Für die Funktion „Passwort zurücksetzen“ wird der Schlüssel deiner Daten zusätzlich mit einem Admin-Schlüssel verschlüsselt auf deinem Gerät abgelegt. Ein Zurücksetzen ist nur am selben Gerät durch den Admin möglich.</p>`}
     <h3>3. Bereitstellung der Website</h3>
-    <p>${LEGAL.hoster ? `Diese Website wird bei ${esc(LEGAL.hoster)} bereitgestellt. Beim Aufruf verarbeitet der Hoster technisch notwendige Daten (u. a. IP-Adresse, Zeitpunkt, aufgerufene Datei, Browsertyp) in Server-Logdateien, um die Seite auszuliefern und die Sicherheit zu gewährleisten (Art. 6 Abs. 1 lit. f DSGVO). Sofern der Hoster seinen Sitz außerhalb der EU hat, erfolgt die Übermittlung auf Grundlage eines Angemessenheitsbeschlusses bzw. der EU-Standardvertragsklauseln.` : 'Wenn du die Anwendung als Datei auf deinem Gerät öffnest, werden dabei keine Daten übertragen. Wird die Anwendung über einen Webserver bereitgestellt, verarbeitet dessen Betreiber technisch notwendige Zugriffsdaten (u. a. IP-Adresse, Zeitpunkt) zur Auslieferung der Seite (Art. 6 Abs. 1 lit. f DSGVO).'}</p>
+    <p>${LEGAL.hoster ? `Diese Website wird bei ${esc(LEGAL.hoster)} bereitgestellt${SERVER ? ', dort liegt auch die Datenbank aus Abschnitt 2' : ''}. Beim Aufruf verarbeitet der Hoster technisch notwendige Daten (u. a. IP-Adresse, Zeitpunkt, aufgerufene Datei, Browsertyp) in Server-Logdateien, um die Seite auszuliefern und die Sicherheit zu gewährleisten (Art. 6 Abs. 1 lit. f DSGVO). Mit dem Hoster besteht ein Vertrag zur Auftragsverarbeitung (Art. 28 DSGVO). Sofern der Hoster seinen Sitz außerhalb der EU hat, erfolgt die Übermittlung auf Grundlage eines Angemessenheitsbeschlusses bzw. der EU-Standardvertragsklauseln.` : 'Wenn du die Anwendung als Datei auf deinem Gerät öffnest, werden dabei keine Daten übertragen. Wird die Anwendung über einen Webserver bereitgestellt, verarbeitet dessen Betreiber technisch notwendige Zugriffsdaten (u. a. IP-Adresse, Zeitpunkt) zur Auslieferung der Seite (Art. 6 Abs. 1 lit. f DSGVO).'}</p>
     <h3>4. Bezahlung über PayPal</h3>
     <p>Wenn du per PayPal bezahlst, nutzt du dafür dein eigenes PayPal-Konto bei PayPal (Europe) S.à r.l. et Cie, S.C.A., 22-24 Boulevard Royal, L-2449 Luxembourg. PayPal verarbeitet dabei deine Zahlungsdaten in eigener Verantwortung, siehe die Datenschutzerklärung von PayPal unter https://www.paypal.com/de/legalhub/privacy-full. Wir erhalten von PayPal deinen Namen, deine E-Mail-Adresse, den Betrag, den Verwendungszweck mit deinem Benutzernamen und den Zahlungsstatus. Diese Daten verwenden wir zur Vertragsabwicklung und um dir deinen Zugangskey zu senden (Art. 6 Abs. 1 lit. b DSGVO). Rechnungs- und Zahlungsdaten bewahren wir wegen gesetzlicher Aufbewahrungspflichten bis zu 10 Jahre auf (Art. 6 Abs. 1 lit. c DSGVO i. V. m. § 147 AO).</p>
     <h3>5. Kontakt per E-Mail</h3>
@@ -1737,9 +2004,9 @@ const LEGAL_PAGES = {
     <h3>§ 1 Geltungsbereich und Anbieter</h3>
     <p>Diese AGB gelten für alle Verträge über die Nutzung des „Tätigkeitsbericht-Generators“ (nachfolgend „Anwendung“) zwischen ${L('name', 'Name')}, ${L('street', 'Straße')}, ${L('city', 'PLZ und Ort')} (nachfolgend „Anbieter“) und den Nutzerinnen und Nutzern (nachfolgend „Kunde“).</p>
     <h3>§ 2 Leistung</h3>
-    <ol><li>Die Anwendung hilft beim Ausfüllen wöchentlicher Ausbildungs-Tätigkeitsberichte und erzeugt daraus PDF-Dateien. Sie läuft im Browser des Kunden; alle Daten werden nur lokal auf dem Gerät des Kunden gespeichert.</li>
+    <ol><li>Die Anwendung hilft beim Ausfüllen wöchentlicher Ausbildungs-Tätigkeitsberichte und erzeugt daraus PDF-Dateien. ${SERVER ? 'Sie läuft im Browser des Kunden; Konto und verschlüsselte Berichte werden zusätzlich in einer Datenbank beim Hoster des Anbieters gespeichert, damit der Kunde sie auf mehreren Geräten nutzen kann.' : 'Sie läuft im Browser des Kunden; alle Daten werden nur lokal auf dem Gerät des Kunden gespeichert.'}</li>
     <li>Der Kunde ist für den Inhalt seiner Berichte selbst verantwortlich. Der Anbieter schuldet nicht, dass Berichte von Ausbildungsbetrieb, Berufsschule oder Kammer anerkannt werden.</li>
-    <li>Für die Sicherung seiner Daten ist der Kunde selbst verantwortlich (Funktion „Backup exportieren“). Daten gehen verloren, wenn Browserdaten gelöscht werden oder das Gerät verloren geht.</li></ol>
+    <li>${SERVER ? 'Der Anbieter bemüht sich um eine hohe Verfügbarkeit, schuldet aber keine ununterbrochene Erreichbarkeit. Zusätzliche Sicherungen kann der Kunde mit „Backup exportieren“ anlegen.' : 'Für die Sicherung seiner Daten ist der Kunde selbst verantwortlich (Funktion „Backup exportieren“). Daten gehen verloren, wenn Browserdaten gelöscht werden oder das Gerät verloren geht.'}</li></ol>
     <h3>§ 3 Vertragsschluss</h3>
     <ol><li>Die Darstellung in der Anwendung ist kein bindendes Angebot. Mit dem Senden der Zahlung per PayPal unter Angabe seines Benutzernamens gibt der Kunde ein verbindliches Angebot ab.</li>
     <li>Der Vertrag kommt zustande, wenn der Anbieter den Zugangskey an den Kunden sendet, spätestens jedoch mit Zahlungseingang. Der Anbieter sendet den Zugangskey in der Regel innerhalb von 2 Werktagen nach Zahlungseingang an die bei PayPal hinterlegte E-Mail-Adresse.</li>
@@ -1836,7 +2103,15 @@ function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add
 window.addEventListener('beforeunload', flushPending);
 
 if (HOSTED) { showGate('Anmeldung wird geprüft …'); $('gateTry').hidden = true; }
-else { $('loginForm').hidden = false; $('gateTry').hidden = true; showGate('Melde dich an oder erstelle ein Konto.'); setMode(Object.keys(readUsers()).length ? 'login' : 'new'); }
+else {
+  $('gateTry').hidden = true; showGate('Verbinde …');
+  detectServer().then(ok => {
+    SERVER = ok;
+    $('loginForm').hidden = false;
+    showGate(ok ? 'Melde dich an oder erstelle ein Konto. Dein Konto funktioniert auf jedem Gerät.' : 'Melde dich an oder erstelle ein Konto.');
+    setMode(ok || Object.keys(readUsers()).length ? 'login' : 'new');
+  });
+}
 loadSettingsUi(); renderYearKw(); renderWeek(); renderLog();
 $('preview').onclick = () => $('preview').classList.toggle('big');
 document.fonts && document.fonts.ready.then(schedulePreview);

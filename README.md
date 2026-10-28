@@ -46,3 +46,24 @@ Alle Daten bleiben lokal im Browser. Über **Backup exportieren/importieren** la
 
 - Jedes Konto sieht nur seine eigenen Wochen (getrennt verschlüsselt gespeichert, zusätzlich mit Besitzer-Kennung gefiltert).
 - „Ansehen“ zeigt den ausgefüllten Bericht direkt auf der Seite, „PDF“ lädt ihn herunter, „Bearbeiten“ öffnet die Woche.
+
+## Datenbank (Netlify Functions + Netlify Blobs)
+
+Wird die Seite über Netlify **aus diesem Repo** bereitgestellt, nutzt sie automatisch die Datenbank in `netlify/functions/api.mjs`:
+
+- Konten funktionieren auf jedem Gerät; der Admin sieht alle Benutzer und kann Passwörter von überall zurücksetzen.
+- Berichte werden im Browser verschlüsselt (AES-256) und nur verschlüsselt gespeichert. Der Server bekommt weder Passwörter noch Schlüssel – nur einen Hash eines aus dem Passwort abgeleiteten Prüfwerts.
+- Zugangskeys sind serverseitig nur einmal einlösbar (atomar), die Admin-Liste zeigt, wer welchen Key eingelöst hat.
+- Nach 10 falschen Passwörtern wird ein Konto 15 Minuten gesperrt.
+- Werden zwei Geräte gleichzeitig benutzt, werden die Stände zusammengeführt (je Woche gewinnt die neueste Änderung, gelöschte Wochen bleiben gelöscht).
+- Admin-Anfragen sind mit dem Admin-Signaturschlüssel unterschrieben und nur 5 Minuten gültig.
+- Konten, die bisher nur im Browser lagen, werden beim ersten Login automatisch in die Datenbank übernommen.
+- Ohne Server (Datei per Doppelklick oder Drag-and-drop-Upload) läuft alles wie bisher nur im Browser.
+
+### Einrichtung bei Netlify
+
+1. Netlify → **Add new site → Import an existing project → GitHub** → Repo `flxrian/erinnerung` auswählen.
+2. Branch: den Branch mit dieser Version (oder nach dem Zusammenführen `main`). Build command leer lassen, Publish directory `.` – steht schon in `netlify.toml`.
+3. **Deploy**. Netlify installiert `@netlify/blobs` und richtet die Function `/api/*` ein. Netlify Blobs braucht keine weitere Einrichtung.
+4. Prüfen: `https://<deine-seite>.netlify.app/api/health` muss `{"ok":true,"v":1}` zeigen.
+5. Falls die alte Drag-and-drop-Seite unter derselben Adresse laufen soll: in der alten Site unter *Domain management* die Domain entfernen und bei der neuen Site eintragen.
