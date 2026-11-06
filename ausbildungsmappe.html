@@ -63,7 +63,7 @@ h1 {
 .card h2 { font: 700 20px/1.2 var(--f-display); margin: 0; }
 .card h3 { font: 700 16px/1.2 var(--f-display); margin: 6px 0 0; }
 label { display: grid; gap: 6px; font: 600 13px/1.2 var(--f-mono); letter-spacing: .04em; color: var(--muted); min-width: 0; }
-input {
+input, select {
   font: 500 17px/1.3 var(--f-display); color: var(--ink); background: var(--bg);
   border: 1.5px solid var(--rule); border-radius: 6px; padding: 11px 12px; width: 100%; min-width: 0;
 }
@@ -161,6 +161,21 @@ a.page:focus-visible { outline-color: var(--c); }
     <h2>Verwaltung</h2>
     <p class="busy" id="busy" role="status"></p>
     <div class="cols">
+      <div class="card">
+        <h2>Seiten</h2>
+        <div class="list" id="pgList"></div>
+        <h3>Seite hinzufügen</h3>
+        <form id="pgForm" style="display:grid;gap:12px">
+          <div class="row2">
+            <label for="pgGroup">Register<select id="pgGroup"></select></label>
+            <label for="pgTitle">Name<input id="pgTitle" maxlength="60" required></label>
+          </div>
+          <label for="pgUrl">Adresse<input id="pgUrl" type="url" placeholder="https://…" maxlength="300" required></label>
+          <button type="submit" id="pgBtn">Hinzufügen</button>
+          <p class="msg" id="pgMsg" role="status"></p>
+        </form>
+      </div>
+
       <div class="card">
         <h2>Zugänge</h2>
         <div class="list" id="accList"></div>
@@ -440,7 +455,7 @@ a.page:focus-visible { outline-color: var(--c); }
     S.links.forEach(g => {
       const s = el("section", "reg r" + (/^[a-d]$/.test(g.farbe) ? g.farbe : "a")); s.append(el("h2", null, g.gruppe));
       (g.seiten || []).forEach(p => {
-        if (!/^https:\/\/[^\s]+$/.test(p.url)) return;
+        if (!/^https:\/\/[^\s"'<>]+$/.test(p.url)) return;
         const a = el("a", "page", p.titel); a.href = p.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.referrerPolicy = "no-referrer";
         s.append(a);
       });
@@ -456,6 +471,7 @@ a.page:focus-visible { outline-color: var(--c); }
   async function startAdmin() {
     $("admin").hidden = false;
     $("nwName").value = randName(); $("nwPass").value = randPass();
+    renderPages();
     const db = await DB();
     if (unsubAcc) { try { unsubAcc(); } catch (e) {} }
     const t = setTimeout(() => $("accList").replaceChildren(info("Zugänge laden gerade nicht.")), 10000);
@@ -495,6 +511,55 @@ a.page:focus-visible { outline-color: var(--c); }
       bs.append(reset, del); r.append(l, bs); list.append(r);
     });
   }
+
+  /* ---------- Seiten verwalten ---------- */
+  const URL_RE = /^https:\/\/[^\s"'<>]+$/;
+  function renderPages() {
+    if (!S) return;
+    const list = $("pgList"); list.replaceChildren();
+    const sel = $("pgGroup"), keep = sel.value; sel.replaceChildren();
+    S.links.forEach((g, gi) => {
+      sel.append(new Option(g.gruppe, String(gi)));
+      (g.seiten || []).forEach((p, pi) => {
+        const r = el("div", "item"), l = el("div");
+        l.append(el("div", "nm", p.titel), el("div", "sub", g.gruppe));
+        const b = el("button", "danger small", "Entfernen"); b.type = "button";
+        armButton(b, "Entfernen", "Wirklich entfernen?", () => removePage(gi, pi));
+        r.append(l, b); list.append(r);
+      });
+    });
+    if (!list.children.length) list.append(info("Keine Seiten."));
+    if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
+  }
+  async function saveLinks(next, text) {
+    const sealed = await sealLinks(S.K, next);
+    await (await DB()).doc("tresor/haupt").update({ links: sealed });
+    tresor.links = sealed; S.links = next;
+    renderLinks(); renderPages();
+    log("verwaltung", text);
+  }
+  async function removePage(gi, pi) {
+    const next = JSON.parse(JSON.stringify(S.links));
+    const [p] = next[gi].seiten.splice(pi, 1);
+    if (!next[gi].seiten.length) next.splice(gi, 1);
+    busy("Entferne „" + p.titel + "“ …");
+    try { await saveLinks(next, "Seite „" + p.titel + "“ entfernt"); busy("„" + p.titel + "“ ist entfernt."); }
+    catch (e) { busy("Entfernen hat nicht geklappt: " + errText(e)); log("fehler", "Seite entfernen: " + errText(e)); }
+  }
+  $("pgForm").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const m = $("pgMsg"); m.className = "msg err"; m.textContent = "";
+    const titel = $("pgTitle").value.trim(), url = $("pgUrl").value.trim(), gi = +$("pgGroup").value;
+    if (!titel) { m.textContent = "Gib der Seite einen Namen."; return; }
+    if (!URL_RE.test(url)) { m.textContent = "Die Adresse muss mit https:// anfangen."; return; }
+    if (!S.links[gi]) { m.textContent = "Wähle ein Register."; return; }
+    const next = JSON.parse(JSON.stringify(S.links));
+    next[gi].seiten.push({ titel, url });
+    $("pgBtn").disabled = true;
+    try { await saveLinks(next, "Seite „" + titel + "“ hinzugefügt"); m.className = "msg ok"; m.textContent = "„" + titel + "“ ist hinzugefügt."; $("pgTitle").value = ""; $("pgUrl").value = ""; }
+    catch (e) { m.textContent = "Hinzufügen hat nicht geklappt."; log("fehler", "Seite hinzufügen: " + errText(e)); }
+    finally { $("pgBtn").disabled = false; }
+  });
 
   function showResult(name, pw) {
     $("nwOut").textContent = "Benutzername: " + name + "\nPasswort: " + pw;
