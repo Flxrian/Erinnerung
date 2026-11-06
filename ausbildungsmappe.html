@@ -1,5 +1,6 @@
 <title>Meine Ausbildungsmappe</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<meta name="referrer" content="no-referrer">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -58,9 +59,9 @@ h1 {
 .who { font: 500 13px/1.4 var(--f-mono); color: var(--muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .who b { color: var(--ink); }
 
-/* Deckblatt / Anmeldung */
 .card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 22px; display: grid; gap: 14px; min-width: 0; }
 .card h2 { font: 700 20px/1.2 var(--f-display); margin: 0; }
+.card h3 { font: 700 16px/1.2 var(--f-display); margin: 6px 0 0; }
 label { display: grid; gap: 6px; font: 600 13px/1.2 var(--f-mono); letter-spacing: .04em; color: var(--muted); min-width: 0; }
 input {
   font: 500 17px/1.3 var(--f-display); color: var(--ink); background: var(--bg);
@@ -80,8 +81,8 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .msg { font-size: 15px; min-height: 1.2em; margin: 0; }
 .msg.err { color: var(--err); }
 .msg.ok { color: var(--ok); }
+.note { font-size: 14px; color: var(--muted); margin: 0; }
 
-/* Register mit Links */
 section.reg { display: grid; gap: 8px; }
 section.reg h2 { font: 600 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--c); margin: 0 0 2px 2px; }
 .ra { --c: var(--reg-a); } .rb { --c: var(--reg-b); } .rc { --c: var(--reg-c); } .rd { --c: var(--reg-d); }
@@ -99,31 +100,29 @@ a.page:focus-visible { outline-color: var(--c); }
   a.page:hover { translate: 4px 0; }
 }
 
-/* Verwaltung */
 .admin { display: grid; gap: 18px; padding-top: 8px; border-top: 2px dashed var(--rule); }
 .admin > h2 { font: 700 26px/1.1 var(--f-display); margin: 0; }
 .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 18px; align-items: start; }
 .row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
-.list { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
-.item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--rule); min-width: 0; }
+.list { display: grid; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--rule); min-width: 0; flex-wrap: wrap; }
 .item:first-child { border-top: 0; }
 .item .nm { font-weight: 700; overflow-wrap: anywhere; min-width: 0; }
 .item .sub { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
 .result { background: var(--ok-bg); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; }
-.result code { font: 600 15px/1.4 var(--f-mono); user-select: all; overflow-wrap: anywhere; }
-.note { font-size: 14px; color: var(--muted); margin: 0; }
-
+.result .sub { font: 600 12px/1.3 var(--f-mono); color: var(--ok); }
+.result code { font: 600 15px/1.4 var(--f-mono); user-select: all; overflow-wrap: anywhere; white-space: pre-line; }
 .pill { font: 600 12px/1 var(--f-mono); padding: 5px 9px; border-radius: 99px; white-space: nowrap; }
 .pill.ok { color: var(--ok); background: var(--ok-bg); }
 .pill.err { color: var(--err); background: var(--err-bg); }
 .pill.warn { color: var(--warn); background: var(--warn-bg); }
 .pill.info { color: var(--muted); background: var(--bg); }
 .status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; }
-.status strong { font-size: 17px; }
 .log { max-height: 420px; overflow-y: auto; }
-.log .item { align-items: start; }
+.log .item { align-items: start; flex-wrap: nowrap; }
 .log .txt { display: grid; gap: 3px; min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
 .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.busy { font: 500 13px/1.3 var(--f-mono); color: var(--muted); }
 </style>
 
 <div class="wrap" id="app">
@@ -132,7 +131,20 @@ a.page:focus-visible { outline-color: var(--c); }
     <div class="who" id="who" hidden><span>Angemeldet als <b id="whoName"></b></span><button class="ghost small" id="logout" type="button">Abmelden</button></div>
   </div>
 
-  <form class="card" id="loginForm" autocomplete="on">
+  <p class="note" id="boot">Wird geladen …</p>
+
+  <!-- Ersteinrichtung: nur der Besitzer der Seite -->
+  <form class="card" id="setupForm" hidden>
+    <h2>Admin-Zugang einrichten</h2>
+    <p class="note">Leg einmalig deinen Admin-Zugang fest. Das Passwort kennst nur du. Es wird nirgends gespeichert und lässt sich nicht wiederherstellen.</p>
+    <label for="suName">Benutzername<input id="suName" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="32" required></label>
+    <label for="suPass">Passwort (mindestens 14 Zeichen)<input id="suPass" type="password" autocomplete="new-password" required></label>
+    <label for="suPass2">Passwort wiederholen<input id="suPass2" type="password" autocomplete="new-password" required></label>
+    <button type="submit" id="suBtn">Einrichten</button>
+    <p class="msg err" id="suMsg" role="alert"></p>
+  </form>
+
+  <form class="card" id="loginForm" hidden>
     <h2>Anmelden</h2>
     <label for="lgName">Benutzername<input id="lgName" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
     <label for="lgPass">Passwort
@@ -143,18 +155,20 @@ a.page:focus-visible { outline-color: var(--c); }
   </form>
 
   <div id="links" hidden></div>
+  <p class="note" id="idle" hidden>Aus Sicherheitsgründen wirst du nach 15 Minuten ohne Aktivität abgemeldet.</p>
 
   <div class="admin" id="admin" hidden>
     <h2>Verwaltung</h2>
-    <p class="note" id="adNote" hidden></p>
+    <p class="busy" id="busy" role="status"></p>
     <div class="cols">
       <div class="card">
         <h2>Zugänge</h2>
         <div class="list" id="accList"></div>
+        <h3>Neuer Zugang</h3>
         <form id="newForm" style="display:grid;gap:12px">
           <div class="row2">
             <label for="nwName">Benutzername<input id="nwName" autocapitalize="none" spellcheck="false" maxlength="32" required></label>
-            <label for="nwPass">Passwort<input id="nwPass" maxlength="64" required></label>
+            <label for="nwPass">Passwort<input id="nwPass" maxlength="64" autocomplete="off" required></label>
           </div>
           <div class="btns">
             <button type="submit" id="nwBtn">Zugang anlegen</button>
@@ -163,10 +177,20 @@ a.page:focus-visible { outline-color: var(--c); }
           <p class="msg" id="nwMsg" role="status"></p>
         </form>
         <div class="result" id="nwResult" hidden>
-          <span class="sub" style="font:600 12px var(--f-mono);color:var(--ok)">ZUGANG ANGELEGT · JETZT NOTIEREN</span>
+          <span class="sub">JETZT NOTIEREN · VERSCHWINDET NACH 2 MINUTEN</span>
           <code id="nwOut"></code>
           <div class="btns"><button type="button" class="small" id="nwCopy">Kopieren</button></div>
         </div>
+        <h3>Mein Admin-Passwort ändern</h3>
+        <form id="apForm" style="display:grid;gap:12px">
+          <label for="apOld">Aktuelles Passwort<input id="apOld" type="password" autocomplete="current-password" required></label>
+          <div class="row2">
+            <label for="apNew">Neues Passwort<input id="apNew" type="password" autocomplete="new-password" required></label>
+            <label for="apNew2">Wiederholen<input id="apNew2" type="password" autocomplete="new-password" required></label>
+          </div>
+          <button type="submit" id="apBtn">Passwort ändern</button>
+          <p class="msg" id="apMsg" role="status"></p>
+        </form>
       </div>
 
       <div class="card">
@@ -185,26 +209,32 @@ a.page:focus-visible { outline-color: var(--c); }
 <script>
 (function () {
   "use strict";
-  const CFG = {"iter": 310000, "admin": {"name": "dachs-r40a8", "salt": "fASsjptTwfXElEK3vRoOPQ==", "iv": "8GOeakCoYImcWk6V", "ct": "mRRXJITUSST4+QXBIRumMrFBIKKctK+PK9Y9W0gdFU9W2KwxUzCZXuGIjbBViU1c"}, "links": {"iv": "HaDnvc1yoROnEKps", "ct": "5qIz4ecbaHEJ/HSRAv9Q0PwOCCD4l/x/X1Fc7eCuLlkqj/oGtr5bxn1xW2BfCewF9Kr+6157p0uNouiic3cB+B6GONO66C03DvVaGY/odzFkkb/NHB9fcmNQNT9aJLqP3uMLNjpC70qknymWtt0OHV7ed9HiqjHipDrhScq4vV0zTXM7gFPhVtaUgsftDr1Ozi+JtJqGrkZTPX0QCXxV+wgLoox9yBNGbtJ67kB3HmJmNLM9FUyqpx1gticp0sgSC47Fwl5XIDq7jikFV/oRaNxJqdI4Pq4Hv1ZK22fYhjG4t7ER2Rvo+7zBXiaounGkggGJOtBnN5uSJVRi2MqZpXdilMOnHUTSrXsN5ZP6KaihBEAQfT1a3QtBwbO/pFQ8YBKEm5UQNn2DZpIcFlRvQuXyHJ4j8I1V3S+6AOZwnYqhpEzA+fIycbWpuiUoDCl62X8jzXRejVDmsWlhdNft+sdTFpQomKYjxHj8Ysc839Z4ILbekyAQ5bR4dptX0vi2dTfp2eLHR/sdXe5GiASFcqhrOxWEzH90CR+W0WdFAEF3aUy5I+oAsZaflrshcnd65fe3IuzbZR0D7QrDz7zF3WO2fa/8/IxlhfQIH2FzzIurTANPN2KjtrSglwiAgU2cb4NYzSkNw41KjSJEfeJG5gceVyNtUTinhBdrCxbLszdXxaZEiisgmX6VQCLBMMYKkftzhoKynAqXuC1l+USzdP8PEfrOHNgmd2RqNzrHRIp5wCTOsgpYMeZJWZB2PkKWuBGffuFCo5L0DzYmz0+ThRVS3e02FNKNmtW/zzC77oAcYQxylUb3zjrsZamRqwMHyOkvmmR1PQDHdklPnmeMOdWR9pGad2zYKqBXS+y/UrTabHccUnjmy0p7yKDIpHT2+Pnfj3/F+/5NrpWLCKfEcbLX2tvglm3qt0HHBldbs5HF+K5G7RGLP51SVjd+Vz8BX0UoH1wjrZC80CqGPBGCJ/skx2qIkyR9RCRB2ho/2RHsW8Ki6RKmLlguZF2JqiBsVoBpFQ1PE1J7"}};
+  /* Sicherheitsmodell
+     - Die Seite selbst enthält keine Links und keine Schlüssel.
+     - Die Linkliste liegt verschlüsselt (AES-256-GCM) mit einem Inhaltsschlüssel K in der Datenbank.
+     - Jeder Zugang hat ein eigenes RSA-OAEP-Schlüsselpaar. Der private Schlüssel ist mit dem Passwort
+       (PBKDF2-SHA-256, 600 000 Runden) verschlüsselt, K ist mit dem öffentlichen Schlüssel verpackt.
+     - Löschen eines Zugangs oder Ändern des Admin-Passworts tauscht K aus: alte Kopien entschlüsseln nichts Neues mehr.
+     - Der Schlüssel bleibt nur im Arbeitsspeicher: Neuladen, Abmelden oder 15 Minuten Inaktivität = neu anmelden. */
+  const ITER = 600000, RSA = { name: "RSA-OAEP", hash: "SHA-256" }, IDLE_MS = 15 * 60 * 1000;
+  const NAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
   const $ = id => document.getElementById(id);
   const te = new TextEncoder(), td = new TextDecoder();
   const toB64 = b => { let s = ""; new Uint8Array(b).forEach(x => s += String.fromCharCode(x)); return btoa(s); };
   const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
   const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
   const fmt = t => new Date(t).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
-  const NAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
+  const errText = e => String(e && (e.code || e.message) || e).slice(0, 200);
 
-  /* ---------- Plattform (Datenbank + Nutzer) ---------- */
+  /* ---------- Plattform ---------- */
   const caps = (async () => {
     if (!window.claude || !window.claude.use) return { db: null, user: null };
-    const [db, user] = await Promise.all([
-      window.claude.use("db").catch(() => null),
-      window.claude.use("user").catch(() => null)
-    ]);
+    const [db, user] = await Promise.all([window.claude.use("db").catch(() => null), window.claude.use("user").catch(() => null)]);
     return { db, user };
   })();
+  const DB = async () => { const { db } = await caps; if (!db) throw new Error("keine Datenbank"); return db; };
 
-  /* ---------- Protokoll: jeder Fehler wird gespeichert ---------- */
+  /* ---------- Protokoll ---------- */
   let logCount = 0, logDocSet = false, inLog = false;
   async function log(typ, text) {
     if (inLog || logCount >= 30) return;
@@ -214,82 +244,159 @@ a.page:focus-visible { outline-color: var(--c); }
       const uid = db && user ? await user.id() : null;
       if (!uid) return;
       if (!logDocSet) { await db.doc("protokoll/" + uid).set({ zuletzt: Date.now() }); logDocSet = true; }
-      await db.collection("protokoll/" + uid + "/eintraege").add({
-        zeit: Date.now(), typ, text: String(text).slice(0, 500), konto: session ? session.name : ""
-      });
-    } catch (e) { /* Protokoll darf die Seite nie blockieren */ }
+      await db.collection("protokoll/" + uid + "/eintraege").add({ zeit: Date.now(), typ, text: String(text).slice(0, 500), konto: S ? S.name : "" });
+    } catch (e) { /* Protokoll blockiert nie die Seite */ }
     finally { inLog = false; }
   }
   window.addEventListener("error", e => log("fehler", (e.message || "Unbekannter Fehler") + (e.lineno ? " (Zeile " + e.lineno + ")" : "")));
-  window.addEventListener("unhandledrejection", e => log("fehler", "Unbehandelt: " + (e.reason && (e.reason.message || e.reason.code) || String(e.reason))));
+  window.addEventListener("unhandledrejection", e => log("fehler", "Unbehandelt: " + errText(e.reason)));
 
-  /* ---------- Verschlüsselung ---------- */
-  async function kek(pw, salt) {
+  /* ---------- Krypto ---------- */
+  const rand = n => crypto.getRandomValues(new Uint8Array(n));
+  async function pwKey(pw, salt, iter) {
     const base = await crypto.subtle.importKey("raw", te.encode(pw), "PBKDF2", false, ["deriveKey"]);
-    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: CFG.iter, hash: "SHA-256" }, base,
-      { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: iter, hash: "SHA-256" }, base, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
   }
-  async function unwrap(acc, pw) {
-    const k = await kek(pw, fromB64(acc.salt));
-    return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(acc.iv) }, k, fromB64(acc.ct)));
-  }
-  async function wrap(master, pw) {
-    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await kek(pw, salt), master);
-    return { salt: toB64(salt), iv: toB64(iv), ct: toB64(ct) };
-  }
-  async function openLinks(master) {
-    const k = await crypto.subtle.importKey("raw", master, "AES-GCM", false, ["decrypt"]);
-    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(CFG.links.iv) }, k, fromB64(CFG.links.ct));
-    return JSON.parse(td.decode(pt));
-  }
+  async function aesEnc(key, bytes) { const iv = rand(12); return { iv: toB64(iv), ct: toB64(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, bytes)) }; }
+  async function aesDec(key, o) { return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(o.iv) }, key, fromB64(o.ct))); }
+  const kKey = raw => crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["encrypt", "decrypt"]);
 
-  /* ---------- Zufallsnamen und Passwörter ---------- */
-  const rnd = n => crypto.getRandomValues(new Uint32Array(n));
-  const pick = (s, n) => Array.from(rnd(n), x => s[x % s.length]).join("");
+  // Neues Schlüsselpaar, privater Teil mit dem Passwort verschlüsselt
+  async function newIdentity(pw) {
+    const pair = await crypto.subtle.generateKey(Object.assign({ modulusLength: 3072, publicExponent: new Uint8Array([1, 0, 1]) }, RSA), true, ["encrypt", "decrypt"]);
+    const salt = rand(16);
+    const priv = await aesEnc(await pwKey(pw, salt, ITER), await crypto.subtle.exportKey("pkcs8", pair.privateKey));
+    return { salt: toB64(salt), iter: ITER, pub: toB64(await crypto.subtle.exportKey("spki", pair.publicKey)), priv };
+  }
+  async function openIdentity(rec, pw) {
+    const raw = await aesDec(await pwKey(pw, fromB64(rec.salt), rec.iter || ITER), rec.priv);
+    return crypto.subtle.importKey("pkcs8", raw, RSA, false, ["decrypt"]);
+  }
+  async function wrapFor(pubB64, K) {
+    const pub = await crypto.subtle.importKey("spki", fromB64(pubB64), RSA, false, ["encrypt"]);
+    return toB64(await crypto.subtle.encrypt(RSA, pub, K));
+  }
+  async function unwrapWith(priv, b64) { return new Uint8Array(await crypto.subtle.decrypt(RSA, priv, fromB64(b64))); }
+  async function sealLinks(K, links) { return aesEnc(await kKey(K), te.encode(JSON.stringify(links))); }
+  async function openLinks(K, o) { return JSON.parse(td.decode(await aesDec(await kKey(K), o))); }
+
+  /* ---------- Zufall ---------- */
+  const pick = (s, n) => Array.from(crypto.getRandomValues(new Uint32Array(n)), x => s[x % s.length]).join("");
   const TIERE = ["falke", "luchs", "otter", "dachs", "kranich", "biber", "marder", "uhu", "igel", "fuchs"];
-  const randName = () => TIERE[rnd(1)[0] % TIERE.length] + "-" + pick("abcdefghijkmnpqrstuvwxyz23456789", 5);
+  const randName = () => TIERE[crypto.getRandomValues(new Uint32Array(1))[0] % TIERE.length] + "-" + pick("abcdefghijkmnpqrstuvwxyz23456789", 5);
   const randPass = () => [0, 1, 2, 3].map(() => pick("ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789", 5)).join("-");
+  function pwProblem(pw, min) {
+    if (pw.length < min) return "Das Passwort braucht mindestens " + min + " Zeichen.";
+    const kinds = [/[a-z]/, /[A-Z]/, /[0-9]/, /[^A-Za-z0-9]/].filter(r => r.test(pw)).length;
+    if (kinds < 3) return "Nimm mindestens drei Sorten: Kleinbuchstaben, Großbuchstaben, Ziffern, Sonderzeichen.";
+    return "";
+  }
 
-  /* ---------- Sitzung ---------- */
-  let session = null;
-  const SKEY = "ausbildungsmappe_sitzung";
-  const saveSess = s => { try { s ? sessionStorage.setItem(SKEY, JSON.stringify(s)) : sessionStorage.removeItem(SKEY); } catch (e) {} };
-  const loadSess = () => { try { return JSON.parse(sessionStorage.getItem(SKEY) || "null"); } catch (e) { return null; } };
+  /* ---------- Sperre nach Fehlversuchen (überlebt Neuladen) ---------- */
+  const LKEY = "ausbildungsmappe_sperre";
+  const getLock = () => { try { return JSON.parse(localStorage.getItem(LKEY) || '{"n":0,"bis":0}'); } catch (e) { return { n: 0, bis: 0 }; } };
+  const setLock = v => { try { localStorage.setItem(LKEY, JSON.stringify(v)); } catch (e) {} };
+  const memLock = getLock();
+  function failLock() {
+    memLock.n++;
+    if (memLock.n >= 3) memLock.bis = Date.now() + Math.min(3600000, 30000 * 2 ** (memLock.n - 3));
+    setLock(memLock);
+  }
 
-  let fails = 0, lockedUntil = 0;
+  /* ---------- Zustand (nur im Arbeitsspeicher) ---------- */
+  let S = null;            // { name, rolle, K, links, version }
+  let tresor = null;       // Datenbank-Dokument tresor/haupt
+  let konten = [];         // Zugänge (nur Admin)
+  let kontenLoaded = false;
+
+  async function loadTresor() {
+    const snap = await (await DB()).doc("tresor/haupt").get();
+    tresor = snap.exists ? snap.data() : null;
+    return tresor;
+  }
+
+  /* ---------- Start ---------- */
+  (async () => {
+    const { db, user } = await caps;
+    $("boot").hidden = true;
+    if (!db) { $("loginForm").hidden = false; $("lgMsg").textContent = "Diese Seite funktioniert nur auf claude.ai, wenn du dort angemeldet bist."; $("lgBtn").disabled = true; return; }
+    try { await loadTresor(); }
+    catch (e) { $("loginForm").hidden = false; $("lgMsg").textContent = "Die Seite lädt gerade nicht. Lade sie neu."; log("fehler", "Tresor laden: " + errText(e)); return; }
+    if (!tresor) {
+      const owner = user ? await user.canEdit().catch(() => false) : false;
+      if (owner) { $("setupForm").hidden = false; $("suName").value = randName(); $("suPass").focus(); }
+      else { $("loginForm").hidden = false; $("lgMsg").textContent = "Diese Seite ist noch nicht eingerichtet."; $("lgBtn").disabled = true; }
+      return;
+    }
+    $("loginForm").hidden = false; $("lgName").focus();
+  })();
+
+  /* ---------- Ersteinrichtung ---------- */
+  $("setupForm").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const m = $("suMsg"); m.textContent = "";
+    const name = $("suName").value.trim().toLowerCase(), pw = $("suPass").value;
+    if (!NAME_RE.test(name)) { m.textContent = "Benutzername: 3–32 Zeichen, nur Kleinbuchstaben, Ziffern, Punkt, Strich, Unterstrich."; return; }
+    const p = pwProblem(pw, 14); if (p) { m.textContent = p; return; }
+    if (pw !== $("suPass2").value) { m.textContent = "Die beiden Passwörter sind nicht gleich."; return; }
+    $("suBtn").disabled = true; $("suBtn").textContent = "Richte ein …";
+    try {
+      const db = await DB();
+      if ((await db.doc("tresor/haupt").get()).exists) { m.textContent = "Die Seite ist schon eingerichtet. Lade neu."; return; }
+      const src = await db.doc("einrichtung/links").get();
+      const links = src.exists ? src.data().gruppen : null;
+      if (!Array.isArray(links)) { m.textContent = "Die Linkliste fehlt. Bitte Claude, sie neu einzuspielen."; return; }
+      const K = rand(32), admin = await newIdentity(pw);
+      tresor = { version: 1, links: await sealLinks(K, links), admin: Object.assign({ name }, admin), adminKey: await wrapFor(admin.pub, K), eingerichtet: Date.now() };
+      await db.doc("tresor/haupt").set(tresor);
+      await db.doc("einrichtung/links").delete();   // Klartext entfernen
+      log("verwaltung", "Admin-Zugang eingerichtet");
+      $("suPass").value = $("suPass2").value = "";
+      $("setupForm").hidden = true;
+      begin({ name, rolle: "admin", K, links, version: 1 });
+    } catch (e) { m.textContent = "Einrichten hat nicht geklappt. Lade neu und versuch es nochmal."; log("fehler", "Einrichtung: " + errText(e)); }
+    finally { $("suBtn").disabled = false; $("suBtn").textContent = "Einrichten"; }
+  });
+
+  /* ---------- Anmeldung ---------- */
+  const FAKE = { salt: toB64(rand(16)), iter: ITER, priv: { iv: toB64(rand(12)), ct: toB64(rand(64)) } };
   $("loginForm").addEventListener("submit", async ev => {
     ev.preventDefault();
     const msg = $("lgMsg"); msg.textContent = "";
-    if (Date.now() < lockedUntil) { msg.textContent = "Zu viele Fehlversuche. Warte " + Math.ceil((lockedUntil - Date.now()) / 1000) + " Sekunden."; return; }
+    const now = Date.now();
+    if (now < memLock.bis) { msg.textContent = "Zu viele Fehlversuche. Warte noch " + Math.ceil((memLock.bis - now) / 1000) + " Sekunden."; return; }
     const name = $("lgName").value.trim().toLowerCase(), pw = $("lgPass").value;
     $("lgBtn").disabled = true; $("lgBtn").textContent = "Prüfe …";
     try {
-      let acc = null, rolle = "nutzer";
-      if (name === CFG.admin.name) { acc = CFG.admin; rolle = "admin"; }
+      await loadTresor();
+      if (!tresor) { msg.textContent = "Diese Seite ist noch nicht eingerichtet."; return; }
+      let rec = null, wrapped = null, rolle = "nutzer";
+      if (name === tresor.admin.name) { rec = tresor.admin; wrapped = tresor.adminKey; rolle = "admin"; }
       else if (NAME_RE.test(name)) {
-        const { db } = await caps;
-        if (!db) { msg.textContent = "Nutzerzugänge funktionieren nur, wenn du auf claude.ai angemeldet bist."; return; }
-        const snap = await db.collection("konten").doc(name).get();
-        if (snap.exists) acc = snap.data();
+        const d = await (await DB()).collection("konten").doc(name).get();
+        if (d.exists) { rec = d.data(); wrapped = rec.key; if (rec.keyVersion !== tresor.version) wrapped = null; }
       }
-      let master = null;
-      if (acc) { try { master = await unwrap(acc, pw); } catch (e) { master = null; } }
-      if (!master) {
-        fails++; if (fails >= 5) { lockedUntil = Date.now() + 30000; fails = 0; }
+      let K = null, links = null;
+      try {
+        // Unbekannte Namen durchlaufen dieselbe Rechenzeit, damit niemand Namen erraten kann
+        const priv = await openIdentity(rec || FAKE, pw);
+        if (!wrapped) throw new Error("kein Schlüssel");
+        K = await unwrapWith(priv, wrapped);
+        links = await openLinks(K, tresor.links);
+      } catch (e) { K = null; }
+      if (!K) {
+        failLock();
         msg.textContent = "Benutzername oder Passwort stimmt nicht.";
         log("anmeldung-fehlgeschlagen", "Falsche Anmeldung für „" + name.slice(0, 40) + "“");
         return;
       }
-      fails = 0;
-      session = { name, rolle, k: toB64(master) };
-      saveSess(session);
+      memLock.n = 0; memLock.bis = 0; setLock(memLock);
       $("lgPass").value = "";
-      await show();
+      begin({ name, rolle, K, links, version: tresor.version });
       log("anmeldung", name + " hat sich angemeldet");
     } catch (e) {
-      msg.textContent = "Anmeldung hat nicht geklappt. Lade die Seite neu und versuch es nochmal.";
-      log("fehler", "Anmeldung: " + (e.message || e.code || e));
+      msg.textContent = "Anmeldung hat nicht geklappt. Lade die Seite neu.";
+      log("fehler", "Anmeldung: " + errText(e));
     } finally { $("lgBtn").disabled = false; $("lgBtn").textContent = "Anmelden"; }
   });
   $("lgShow").onclick = () => {
@@ -297,93 +404,140 @@ a.page:focus-visible { outline-color: var(--c); }
     p.type = show ? "text" : "password"; $("lgShow").textContent = show ? "Verbergen" : "Zeigen";
     $("lgShow").setAttribute("aria-label", show ? "Passwort verbergen" : "Passwort anzeigen");
   };
-  $("logout").onclick = () => {
-    log("abmeldung", (session ? session.name : "") + " hat sich abgemeldet");
-    session = null; saveSess(null); stopAdmin();
-    $("links").hidden = true; $("links").replaceChildren(); $("admin").hidden = true; $("who").hidden = true;
-    $("loginForm").hidden = false; $("app").classList.remove("wide"); $("lgName").focus();
-  };
 
-  async function show() {
-    let groups;
-    try { groups = await openLinks(fromB64(session.k)); }
-    catch (e) { log("fehler", "Links ließen sich nicht entschlüsseln"); session = null; saveSess(null); $("lgMsg").textContent = "Die Seite konnte nicht entschlüsselt werden. Bitte neu anmelden."; return; }
+  /* ---------- Sitzung ---------- */
+  let lastAct = Date.now(), idleTimer = null, unsubAcc = null;
+  ["pointerdown", "keydown", "scroll", "touchstart"].forEach(t => addEventListener(t, () => { lastAct = Date.now(); }, { passive: true }));
+  function begin(sess) {
+    S = sess; lastAct = Date.now();
+    renderLinks();
+    $("loginForm").hidden = true; $("idle").hidden = false;
+    $("whoName").textContent = S.name + (S.rolle === "admin" ? " (Admin)" : ""); $("who").hidden = false;
+    clearInterval(idleTimer);
+    idleTimer = setInterval(() => { if (Date.now() - lastAct > IDLE_MS) logout("Du wurdest nach 15 Minuten ohne Aktivität abgemeldet."); }, 15000);
+    if (S.rolle === "admin") { $("app").classList.add("wide"); startAdmin(); }
+  }
+  function logout(reason) {
+    if (S) log("abmeldung", S.name + (reason ? " automatisch abgemeldet" : " hat sich abgemeldet"));
+    if (S && S.K) S.K.fill(0);
+    S = null; konten = []; kontenLoaded = false;
+    clearInterval(idleTimer);
+    if (unsubAcc) { try { unsubAcc(); } catch (e) {} unsubAcc = null; }
+    ["links", "accList", "logList"].forEach(id => $(id).replaceChildren());
+    $("nwResult").hidden = true; $("nwOut").textContent = "";
+    $("links").hidden = $("admin").hidden = $("who").hidden = $("idle").hidden = true;
+    $("loginForm").hidden = false; $("app").classList.remove("wide");
+    $("lgMsg").textContent = reason || "";
+    $("lgName").focus();
+  }
+  $("logout").onclick = () => logout("");
+  // Wenn der Tab im Hintergrund war und die Frist abgelaufen ist, sofort abmelden
+  document.addEventListener("visibilitychange", () => { if (S && !document.hidden && Date.now() - lastAct > IDLE_MS) logout("Du wurdest nach 15 Minuten ohne Aktivität abgemeldet."); });
+
+  function renderLinks() {
     const box = $("links"); box.replaceChildren();
     box.style.display = "grid"; box.style.gap = "28px";
-    groups.forEach(g => {
-      const s = el("section", "reg r" + g.farbe); s.append(el("h2", null, g.gruppe));
-      g.seiten.forEach(p => {
-        if (!/^https:\/\//.test(p.url)) return;
-        const a = el("a", "page", p.titel); a.href = p.url; a.target = "_blank"; a.rel = "noopener";
+    S.links.forEach(g => {
+      const s = el("section", "reg r" + (/^[a-d]$/.test(g.farbe) ? g.farbe : "a")); s.append(el("h2", null, g.gruppe));
+      (g.seiten || []).forEach(p => {
+        if (!/^https:\/\/[^\s]+$/.test(p.url)) return;
+        const a = el("a", "page", p.titel); a.href = p.url; a.target = "_blank"; a.rel = "noopener noreferrer"; a.referrerPolicy = "no-referrer";
         s.append(a);
       });
       box.append(s);
     });
-    $("loginForm").hidden = true; box.hidden = false;
-    $("whoName").textContent = session.name + (session.rolle === "admin" ? " (Admin)" : ""); $("who").hidden = false;
-    if (session.rolle === "admin") { $("app").classList.add("wide"); startAdmin(); }
+    box.hidden = false;
   }
 
-  /* ---------- Verwaltung (nur Admin) ---------- */
-  let unsubAcc = null, canWrite = false;
-  function stopAdmin() { if (unsubAcc) { try { unsubAcc(); } catch (e) {} unsubAcc = null; } }
+  /* ---------- Verwaltung ---------- */
+  const busy = t => { $("busy").textContent = t || ""; };
+  const info = t => { const r = el("div", "item"); r.append(el("span", "sub", t)); return r; };
 
   async function startAdmin() {
     $("admin").hidden = false;
     $("nwName").value = randName(); $("nwPass").value = randPass();
-    const { db, user } = await caps;
-    const note = $("adNote");
-    if (!db) {
-      note.hidden = false; note.textContent = "Zugänge und Protokoll sind nur auf claude.ai verfügbar, wenn du dort angemeldet bist.";
-      ["nwBtn", "logClear", "logReload"].forEach(id => $(id).disabled = true);
-      $("accList").replaceChildren(adminRow()); $("logPill").textContent = "nicht verfügbar"; return;
-    }
-    try { canWrite = !!(user && await user.canEdit()); } catch (e) { canWrite = false; }
-    if (!canWrite) {
-      note.hidden = false; note.textContent = "Zugänge anlegen, löschen und das Protokoll lesen kann nur der Besitzer dieser Seite auf claude.ai.";
-      ["nwBtn", "logClear"].forEach(id => $(id).disabled = true);
-    }
-    stopAdmin();
-    const timer = setTimeout(() => { $("accList").replaceChildren(adminRow(), info("Zugänge laden gerade nicht.")); }, 10000);
+    const db = await DB();
+    if (unsubAcc) { try { unsubAcc(); } catch (e) {} }
+    const t = setTimeout(() => $("accList").replaceChildren(info("Zugänge laden gerade nicht.")), 10000);
     unsubAcc = db.collection("konten").onSnapshot(snap => {
-      clearTimeout(timer);
-      const rows = snap.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.erstellt || 0) - (b.erstellt || 0));
-      renderAccounts(rows);
-    }, err => { clearTimeout(timer); log("fehler", "Zugänge laden: " + (err && (err.code || err.message))); $("accList").replaceChildren(adminRow(), info("Zugänge ließen sich nicht laden.")); });
+      clearTimeout(t);
+      kontenLoaded = !snap.metadata || !snap.metadata.fromCache;
+      konten = snap.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.erstellt || 0) - (b.erstellt || 0));
+      renderAccounts();
+    }, err => { clearTimeout(t); log("fehler", "Zugänge laden: " + errText(err)); $("accList").replaceChildren(info("Zugänge ließen sich nicht laden.")); });
     loadLog();
   }
-  const info = t => { const r = el("div", "item"); r.append(el("span", "sub", t)); return r; };
-  function adminRow() {
-    const r = el("div", "item"), l = el("div");
-    l.append(el("div", "nm", CFG.admin.name), el("div", "sub", "Admin · fest eingebaut"));
-    r.append(l, el("span", "pill info", "Admin")); return r;
+
+  function armButton(b, label, armedLabel, action) {
+    let t = null;
+    b.onclick = async () => {
+      if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = armedLabel; t = setTimeout(() => { b.classList.remove("armed"); b.textContent = label; }, 4000); return; }
+      clearTimeout(t); b.classList.remove("armed"); b.textContent = label; b.disabled = true;
+      try { await action(); } finally { b.disabled = false; }
+    };
   }
-  function renderAccounts(rows) {
-    const list = $("accList"); list.replaceChildren(adminRow());
-    if (!rows.length) list.append(info("Noch keine weiteren Zugänge."));
-    rows.forEach(a => {
-      const r = el("div", "item"), l = el("div");
-      l.append(el("div", "nm", a.name || a.id), el("div", "sub", "Nutzer · seit " + (a.erstellt ? fmt(a.erstellt) : "–")));
-      const b = el("button", "danger small", "Löschen"); b.type = "button"; b.disabled = !canWrite;
-      let t = null;
-      b.onclick = async () => {
-        if (!b.classList.contains("armed")) {
-          b.classList.add("armed"); b.textContent = "Wirklich löschen?";
-          t = setTimeout(() => { b.classList.remove("armed"); b.textContent = "Löschen"; }, 4000); return;
-        }
-        clearTimeout(t); b.disabled = true;
-        try {
-          const { db } = await caps;
-          await db.collection("konten").doc(a.id).delete();
-          log("verwaltung", "Zugang „" + a.id + "“ gelöscht");
-        } catch (e) {
-          b.disabled = false; b.classList.remove("armed"); b.textContent = "Löschen";
-          $("nwMsg").className = "msg err"; $("nwMsg").textContent = "Löschen hat nicht geklappt.";
-          log("fehler", "Zugang löschen: " + (e.code || e.message));
-        }
-      };
-      r.append(l, b); list.append(r);
+
+  function renderAccounts() {
+    if (!S) return;
+    const list = $("accList"); list.replaceChildren();
+    const ad = el("div", "item"), l0 = el("div");
+    l0.append(el("div", "nm", tresor.admin.name), el("div", "sub", "Admin"));
+    ad.append(l0, el("span", "pill info", "Admin")); list.append(ad);
+    if (!konten.length) list.append(info("Noch keine weiteren Zugänge."));
+    konten.forEach(a => {
+      const r = el("div", "item"), l = el("div"), bs = el("div", "btns");
+      const stale = a.keyVersion !== tresor.version;
+      l.append(el("div", "nm", a.name || a.id), el("div", "sub", "seit " + (a.erstellt ? fmt(a.erstellt) : "–") + (stale ? " · Schlüssel veraltet" : "")));
+      const reset = el("button", "ghost small", "Neues Passwort"); reset.type = "button";
+      reset.onclick = () => resetAccount(a);
+      const del = el("button", "danger small", "Löschen"); del.type = "button";
+      armButton(del, "Löschen", "Wirklich löschen?", () => deleteAccount(a));
+      bs.append(reset, del); r.append(l, bs); list.append(r);
     });
+  }
+
+  function showResult(name, pw) {
+    $("nwOut").textContent = "Benutzername: " + name + "\nPasswort: " + pw;
+    $("nwResult").hidden = false;
+    clearTimeout(showResult.t);
+    showResult.t = setTimeout(() => { $("nwResult").hidden = true; $("nwOut").textContent = ""; }, 120000);
+  }
+
+  // Neuen Inhaltsschlüssel erzeugen und für alle verbleibenden Zugänge neu verpacken
+  async function rotate(adminRec, without) {
+    if (!kontenLoaded) throw new Error("Zugänge sind noch nicht vollständig geladen. Warte kurz und versuch es nochmal.");
+    const db = await DB();
+    const K2 = rand(32), version = (tresor.version || 1) + 1;
+    const keep = konten.filter(a => a.id !== without);
+    for (const a of keep) {
+      await db.collection("konten").doc(a.id).update({ key: await wrapFor(a.pub, K2), keyVersion: version });
+    }
+    const admin = adminRec || tresor.admin;
+    const next = Object.assign({}, tresor, { version, admin, links: await sealLinks(K2, S.links), adminKey: await wrapFor(admin.pub, K2) });
+    await db.doc("tresor/haupt").set(next);
+    tresor = next; S.K.fill(0); S.K = K2; S.version = version;
+  }
+
+  async function deleteAccount(a) {
+    busy("Lösche „" + a.id + "“ und tausche den Schlüssel aus …");
+    try {
+      await (await DB()).collection("konten").doc(a.id).delete();
+      konten = konten.filter(x => x.id !== a.id);
+      await rotate(null, a.id);
+      log("verwaltung", "Zugang „" + a.id + "“ gelöscht, Schlüssel ausgetauscht");
+      busy("„" + a.id + "“ ist gelöscht. Alte Kopien des Schlüssels sind jetzt wertlos.");
+    } catch (e) { busy("Löschen hat nicht geklappt: " + errText(e)); log("fehler", "Zugang löschen: " + errText(e)); }
+  }
+
+  async function resetAccount(a) {
+    const pw = randPass();
+    busy("Erzeuge neues Passwort für „" + a.id + "“ …");
+    try {
+      const id = await newIdentity(pw);
+      await (await DB()).collection("konten").doc(a.id).set(Object.assign({ name: a.id, rolle: "nutzer", erstellt: a.erstellt || Date.now() }, id, { key: await wrapFor(id.pub, S.K), keyVersion: tresor.version }));
+      showResult(a.id, pw); busy("");
+      log("verwaltung", "Passwort für „" + a.id + "“ neu gesetzt");
+    } catch (e) { busy("Zurücksetzen hat nicht geklappt: " + errText(e)); log("fehler", "Passwort zurücksetzen: " + errText(e)); }
   }
 
   $("nwDice").onclick = () => { $("nwName").value = randName(); $("nwPass").value = randPass(); };
@@ -391,100 +545,82 @@ a.page:focus-visible { outline-color: var(--c); }
     ev.preventDefault();
     const m = $("nwMsg"); m.className = "msg err"; m.textContent = "";
     const name = $("nwName").value.trim().toLowerCase(), pw = $("nwPass").value;
-    if (!NAME_RE.test(name)) { m.textContent = "Benutzername: 3–32 Zeichen, nur Kleinbuchstaben, Ziffern, Punkt, Strich und Unterstrich."; return; }
-    if (name === CFG.admin.name) { m.textContent = "Diesen Namen hat schon der Admin."; return; }
-    if (pw.length < 10) { m.textContent = "Das Passwort braucht mindestens 10 Zeichen."; return; }
-    $("nwBtn").disabled = true;
+    if (!NAME_RE.test(name)) { m.textContent = "Benutzername: 3–32 Zeichen, nur Kleinbuchstaben, Ziffern, Punkt, Strich, Unterstrich."; return; }
+    if (name === tresor.admin.name) { m.textContent = "Diesen Namen hat schon der Admin."; return; }
+    const p = pwProblem(pw, 12); if (p) { m.textContent = p; return; }
+    $("nwBtn").disabled = true; busy("Erzeuge Schlüssel für „" + name + "“ …");
     try {
-      const { db } = await caps;
-      const ref = db.collection("konten").doc(name);
+      const ref = (await DB()).collection("konten").doc(name);
       if ((await ref.get()).exists) { m.textContent = "Diesen Benutzernamen gibt es schon."; return; }
-      const w = await wrap(fromB64(session.k), pw);
-      await ref.set(Object.assign({ name, rolle: "nutzer", erstellt: Date.now() }, w));
-      $("nwOut").textContent = "Benutzername: " + name + "\nPasswort: " + pw;
-      $("nwOut").style.whiteSpace = "pre-line";
-      $("nwResult").hidden = false;
+      const id = await newIdentity(pw);
+      await ref.set(Object.assign({ name, rolle: "nutzer", erstellt: Date.now() }, id, { key: await wrapFor(id.pub, S.K), keyVersion: tresor.version }));
+      showResult(name, pw);
       m.className = "msg ok"; m.textContent = "Zugang „" + name + "“ ist angelegt.";
       log("verwaltung", "Zugang „" + name + "“ angelegt");
       $("nwName").value = randName(); $("nwPass").value = randPass();
-    } catch (e) {
-      m.textContent = e && e.code === "invalid_argument" ? "Nur der Besitzer der Seite darf Zugänge anlegen." : "Anlegen hat nicht geklappt. Versuch es nochmal.";
-      log("fehler", "Zugang anlegen: " + (e.code || e.message));
-    } finally { $("nwBtn").disabled = !canWrite; }
+    } catch (e) { m.textContent = "Anlegen hat nicht geklappt."; log("fehler", "Zugang anlegen: " + errText(e)); }
+    finally { $("nwBtn").disabled = false; busy(""); }
   });
   $("nwCopy").onclick = () => {
-    const txt = $("nwOut").textContent;
-    navigator.clipboard.writeText(txt).then(() => { $("nwCopy").textContent = "Kopiert"; setTimeout(() => $("nwCopy").textContent = "Kopieren", 2000); })
+    navigator.clipboard.writeText($("nwOut").textContent).then(() => { $("nwCopy").textContent = "Kopiert"; setTimeout(() => $("nwCopy").textContent = "Kopieren", 2000); })
       .catch(() => { const r = document.createRange(); r.selectNodeContents($("nwOut")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
   };
 
+  $("apForm").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const m = $("apMsg"); m.className = "msg err"; m.textContent = "";
+    const pw = $("apNew").value;
+    const p = pwProblem(pw, 14); if (p) { m.textContent = p; return; }
+    if (pw !== $("apNew2").value) { m.textContent = "Die beiden neuen Passwörter sind nicht gleich."; return; }
+    $("apBtn").disabled = true; busy("Prüfe aktuelles Passwort …");
+    try {
+      try { await openIdentity(tresor.admin, $("apOld").value); }
+      catch (e) { m.textContent = "Das aktuelle Passwort stimmt nicht."; log("anmeldung-fehlgeschlagen", "Falsches aktuelles Passwort beim Ändern"); return; }
+      busy("Erzeuge neuen Admin-Schlüssel und tausche den Inhaltsschlüssel aus …");
+      const id = await newIdentity(pw);
+      await rotate(Object.assign({ name: tresor.admin.name }, id), null);
+      ["apOld", "apNew", "apNew2"].forEach(i => $(i).value = "");
+      m.className = "msg ok"; m.textContent = "Admin-Passwort geändert.";
+      log("verwaltung", "Admin-Passwort geändert, Schlüssel ausgetauscht");
+    } catch (e) { m.textContent = "Ändern hat nicht geklappt."; log("fehler", "Admin-Passwort ändern: " + errText(e)); }
+    finally { $("apBtn").disabled = false; busy(""); }
+  });
+
   /* ---------- Protokoll anzeigen ---------- */
-  const TYP = {
-    "fehler": ["Fehler", "err"], "anmeldung-fehlgeschlagen": ["Falsches Passwort", "warn"],
-    "anmeldung": ["Anmeldung", "info"], "abmeldung": ["Abmeldung", "info"], "verwaltung": ["Verwaltung", "info"]
-  };
+  const TYP = { "fehler": ["Fehler", "err"], "anmeldung-fehlgeschlagen": ["Falsches Passwort", "warn"], "anmeldung": ["Anmeldung", "info"], "abmeldung": ["Abmeldung", "info"], "verwaltung": ["Verwaltung", "info"] };
   let logRefs = [];
   async function loadLog() {
-    const { db } = await caps; if (!db) return;
     const list = $("logList"), pill = $("logPill");
     pill.className = "pill info"; pill.textContent = "wird geladen";
     try {
+      const db = await DB();
       const people = await db.collection("protokoll").get();
-      const parts = await Promise.all(people.docs.map(p =>
-        db.collection("protokoll/" + p.id + "/eintraege").orderBy("zeit", "desc").limit(100).get()));
-      logRefs = [];
-      const rows = [];
-      parts.forEach((snap, i) => snap.docs.forEach(d => {
-        logRefs.push("protokoll/" + people.docs[i].id + "/eintraege/" + d.id);
-        rows.push(d.data());
-      }));
+      const parts = await Promise.all(people.docs.map(p => db.collection("protokoll/" + p.id + "/eintraege").orderBy("zeit", "desc").limit(100).get()));
+      logRefs = []; const rows = [];
+      parts.forEach((snap, i) => snap.docs.forEach(d => { logRefs.push("protokoll/" + people.docs[i].id + "/eintraege/" + d.id); rows.push(d.data()); }));
       rows.sort((a, b) => b.zeit - a.zeit);
       const week = Date.now() - 7 * 864e5;
       const errs = rows.filter(r => r.typ === "fehler" && r.zeit > week).length;
       const bad = rows.filter(r => r.typ === "anmeldung-fehlgeschlagen" && r.zeit > week).length;
-      if (errs) { pill.className = "pill err"; pill.textContent = errs + (errs === 1 ? " Fehler" : " Fehler"); }
+      if (errs) { pill.className = "pill err"; pill.textContent = errs + " Fehler"; }
       else if (bad) { pill.className = "pill warn"; pill.textContent = bad + "× falsches Passwort"; }
       else { pill.className = "pill ok"; pill.textContent = "Alles in Ordnung"; }
-      $("logSummary").textContent = "Letzte 7 Tage: " + errs + " Fehler, " + bad + " falsche Anmeldungen. Zuletzt geprüft " + fmt(Date.now()) + ".";
+      $("logSummary").textContent = "Letzte 7 Tage: " + errs + " Fehler, " + bad + " falsche Anmeldungen. Geprüft " + fmt(Date.now()) + ".";
       list.replaceChildren();
       if (!rows.length) list.append(info("Noch keine Einträge."));
       rows.slice(0, 150).forEach(r => {
-        const [lab, cls] = TYP[r.typ] || [r.typ, "info"];
+        const [lab, cls] = TYP[r.typ] || [String(r.typ), "info"];
         const it = el("div", "item"), t = el("div", "txt");
-        t.append(el("span", null, r.text), el("span", "sub", fmt(r.zeit) + (r.konto ? " · " + r.konto : "")));
+        t.append(el("span", null, String(r.text)), el("span", "sub", fmt(r.zeit) + (r.konto ? " · " + r.konto : "")));
         it.append(t, el("span", "pill " + cls, lab)); list.append(it);
       });
-    } catch (e) {
-      pill.className = "pill info"; pill.textContent = "nicht lesbar";
-      list.replaceChildren(info(canWrite ? "Das Protokoll ließ sich nicht laden." : "Nur der Besitzer der Seite kann das Protokoll lesen."));
-    }
+    } catch (e) { pill.className = "pill info"; pill.textContent = "nicht lesbar"; list.replaceChildren(info("Nur der Besitzer der Seite kann das Protokoll lesen.")); }
   }
   $("logReload").onclick = loadLog;
-  let clearT = null;
-  $("logClear").onclick = async () => {
-    const b = $("logClear");
-    if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Wirklich leeren?"; clearT = setTimeout(() => { b.classList.remove("armed"); b.textContent = "Protokoll leeren"; }, 4000); return; }
-    clearTimeout(clearT); b.classList.remove("armed"); b.textContent = "Protokoll leeren"; b.disabled = true;
-    try { const { db } = await caps; for (const p of logRefs) await db.doc(p).delete(); }
-    catch (e) { log("fehler", "Protokoll leeren: " + (e.code || e.message)); }
-    b.disabled = false; loadLog();
-  };
-
-  /* ---------- Start ---------- */
-  if (!CFG) { $("lgMsg").textContent = "Diese Seite ist noch nicht eingerichtet."; return; }
-  const saved = loadSess();
-  if (saved && saved.k && saved.name) {
-    session = saved;
-    (async () => {
-      if (session.rolle !== "admin") {
-        const { db } = await caps;
-        if (db) {
-          try { if (!(await db.collection("konten").doc(session.name).get()).exists) { session = null; saveSess(null); $("lgMsg").textContent = "Dein Zugang wurde gelöscht."; return; } }
-          catch (e) {}
-        }
-      }
-      show();
-    })();
-  }
+  armButton($("logClear"), "Protokoll leeren", "Wirklich leeren?", async () => {
+    try { const db = await DB(); for (const p of logRefs) await db.doc(p).delete(); }
+    catch (e) { log("fehler", "Protokoll leeren: " + errText(e)); }
+    loadLog();
+  });
 })();
 </script>
