@@ -82,6 +82,7 @@ button:disabled { opacity: .5; cursor: not-allowed; }
 .msg.err { color: var(--err); }
 .msg.ok { color: var(--ok); }
 .note { font-size: 14px; color: var(--muted); margin: 0; }
+a.btnlink { display: inline-block; justify-self: start; font: 700 15px/1 var(--f-display); text-decoration: none; border-radius: 6px; padding: 12px 18px; background: var(--accent); color: var(--on-accent); }
 
 section.reg { display: grid; gap: 8px; }
 section.reg h2 { font: 600 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--c); margin: 0 0 2px 2px; }
@@ -132,6 +133,13 @@ a.page:focus-visible { outline-color: var(--c); }
   </div>
 
   <p class="note" id="boot">Wird geladen …</p>
+
+  <!-- Außerhalb von claude.ai (z. B. Netlify): Weiterleitung zur Mappe auf claude.ai -->
+  <div class="card" id="redir" hidden>
+    <h2>Weiter zu claude.ai</h2>
+    <p class="note">Die Mappe läuft auf claude.ai. Du wirst gleich weitergeleitet. Bist du dort nicht angemeldet, meldest du dich zuerst bei Claude an, danach öffnet sich die Mappe.</p>
+    <a class="btnlink" id="redirLink" href="https://claude.ai/artifact/Pv55c31TcBRBQda2GW5xiU" rel="noopener noreferrer">Jetzt zu claude.ai</a>
+  </div>
 
   <!-- Ersteinrichtung: nur der Besitzer der Seite -->
   <form class="card" id="setupForm" hidden>
@@ -334,6 +342,12 @@ a.page:focus-visible { outline-color: var(--c); }
   (async () => {
     const { db, user } = await caps;
     $("boot").hidden = true;
+    if (!window.claude) {
+      // Nicht in claude.ai geöffnet: dorthin weiterleiten, claude.ai übernimmt die Anmeldung
+      $("redir").hidden = false;
+      setTimeout(() => { location.replace($("redirLink").href); }, 1500);
+      return;
+    }
     if (!db) { $("loginForm").hidden = false; $("lgMsg").textContent = "Diese Seite funktioniert nur auf claude.ai, wenn du dort angemeldet bist."; $("lgBtn").disabled = true; return; }
     try { await loadTresor(); }
     catch (e) { $("loginForm").hidden = false; $("lgMsg").textContent = "Die Seite lädt gerade nicht. Lade sie neu."; log("fehler", "Tresor laden: " + errText(e)); return; }
