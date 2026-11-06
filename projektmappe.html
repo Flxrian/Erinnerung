@@ -1,0 +1,308 @@
+<title>Meine Projektmappe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="referrer" content="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: Register 4 der Ausbildungsmappe – gleiche Tokens wie die Mappe, Projekte als abgeheftete Blätter */
+:root {
+  --bg: #eef1f4;
+  --sheet: #ffffff;
+  --ink: #18212d;
+  --muted: #566274;
+  --rule: #d5dbe3;
+  --accent: #0f6b5c;
+  --on-accent: #ffffff;
+  --reg: #6b4fa3;
+  --grade: #c9472f;
+  --ok: #1d7a4a; --warn: #9a5b00;
+  --f-display: "Familjen Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161d; --sheet: #19202a; --ink: #e7ecf2; --muted: #9ba7b8; --rule: #2c3644;
+    --accent: #4fc2ab; --on-accent: #0b1a17; --reg: #ad93e6; --grade: #f07c64; --ok: #5fd39a; --warn: #f0b45a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161d; --sheet: #19202a; --ink: #e7ecf2; --muted: #9ba7b8; --rule: #2c3644;
+  --accent: #4fc2ab; --on-accent: #0b1a17; --reg: #ad93e6; --grade: #f07c64; --ok: #5fd39a; --warn: #f0b45a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font: 17px/1.5 var(--f-display);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 24px 64px;
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: grid; gap: 24px; }
+.back { font: 600 13px/1 var(--f-mono); color: var(--accent); text-decoration: none; justify-self: start; padding: 6px 0; }
+.back:hover { text-decoration: underline; }
+header { display: grid; gap: 12px; }
+.kicker { font: 600 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--reg); }
+h1 { font: 700 clamp(30px, 6vw, 44px)/1.05 var(--f-display); margin: 0; letter-spacing: -.02em; border-left: 8px solid var(--reg); padding-left: 16px; }
+.lead { margin: 0; color: var(--muted); max-width: 62ch; }
+.stats { display: flex; flex-wrap: wrap; gap: 8px 28px; font: 500 13px/1.3 var(--f-mono); color: var(--muted); }
+.stats b { display: block; font: 700 24px/1.1 var(--f-display); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+.bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.search { flex: 1 1 240px; min-width: 0; }
+input, select, textarea {
+  font: 500 16px/1.4 var(--f-display); color: var(--ink); background: var(--sheet);
+  border: 1.5px solid var(--rule); border-radius: 6px; padding: 10px 12px; width: 100%; min-width: 0;
+}
+textarea { resize: vertical; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+button { font: 700 15px/1 var(--f-display); cursor: pointer; border-radius: 6px; padding: 11px 16px; border: 1.5px solid var(--accent); background: var(--accent); color: var(--on-accent); }
+button.ghost { background: transparent; color: var(--accent); }
+button.danger { border-color: var(--grade); background: var(--grade); color: var(--sheet); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: 600 13px/1 var(--f-display); border: 1.5px solid var(--rule); background: var(--sheet); color: var(--ink); border-radius: 99px; padding: 7px 12px; }
+.chip[aria-pressed="true"] { background: var(--reg); border-color: var(--reg); color: var(--sheet); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 16px; align-items: start; }
+.card {
+  position: relative; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px;
+  padding: 18px 20px 16px 34px; display: grid; gap: 10px; min-width: 0;
+}
+.card::before, .card::after { content: ""; position: absolute; left: 11px; width: 10px; height: 10px; border-radius: 50%; background: var(--bg); box-shadow: inset 0 1px 2px rgba(0,0,0,.18); }
+.card::before { top: 22px; } .card::after { bottom: 22px; }
+.meta { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font: 500 12px/1.3 var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.meta span:first-child { color: var(--reg); font-weight: 600; }
+.card h2 { font: 700 21px/1.2 var(--f-display); margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
+.card p { margin: 0; color: var(--muted); font-size: 15.5px; overflow-wrap: anywhere; white-space: pre-line; }
+.grade { position: absolute; top: 12px; right: 16px; font: 700 28px/1 var(--f-display); color: var(--grade); rotate: -8deg; font-variant-numeric: tabular-nums; }
+.card.has-grade .meta, .card.has-grade h2 { padding-right: 40px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font: 12px/1 var(--f-mono); background: var(--bg); padding: 5px 8px; border-radius: 4px; }
+.foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; border-top: 1px dashed var(--rule); padding-top: 10px; font-size: 14px; }
+.status { font: 600 12px/1 var(--f-mono); text-transform: uppercase; letter-spacing: .06em; }
+.status.done { color: var(--ok); } .status.wip { color: var(--warn); } .status.plan { color: var(--muted); }
+.foot a { color: var(--accent); font-weight: 700; }
+.edit { background: none; border: 0; color: var(--muted); font: 600 13px var(--f-display); text-decoration: underline; padding: 4px; }
+.empty { border: 2px dashed var(--rule); border-radius: 6px; padding: 32px; text-align: center; color: var(--muted); background: var(--sheet); }
+.note { font-size: 14px; color: var(--muted); margin: 0; }
+
+dialog { border: 1px solid var(--rule); border-radius: 8px; background: var(--sheet); color: var(--ink); padding: 0; width: min(560px, calc(100vw - 32px)); }
+dialog::backdrop { background: rgba(10,20,40,.45); }
+form.f { display: grid; gap: 14px; padding: 22px; }
+form.f h3 { margin: 0; font: 700 22px/1.2 var(--f-display); }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 12px; }
+label { display: grid; gap: 5px; font: 600 12px/1.2 var(--f-mono); letter-spacing: .04em; color: var(--muted); min-width: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.actions .left { margin-right: auto; }
+.msg { font-size: 14px; color: var(--grade); min-height: 1em; margin: 0; }
+</style>
+
+<div class="wrap">
+  <a class="back" href="https://claude.ai/artifact/Pv55c31TcBRBQda2GW5xiU" target="_blank" rel="noopener noreferrer">← Ausbildungsmappe</a>
+  <header>
+    <div class="kicker">Register 4 · Ablage</div>
+    <h1>Meine Projektmappe</h1>
+    <p class="lead">Alle Projekte aus Berufsschule und Betrieb: Lernfeld-Aufgaben, Präsentationen, Referate und eigene Projekte, mit Note und Stand.</p>
+    <div class="stats" id="stats"></div>
+  </header>
+
+  <div class="bar">
+    <div class="search"><input id="q" type="search" placeholder="Suchen: Titel, Lernfeld, Stichwort …" aria-label="Projekte durchsuchen"></div>
+    <button id="add" type="button" hidden>+ Projekt eintragen</button>
+    <button id="exp" type="button" class="ghost" hidden>Sicherung speichern</button>
+  </div>
+  <div class="chips" id="chips" aria-label="Nach Lernfeld oder Fach filtern"></div>
+
+  <main class="grid" id="grid"><div class="empty">Projekte werden geladen …</div></main>
+  <p class="note" id="note" role="status"></p>
+</div>
+
+<dialog id="dlg">
+  <form class="f" id="form" method="dialog">
+    <h3 id="ftitle">Projekt eintragen</h3>
+    <label for="f-titel">Titel<input id="f-titel" required maxlength="120"></label>
+    <div class="row">
+      <label for="f-fach">Lernfeld oder Fach<input id="f-fach" list="faecher" required maxlength="60"></label>
+      <label for="f-art">Art
+        <select id="f-art">
+          <option>Lernfeld-Aufgabe</option><option>Präsentation</option><option>Referat</option><option>Projekt</option>
+          <option>Website</option><option>Plakat</option><option>Prüfungsvorbereitung</option><option>Betriebliche Aufgabe</option>
+          <option>Programmierprojekt</option><option>Gruppenarbeit</option>
+        </select>
+      </label>
+    </div>
+    <div class="row">
+      <label for="f-jahr">Schuljahr<input id="f-jahr" placeholder="2026/27" maxlength="9"></label>
+      <label for="f-klasse">Ausbildungsjahr
+        <select id="f-klasse"><option value="">–</option><option>1. Ausbildungsjahr</option><option>2. Ausbildungsjahr</option><option>3. Ausbildungsjahr</option></select>
+      </label>
+      <label for="f-note">Note<input id="f-note" placeholder="1–6" maxlength="4" inputmode="decimal"></label>
+    </div>
+    <label for="f-status">Stand
+      <select id="f-status"><option value="fertig">Abgegeben</option><option value="arbeit">In Arbeit</option><option value="geplant">Geplant</option></select>
+    </label>
+    <label for="f-text">Beschreibung<textarea id="f-text" rows="4" maxlength="1200"></textarea></label>
+    <label for="f-tags">Stichwörter (mit Komma getrennt)<input id="f-tags" maxlength="200"></label>
+    <label for="f-link">Link (optional)<input id="f-link" type="url" placeholder="https://…"></label>
+    <p class="msg" id="fmsg" role="alert"></p>
+    <div class="actions">
+      <button type="button" class="ghost left" id="del" hidden>Löschen</button>
+      <button type="button" class="ghost" id="cancel">Abbrechen</button>
+      <button type="submit" id="save">Speichern</button>
+    </div>
+  </form>
+</dialog>
+<datalist id="faecher">
+  <option>LF 1 · Das Einzelhandelsunternehmen repräsentieren</option>
+  <option>LF 2 · Verkaufsgespräche kundenorientiert führen</option>
+  <option>LF 3 · Kunden im Servicebereich Kasse betreuen</option>
+  <option>LF 4 · Waren präsentieren</option>
+  <option>LF 5 · Werben und den Verkauf fördern</option>
+  <option>LF 6 · Waren beschaffen</option>
+  <option>LF 7 · Waren annehmen, lagern und pflegen</option>
+  <option>LF 8 · Geschäftsprozesse erfassen und kontrollieren</option>
+  <option>LF 9 · Preispolitische Maßnahmen vorbereiten und durchführen</option>
+  <option>LF 10 · Besondere Verkaufssituationen bewältigen</option>
+  <option>LF 11 · Geschäftsprozesse erfolgsorientiert steuern</option>
+  <option>LF 12 · Mit Marketingkonzepten Kunden gewinnen und binden</option>
+  <option>LF 13 · Personaleinsatz planen und Mitarbeiter führen</option>
+  <option>LF 14 · Ein Unternehmen leiten und entwickeln</option>
+  <option>Deutsch/Kommunikation</option><option>Englisch</option><option>Politik</option><option>Wirtschafts- und Sozialkunde</option>
+  <option>Religion/Ethik</option><option>Sport</option><option>Betrieb</option><option>Informatik</option>
+</datalist>
+
+<script>
+(function () {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  let projects = [], filter = "Alle", canWrite = false, db = null, dl = null, editing = null, delArmed = false;
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const statusLabel = { fertig: ["Abgegeben", "done"], arbeit: ["In Arbeit", "wip"], geplant: ["Geplant", "plan"] };
+  // "LF 3 · Kunden …" -> "LF 3" für die Filterchips
+  const short = f => { const m = /^LF\s?(\d+)/.exec(f || ""); return m ? "LF " + m[1] : (f || ""); };
+  const lfNum = s => { const m = /^LF (\d+)$/.exec(s); return m ? +m[1] : 999; };
+
+  function render() {
+    const q = $("q").value.trim().toLowerCase();
+    const groups = [...new Set(projects.map(p => short(p.fach)).filter(Boolean))]
+      .sort((a, b) => lfNum(a) - lfNum(b) || a.localeCompare(b, "de"));
+
+    const st = $("stats"); st.replaceChildren();
+    const noten = projects.map(p => parseFloat(String(p.note || "").replace(",", "."))).filter(n => n >= 1 && n <= 6);
+    const stat = (n, l) => { const d = el("div"); d.append(el("b", null, n), l); st.append(d); };
+    stat(projects.length, projects.length === 1 ? "Projekt" : "Projekte");
+    stat(projects.filter(p => p.status === "fertig").length, "abgegeben");
+    stat(projects.filter(p => p.status === "arbeit").length, "in Arbeit");
+    if (noten.length) stat((noten.reduce((a, b) => a + b, 0) / noten.length).toFixed(1).replace(".", ","), "Notenschnitt");
+
+    const ch = $("chips"); ch.replaceChildren();
+    if (!groups.includes(filter)) filter = "Alle";
+    ["Alle", ...groups].forEach(f => {
+      const b = el("button", "chip", f); b.type = "button";
+      b.setAttribute("aria-pressed", String(f === filter));
+      b.onclick = () => { filter = f; render(); };
+      ch.append(b);
+    });
+
+    const list = projects
+      .filter(p => filter === "Alle" || short(p.fach) === filter)
+      .filter(p => !q || [p.titel, p.fach, p.art, p.beschreibung, (p.tags || []).join(" "), p.klasse, p.schuljahr].join(" ").toLowerCase().includes(q))
+      .sort((a, b) => String(b.schuljahr || "").localeCompare(String(a.schuljahr || "")) || (b.erstellt || 0) - (a.erstellt || 0));
+
+    const g = $("grid"); g.replaceChildren();
+    if (!list.length) {
+      g.append(el("div", "empty", projects.length ? "Keine Projekte passen zu deiner Suche."
+        : (canWrite ? "Noch keine Projekte. Trag dein erstes mit „+ Projekt eintragen“ ein." : "Hier erscheinen bald die Projekte.")));
+      return;
+    }
+    list.forEach(p => {
+      const c = el("article", "card");
+      if (p.note) { c.classList.add("has-grade"); const gr = el("div", "grade", p.note); gr.title = "Note"; c.append(gr); }
+      const m = el("div", "meta");
+      m.append(el("span", null, [short(p.fach), p.art].filter(Boolean).join(" · ")), el("span", null, [p.klasse, p.schuljahr].filter(Boolean).join(" · ")));
+      c.append(m, el("h2", null, p.titel || "Ohne Titel"));
+      if (p.beschreibung) c.append(el("p", null, p.beschreibung));
+      if (p.tags && p.tags.length) { const t = el("div", "tags"); p.tags.forEach(x => t.append(el("span", "tag", x))); c.append(t); }
+      const f = el("div", "foot");
+      const [sl, sc] = statusLabel[p.status] || statusLabel.fertig;
+      f.append(el("span", "status " + sc, sl));
+      const right = el("span");
+      if (p.link && /^https:\/\/\S+$/.test(p.link)) { const a = el("a", null, "Ansehen ↗"); a.href = p.link; a.target = "_blank"; a.rel = "noopener noreferrer"; right.append(a); }
+      if (canWrite) { const e = el("button", "edit", "Bearbeiten"); e.type = "button"; e.onclick = () => openForm(p); right.append(" ", e); }
+      f.append(right); c.append(f); g.append(c);
+    });
+  }
+
+  function openForm(p) {
+    editing = p || null; delArmed = false;
+    $("ftitle").textContent = p ? "Projekt bearbeiten" : "Projekt eintragen";
+    $("f-titel").value = p?.titel || ""; $("f-fach").value = p?.fach || "";
+    $("f-art").value = p?.art || "Lernfeld-Aufgabe"; $("f-jahr").value = p?.schuljahr || "2026/27";
+    const kl = $("f-klasse"); if (p?.klasse && ![...kl.options].some(o => o.value === p.klasse)) kl.append(new Option(p.klasse, p.klasse)); kl.value = p?.klasse || "";
+    $("f-note").value = p?.note || ""; $("f-status").value = p?.status || "fertig";
+    $("f-text").value = p?.beschreibung || ""; $("f-tags").value = (p?.tags || []).join(", "); $("f-link").value = p?.link || "";
+    $("del").hidden = !p; $("del").textContent = "Löschen"; $("del").className = "ghost left"; $("fmsg").textContent = "";
+    $("dlg").showModal(); $("f-titel").focus();
+  }
+
+  $("q").addEventListener("input", render);
+  $("add").onclick = () => openForm(null);
+  $("cancel").onclick = () => $("dlg").close();
+  $("del").onclick = async () => {
+    if (!delArmed) { delArmed = true; $("del").textContent = "Wirklich löschen?"; $("del").className = "danger left"; return; }
+    try { await db.collection("projekte").doc(editing.id).delete(); $("dlg").close(); }
+    catch (e) { $("fmsg").textContent = "Löschen hat nicht geklappt. Versuch es nochmal."; }
+  };
+  $("form").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const note = $("f-note").value.trim().replace(".", ",");
+    if (note && !/^[1-6](,\d{1,2})?$/.test(note)) { $("fmsg").textContent = "Die Note muss zwischen 1 und 6 liegen, z. B. 2 oder 2,3."; return; }
+    const link = $("f-link").value.trim();
+    if (link && !/^https:\/\/\S+$/.test(link)) { $("fmsg").textContent = "Der Link muss mit https:// anfangen."; return; }
+    const data = {
+      titel: $("f-titel").value.trim(), fach: $("f-fach").value.trim(), art: $("f-art").value,
+      schuljahr: $("f-jahr").value.trim(), klasse: $("f-klasse").value, note,
+      status: $("f-status").value, beschreibung: $("f-text").value.trim(),
+      tags: $("f-tags").value.split(",").map(s => s.trim()).filter(Boolean).slice(0, 12), link,
+      erstellt: editing?.erstellt || Date.now()
+    };
+    if (!data.titel || !data.fach) { $("fmsg").textContent = "Titel und Lernfeld oder Fach brauchen einen Eintrag."; return; }
+    $("save").disabled = true;
+    try {
+      const col = db.collection("projekte");
+      if (editing) await col.doc(editing.id).set(data); else await col.add(data);
+      $("dlg").close();
+    } catch (e) {
+      $("fmsg").textContent = e && e.code === "invalid_argument" ? "Nur der Besitzer darf diese Mappe bearbeiten." : "Speichern hat nicht geklappt. Versuch es nochmal.";
+    } finally { $("save").disabled = false; }
+  });
+
+  // Sicherung: alle Projekte als JSON-Datei
+  $("exp").onclick = async () => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    const body = JSON.stringify({ gesichert: new Date().toISOString(), projekte: projects }, null, 2);
+    try { await dl.save({ filename: "projektmappe-" + stamp + ".json", data: new Blob([body], { type: "application/json" }) }); $("note").textContent = "Sicherung gespeichert."; }
+    catch (e) { $("note").textContent = e && e.code === "unavailable" ? "Speichern geht in dieser Ansicht nicht. Öffne die Seite direkt auf claude.ai." : "Die Sicherung wurde nicht gespeichert."; }
+  };
+
+  render();
+
+  (async () => {
+    db = window.claude ? await window.claude.use("db") : null;
+    const user = window.claude ? await window.claude.use("user") : null;
+    dl = window.claude ? await window.claude.use("downloads") : null;
+    if (!db) { $("grid").replaceChildren(el("div", "empty", "Die Projektmappe ist gerade nicht erreichbar. Öffne die Seite auf claude.ai und melde dich an.")); return; }
+    try { canWrite = !!(user && await user.canEdit()); } catch (e) {}
+    $("add").hidden = !canWrite; $("exp").hidden = !dl;
+    const t = setTimeout(() => { $("note").textContent = "Die Projekte laden gerade nicht. Lade die Seite neu."; }, 10000);
+    db.collection("projekte").onSnapshot(snap => {
+      clearTimeout(t); $("note").textContent = "";
+      projects = snap.docs.map(d => Object.assign({ id: d.id }, d.data()));
+      render();
+    }, () => { clearTimeout(t); $("note").textContent = "Die Verbindung zur Projektmappe ist abgebrochen. Lade die Seite neu."; });
+  })();
+})();
+</script>

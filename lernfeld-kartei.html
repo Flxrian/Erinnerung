@@ -1,0 +1,1432 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Lernfeld-Kartei Einzelhandel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="referrer" content="no-referrer">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: App-Shell – Seitenleiste (Desktop) bzw. Tab-Leiste unten (Handy); Inhalt in weichen Karten; Fortschritt als eigene Ansicht mit Diagrammen */
+:root{
+  --bg:#f2f4f7; --surface:#ffffff; --surface-2:#f7f9fb; --ink:#141b24; --ink-2:#4a5565; --muted:#6b7686; --line:#e1e6ec;
+  --accent:#0d7a84; --accent-2:#0a5f67; --accent-soft:#dff1f2; --on-accent:#ffffff; --mark:#ffe680;
+  --ok:#1e8a52; --ok-soft:#ddf3e6; --mid:#b57d12; --mid-fill:#d99a1e; --mid-soft:#fbefd4; --bad:#c23b30; --bad-fill:#d0453a; --bad-soft:#fbe3e0; --new:#c9d0d9;
+  --shadow:0 1px 2px rgba(20,27,36,.05),0 4px 16px rgba(20,27,36,.06);
+  --r:14px; --r-sm:9px;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1419; --surface:#171e26; --surface-2:#1c242e; --ink:#e8edf2; --ink-2:#b7c1cc; --muted:#8994a2; --line:#28323e;
+  --accent:#4fc3cb; --accent-2:#7fd6dc; --accent-soft:#153a3e; --on-accent:#08201f; --mark:#6d5f12;
+  --ok:#5fd39a; --ok-soft:#163626; --mid:#e6b04f; --mid-fill:#c98f22; --mid-soft:#3a2d12; --bad:#ff8a7f; --bad-fill:#e5584c; --bad-soft:#3d1d1b; --new:#3a4552;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1419; --surface:#171e26; --surface-2:#1c242e; --ink:#e8edf2; --ink-2:#b7c1cc; --muted:#8994a2; --line:#28323e;
+  --accent:#4fc3cb; --accent-2:#7fd6dc; --accent-soft:#153a3e; --on-accent:#08201f; --mark:#6d5f12;
+  --ok:#5fd39a; --ok-soft:#163626; --mid:#e6b04f; --mid-fill:#c98f22; --mid-soft:#3a2d12; --bad:#ff8a7f; --bad-fill:#e5584c; --bad-soft:#3d1d1b; --new:#3a4552;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--bg)}
+h1,h2,h3,h4{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0;letter-spacing:-.01em;overflow-wrap:break-word;hyphens:auto;-webkit-hyphens:auto}
+h1{font-size:clamp(1.7rem,4vw,2.3rem);font-weight:800;letter-spacing:-.025em}
+h2{font-size:1.3rem;font-weight:800}
+h3{font-size:1.05rem;font-weight:600}
+h4{font-size:.98rem;font-weight:600}
+p{margin:0}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:6px}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+mark{background:var(--mark);color:inherit;padding:0 .15em;border-radius:3px}
+.num{font-variant-numeric:tabular-nums}
+
+/* Shell */
+.shell{display:grid;grid-template-columns:1fr;min-height:100%}
+.side{display:none}
+.mtop{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink)}
+.logo i{width:30px;height:30px;border-radius:9px;background:var(--accent);display:grid;place-items:center;color:var(--on-accent);font-style:normal;font-family:var(--f-display);font-weight:800;font-size:.95rem}
+.logo b{font-family:var(--f-display);font-weight:800;font-size:1.08rem;letter-spacing:-.01em}
+main{padding-block:22px 110px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+.page{max-width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.btabs{position:fixed;left:0;right:0;bottom:0;z-index:20;display:grid;grid-template-columns:repeat(4,1fr);background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.btabs a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 2px 10px;text-decoration:none;color:var(--muted);font-size:.7rem;font-weight:600;min-width:0;white-space:nowrap}
+.btabs a svg{width:22px;height:22px}
+.btabs a[aria-current="page"]{color:var(--accent)}
+@media (min-width:900px){
+  .shell{grid-template-columns:260px 1fr}
+  .mtop,.btabs{display:none}
+  .side{display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;overflow:auto;padding:22px 14px 22px max(18px,env(safe-area-inset-left,0px));border-right:1px solid var(--line);background:var(--surface)}
+  main{padding-block:32px 60px}
+}
+.snav{display:flex;flex-direction:column;gap:2px}
+.snav a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:10px;text-decoration:none;color:var(--ink-2);font-weight:600;font-size:.95rem}
+.snav a svg{width:19px;height:19px;flex:none}
+.snav a:hover{background:var(--surface-2)}
+.snav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent-2)}
+.slist{display:flex;flex-direction:column;gap:1px}
+.slist a{display:flex;align-items:center;gap:10px;padding:7px 12px;border-radius:9px;text-decoration:none;color:var(--ink-2);font-size:.88rem;min-width:0}
+.slist a span.t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.slist a:hover{background:var(--surface-2)}
+.slist a[aria-current="page"]{background:var(--surface-2);color:var(--ink);font-weight:600}
+.mappe{font:600 .78rem var(--f-mono);color:var(--accent);text-decoration:none;padding:4px 12px;white-space:nowrap}
+.mappe:hover{text-decoration:underline}
+.side .sich{margin:0 8px}
+.side .lock{margin-top:auto;font-size:.78rem;color:var(--muted);display:flex;gap:8px;align-items:flex-start;padding:0 8px}
+
+/* Bausteine */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.card.flat{box-shadow:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.row.between{justify-content:space-between}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 .95rem var(--f-body);padding:10px 18px;border-radius:999px;border:1px solid transparent;background:var(--accent);color:var(--on-accent);cursor:pointer;text-decoration:none;transition:transform .12s, background .15s}
+.btn:hover{background:var(--accent-2)}
+.btn:active{transform:scale(.98)}
+.btn.soft{background:var(--accent-soft);color:var(--accent-2)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.danger{background:var(--bad-fill);color:#fff}
+.btn.sm{padding:7px 13px;font-size:.85rem}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:.75rem;font-weight:600;white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
+.chip.mid{background:var(--mid-soft);color:var(--mid)}
+.chip.bad{background:var(--bad-soft);color:var(--bad)}
+.chip.new{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.chip.acc{background:var(--accent-soft);color:var(--accent-2)}
+.note{background:var(--mid-soft);border-radius:var(--r-sm);padding:10px 14px;font-size:.92rem}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:28px 22px;display:flex;flex-direction:column;gap:12px;align-items:flex-start;background:var(--surface)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-weight:600;z-index:40;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+@media (min-width:900px){.toast{bottom:28px}}
+
+/* Ring */
+.ring{position:relative;display:inline-grid;place-items:center;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring .trk{fill:none;stroke:var(--line)}
+.ring .val{fill:none;stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset .6s ease}
+.ring b{position:absolute;font-family:var(--f-display);font-weight:800;font-variant-numeric:tabular-nums}
+
+/* Start */
+.hero{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;background:linear-gradient(135deg,var(--accent-soft),var(--surface) 70%)}
+.hero .acts{display:flex;flex-wrap:wrap;gap:10px}
+@media (max-width:560px){.hero{grid-template-columns:1fr}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.kpi .v{font-family:var(--f-display);font-size:1.65rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .s{font-size:.8rem;color:var(--muted)}
+.search{position:relative}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+.search input{width:100%;padding:13px 14px 13px 42px;border-radius:999px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
+.hits{display:flex;flex-direction:column;gap:6px}
+.hit{display:block;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);padding:10px 14px;text-decoration:none;color:var(--ink)}
+.hit:hover{border-color:var(--accent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.lf{display:flex;flex-direction:column;gap:12px;text-decoration:none;color:var(--ink);transition:transform .15s,border-color .15s}
+.lf:hover{transform:translateY(-2px);border-color:var(--accent)}
+.lf .top{display:flex;gap:14px;align-items:center}
+.lf .top div{min-width:0;display:flex;flex-direction:column;gap:3px}
+.lf .meta{display:flex;gap:6px;flex-wrap:wrap}
+.sh{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+
+/* gestapelter Balken */
+.stack{display:flex;gap:2px;height:10px;border-radius:999px;overflow:hidden;background:var(--surface)}
+.stack span{height:100%;min-width:0}
+.stack .s-ok{background:var(--ok)} .stack .s-mid{background:var(--mid-fill)} .stack .s-bad{background:var(--bad-fill)} .stack .s-new{background:var(--new)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--ink-2)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.legend .s-ok{background:var(--ok)} .legend .s-mid{background:var(--mid-fill)} .legend .s-bad{background:var(--bad-fill)} .legend .s-new{background:var(--new)}
+.mrow{display:grid;grid-template-columns:minmax(0,220px) 1fr auto;gap:14px;align-items:center;text-decoration:none;color:var(--ink);padding:6px 0}
+.mrow .lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:.92rem}
+@media (max-width:560px){.mrow{grid-template-columns:1fr auto}.mrow .stack{grid-column:1/-1;order:3}}
+
+/* Trend */
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .grid-l{stroke:var(--line);stroke-width:1}
+.chart .ax{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+.chart .area{fill:var(--accent);opacity:.1}
+.chart .line{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.chart .dot.last{r:5}
+.chart .hl{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);padding:7px 10px;border-radius:8px;font-size:.8rem;white-space:nowrap;transform:translate(-50%,-115%);z-index:2}
+
+/* Listen */
+.list{display:flex;flex-direction:column}
+.li{display:flex;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--line);flex-wrap:wrap}
+.li:first-child{border-top:0}
+.li .grow{flex:1;min-width:200px;display:flex;flex-direction:column;gap:3px}
+.li .ans{font-size:.88rem;color:var(--ok)}
+
+/* Lernfeld */
+.lfhead{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.lfhead > div{flex:1;min-width:220px;display:flex;flex-direction:column;gap:4px}
+.seg{display:inline-flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;flex-wrap:wrap;max-width:100%}
+.seg button{border:0;background:transparent;padding:8px 16px;border-radius:999px;font-weight:600;font-size:.92rem;cursor:pointer;color:var(--ink-2)}
+.seg button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.toc{display:flex;flex-wrap:wrap;gap:6px}
+.toc button{font-size:.83rem;padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer}
+.toc button:hover{border-color:var(--accent)}
+.sections{display:flex;flex-direction:column;gap:10px}
+details.sec{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+details.sec>summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;gap:12px;align-items:center}
+details.sec>summary::-webkit-details-marker{display:none}
+details.sec>summary h3{flex:1;min-width:0}
+details.sec>summary .chev{color:var(--muted);transition:transform .2s;font-size:1.2rem}
+details.sec[open]>summary .chev{transform:rotate(90deg)}
+.md{padding:0 18px 20px;display:flex;flex-direction:column;gap:10px;max-width:72ch}
+.md ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.tip2{background:var(--accent-soft);border-radius:var(--r-sm);padding:10px 14px}
+
+/* Quiz */
+.progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress div{height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.qmeta{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:.82rem;color:var(--muted);font-weight:600}
+.qtext{font-family:var(--f-display);font-size:1.3rem;font-weight:600;line-height:1.3}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;padding:14px 16px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);cursor:pointer;display:flex;gap:12px;align-items:flex-start;transition:border-color .12s,background .12s}
+.opt .k{font-family:var(--f-mono);font-weight:600;color:var(--muted);width:22px;height:22px;border-radius:6px;background:var(--surface-2);display:grid;place-items:center;font-size:.78rem;flex:none}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.answer{border-left:3px solid var(--accent);padding:6px 0 6px 14px}
+.feedback{border-radius:12px;padding:12px 16px;font-size:.95rem}
+.feedback.ok{background:var(--ok-soft)} .feedback.no{background:var(--bad-soft)}
+.result{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center}
+@media (max-width:520px){.result{grid-template-columns:1fr;justify-items:start}}
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.pick button{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:3px}
+.pick button:hover:not(:disabled){border-color:var(--accent)}
+.pick button b{font-family:var(--f-display);font-size:1.02rem}
+.pick button:disabled{opacity:.5;cursor:default}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chips label .cut{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.chips label{max-width:100%;min-width:0;display:inline-flex;gap:8px;align-items:center;padding:7px 12px;border:1px solid var(--line);border-radius:999px;cursor:pointer;font-size:.9rem;background:var(--surface)}
+select,input[type=number],input[type=text]{padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);max-width:100%}
+label.chk{display:inline-flex;gap:8px;align-items:center;cursor:pointer}
+
+/* Karten */
+.fc{perspective:1200px;cursor:pointer}
+.fc-inner{position:relative;min-height:250px;transition:transform .5s cubic-bezier(.2,.7,.2,1);transform-style:preserve-3d}
+.fc.flip .fc-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border:1px solid var(--line);border-radius:18px;background:var(--surface);box-shadow:var(--shadow);padding:26px;display:flex;flex-direction:column;justify-content:center;gap:10px;overflow:auto}
+.face.back{transform:rotateY(180deg);background:var(--accent-soft)}
+.face .term{font-family:var(--f-display);font-size:1.6rem;font-weight:800;overflow-wrap:anywhere}
+
+/* Editor */
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field label{font-weight:700}
+.field textarea{width:100%;min-height:230px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);font-family:var(--f-mono);font-size:.84rem;line-height:1.55;resize:vertical}
+.field .count{font-size:.8rem;color:var(--muted)}
+.two{display:grid;grid-template-columns:110px 1fr;gap:12px}
+.two input{width:100%}
+@media (max-width:520px){.two{grid-template-columns:1fr}}
+details.help{border:1px solid var(--line);border-radius:12px;padding:10px 14px;background:var(--surface-2)}
+details.help summary{cursor:pointer;font-weight:700}
+details.help pre{font-family:var(--f-mono);font-size:.8rem;white-space:pre-wrap;margin:8px 0 0}
+.ai{border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--accent-soft)}
+/* Lernblätter */
+.sheet{display:flex;flex-direction:column;gap:14px;max-width:none}
+.sheet h3.st{font-size:1.15rem}
+.tree,.tree ul{list-style:none;margin:0;padding:0}
+.tree ul{margin-left:12px;padding-left:18px;border-left:2px solid var(--line)}
+.tree li{position:relative;padding:5px 0}
+.tree ul>li::before{content:"";position:absolute;left:-18px;top:21px;width:14px;border-top:2px solid var(--line)}
+.tree .node{display:inline-block;padding:7px 12px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);max-width:100%;overflow-wrap:anywhere}
+.tree>li>.node{background:var(--ink);color:var(--bg);border-color:var(--ink);font-family:var(--f-display);font-weight:800;font-size:1.05rem}
+.tree>li>ul>li>.node{background:var(--accent-soft);border-color:transparent;color:var(--accent-2);font-weight:600}
+.tree .node .ex{color:var(--muted)}
+.tree>li>ul>li>.node .ex{color:inherit;opacity:.8}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+.tbl table{border-collapse:collapse;width:100%;min-width:480px;font-size:.92rem}
+.tbl th{background:var(--surface-2);text-align:left;font-weight:700;padding:10px 12px;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td:first-child{font-weight:600}
+.merk{display:flex;flex-direction:column;gap:8px}
+.merk p{background:var(--accent-soft);border-radius:10px;padding:10px 14px}
+.merk p small{display:block;color:var(--muted);font-size:.75rem;margin-bottom:2px}
+.sheetlf{display:flex;flex-direction:column;gap:14px;padding-top:6px}
+.sheetlf > .sh h2{font-size:1.45rem}
+/* Schaubild (Organigramm) */
+.treewrap{display:flex;flex-direction:column;gap:8px;min-width:0}
+.tmode{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.tmode button{border:1px solid var(--line);background:var(--surface);padding:5px 12px;border-radius:999px;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--ink-2)}
+:root:not([data-tree="list"]) .tmode [data-tm="org"],:root[data-tree="list"] .tmode [data-tm="list"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.tmode .swipe{font-size:.75rem;color:var(--muted);margin-left:6px}
+@media (min-width:1100px){.tmode .swipe{display:none}}
+.tree.lst{display:none}
+:root[data-tree="list"] .tree.lst{display:block}
+:root[data-tree="list"] .org{display:none}
+.org{overflow-x:auto;padding:4px 2px 14px;-webkit-overflow-scrolling:touch}
+.org ul{display:flex;justify-content:center;list-style:none;margin:0;padding:24px 0 0;position:relative}
+.org > ul{padding-top:0;width:max-content;min-width:100%}
+.org li{display:flex;flex-direction:column;align-items:center;position:relative;padding:24px 3px 0}
+.org > ul > li{padding-top:0}
+.org li::before,.org li::after{content:"";position:absolute;top:0;right:50%;width:50%;height:24px;border-top:2px solid var(--muted)}
+.org li::after{right:auto;left:50%;border-left:2px solid var(--muted)}
+.org li:first-child::before,.org li:last-child::after{border:0 none}
+.org li:last-child::before{border-right:2px solid var(--muted);border-radius:0 10px 0 0}
+.org li:first-child::after{border-radius:10px 0 0 0}
+.org li:only-child::before{display:none}
+.org li:only-child::after{border-top:0;border-radius:0;width:0}
+.org > ul > li::before,.org > ul > li::after{display:none}
+.org ul ul::before{content:"";position:absolute;top:0;left:50%;height:24px;border-left:2px solid var(--muted)}
+.org .box{position:relative;display:flex;flex-direction:column;gap:2px;align-items:center;text-align:center;border:2px solid var(--ink-2);border-radius:10px;padding:7px 9px;background:var(--surface);min-width:92px;max-width:170px;font-size:.8rem;line-height:1.28}
+.org ul ul > li > .box::before{content:"";position:absolute;top:-8px;left:50%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--muted);border-bottom:0}
+.org .box b{font-family:var(--f-display);font-weight:700;font-size:.9rem}
+.org .box small{color:var(--muted);font-size:.76rem}
+.org .box .exl{display:flex;flex-direction:column;align-items:flex-start;text-align:left;margin-top:4px;gap:1px;font-size:.76rem;color:var(--ink-2)}
+.org .box.wide{max-width:240px}
+.org .box.wide .exl{display:grid;grid-template-columns:1fr 1fr;column-gap:10px;width:100%}
+.org .box b{overflow-wrap:anywhere}
+.org .box.d0{background:var(--ink);border-color:var(--ink);color:var(--bg);padding:10px 28px}
+.org .box.d0 b{font-size:1.2rem;font-weight:800;letter-spacing:.04em;text-transform:uppercase}
+.org .box.d0 small,.org .box.d0 .exl{color:inherit;opacity:.8}
+.org .box.d1{background:var(--accent-soft);border-color:var(--accent);}
+.org .box.d1 b{color:var(--accent-2)}
+.org .box.d2{border-color:var(--ink-2)}
+.org .box.leaf b{text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1.5px}
+/* Lernsituationen */
+.lsbar{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.lsbar a{flex:none;display:flex;flex-direction:column;gap:1px;padding:8px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);text-decoration:none;color:var(--ink);min-width:86px}
+.lsbar a b{font-family:var(--f-display);font-size:.95rem;font-weight:600}
+.lsbar a span{font-size:.75rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.lsbar a:hover{border-color:var(--accent)}
+.lsbar a[aria-current="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.lsbar a[aria-current="true"] span{color:inherit;opacity:.75}
+.lsh{font-size:1.05rem;color:var(--accent-2);margin-top:8px;display:flex;align-items:center;gap:10px}
+.lsh a{font-size:.8rem;font-weight:600;font-family:var(--f-body)}
+.slist a.sub{padding:5px 12px 5px 44px;font-size:.82rem}
+.mrow .lbl.sub{padding-left:20px;font-weight:500;color:var(--ink-2)}
+.pgroup{display:flex;flex-direction:column;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.pgroup:first-child{border-top:0}
+/* Foto-Import */
+.drop{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:36px 20px;border:2px dashed color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:20px;background:linear-gradient(160deg,var(--accent-soft),var(--surface) 75%);cursor:pointer;transition:border-color .15s,transform .15s}
+.drop:hover,.drop.over{border-color:var(--accent);transform:translateY(-1px)}
+.drop .big{width:64px;height:64px;border-radius:18px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center}
+.drop .big svg{width:32px;height:32px}
+.imp{display:grid;grid-template-columns:64px 1fr auto;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.imp:first-child{border-top:0}
+.imp .th{width:64px;height:64px;border-radius:10px;object-fit:cover;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center;color:var(--muted);overflow:hidden}
+.imp .th img{width:100%;height:100%;object-fit:cover}
+.imp .info{min-width:0;display:flex;flex-direction:column;gap:3px}
+.imp .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:560px){.imp{grid-template-columns:56px 1fr}.imp .th{width:56px;height:56px}.imp .acts{grid-column:1/-1;justify-content:flex-start}}
+.spin{width:16px;height:16px;border-radius:50%;border:2px solid var(--accent-soft);border-top-color:var(--accent);animation:sp 0.8s linear infinite;display:inline-block;vertical-align:-3px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}.spin{animation-duration:2.4s}}
+</style>
+
+<div class="shell">
+  <aside class="side" aria-label="Navigation">
+    <a class="mappe" href="https://claude.ai/artifact/Pv55c31TcBRBQda2GW5xiU" target="_blank" rel="noopener noreferrer">← Ausbildungsmappe</a>
+    <a class="logo" href="#start"><i>LF</i><b>Lernfeld-Kartei</b></a>
+    <nav class="snav" id="snav"></nav>
+    <button class="btn ghost sm sich" type="button" hidden>Sicherung speichern</button>
+    <div><p class="eyebrow" style="padding:0 12px 6px">Lernfelder</p><nav class="slist" id="slist"></nav></div>
+    <p class="lock"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span>Inhalte und Fortschritt liegen geschützt in deinem Konto, nicht im Seitencode.</span></p>
+  </aside>
+  <div style="min-width:0">
+    <header class="mtop"><a class="logo" href="#start"><i>LF</i><b>Lernfeld-Kartei</b></a><span class="row" style="gap:6px"><button class="btn ghost sm sich" type="button" hidden>Sichern</button><a class="mappe" href="https://claude.ai/artifact/Pv55c31TcBRBQda2GW5xiU" target="_blank" rel="noopener noreferrer">← Mappe</a></span></header>
+    <main><div class="page" id="app" aria-live="polite"><p class="muted">Wird geladen …</p></div></main>
+  </div>
+</div>
+<nav class="btabs" id="btabs" aria-label="Navigation"></nav>
+<div class="toast" id="toast" hidden></div>
+<datalist id="lf-vorschlaege">
+  <option value="Das Einzelhandelsunternehmen repräsentieren"></option><option value="Verkaufsgespräche kundenorientiert führen"></option>
+  <option value="Kunden im Servicebereich Kasse betreuen"></option><option value="Waren präsentieren"></option>
+  <option value="Werben und den Verkauf fördern"></option><option value="Waren beschaffen"></option>
+  <option value="Waren annehmen, lagern und pflegen"></option><option value="Geschäftsprozesse erfassen und kontrollieren"></option>
+  <option value="Preispolitische Maßnahmen vorbereiten und durchführen"></option><option value="Besondere Verkaufssituationen bewältigen"></option>
+  <option value="Geschäftsprozesse erfolgsorientiert steuern"></option><option value="Mit Marketingkonzepten Kunden gewinnen und binden"></option>
+  <option value="Personaleinsatz planen und Mitarbeiter führen"></option><option value="Ein Unternehmen leiten und entwickeln"></option>
+</datalist>
+
+<script>
+"use strict";
+document.documentElement.lang = "de";
+/* ================= Hilfen ================= */
+const $ = s => document.querySelector(s);
+const app = $("#app");
+const safeImg = u => (typeof u === "string" && u.length < 60000 && /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]*$/.test(u)) ? u : "";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const hashStr = s => { let h = 5381; for (const ch of s) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0; return h.toString(36); };
+const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const ls = { get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } }, set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} } };
+const today = () => new Date().toLocaleDateString("sv-SE");
+const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
+let toastT; function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+const ICON = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  exam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l2 2 4-4"/><rect x="4" y="3" width="16" height="18" rx="2"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  sheet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>',
+  camera: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/></svg>'
+};
+const LF_OFFIZIELL = ["Das Einzelhandelsunternehmen repräsentieren","Verkaufsgespräche kundenorientiert führen","Kunden im Servicebereich Kasse betreuen","Waren präsentieren","Werben und den Verkauf fördern","Waren beschaffen","Waren annehmen, lagern und pflegen","Geschäftsprozesse erfassen und kontrollieren","Preispolitische Maßnahmen vorbereiten und durchführen","Besondere Verkaufssituationen bewältigen","Geschäftsprozesse erfolgsorientiert steuern","Mit Marketingkonzepten Kunden gewinnen und binden","Personaleinsatz planen und Mitarbeiter führen","Ein Unternehmen leiten und entwickeln"];
+function ring(value, size = 64, stroke = 7, label){
+  const r = (size - stroke) / 2, c = 2 * Math.PI * r, v = Math.max(0, Math.min(1, value || 0));
+  return `<span class="ring" style="width:${size}px;height:${size}px" role="img" aria-label="${esc(label || Math.round(v*100) + " Prozent")}">
+    <svg width="${size}" height="${size}"><circle class="trk" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}"/>
+    <circle class="val" cx="${size/2}" cy="${size/2}" r="${r}" stroke-width="${stroke}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - v)}" ${v === 0 ? 'style="stroke:none"' : ""}/></svg>
+    <b style="font-size:${size * .26}px">${Math.round(v * 100)}%</b></span>`;
+}
+
+/* ================= Formate ================= */
+const inline = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/==(.+?)==/g, "<mark>$1</mark>");
+function parseSections(t){
+  const out = []; let cur = null;
+  for (const line of String(t || "").split("\n")) {
+    const m = line.match(/^#\s+(.*)/);
+    if (m) { cur = { titel: m[1].trim(), lines: [] }; out.push(cur); }
+    else { if (!cur) { cur = { titel: "Allgemein", lines: [] }; out.push(cur); } cur.lines.push(line); }
+  }
+  return out.filter(s => s.titel !== "Allgemein" || s.lines.join("").trim());
+}
+function renderMd(lines){
+  let html = "", list = false, para = [];
+  const flushP = () => { if (para.length) { html += `<p>${para.map(inline).join(" ")}</p>`; para = []; } };
+  const closeL = () => { if (list) { html += "</ul>"; list = false; } };
+  for (const raw of lines) {
+    const l = raw.trimEnd(); let m;
+    if (!l.trim()) { flushP(); closeL(); continue; }
+    if ((m = l.match(/^##\s+(.*)/))) { flushP(); closeL(); html += `<h4>${inline(m[1])}</h4>`; }
+    else if ((m = l.match(/^\s*[-*]\s+(.*)/))) { flushP(); if (!list) { html += "<ul>"; list = true; } html += `<li>${inline(m[1])}</li>`; }
+    else if ((m = l.match(/^>\s?(.*)/))) { flushP(); closeL(); html += `<p class="tip2">${inline(m[1])}</p>`; }
+    else { closeL(); para.push(l.trim()); }
+  }
+  flushP(); closeL(); return html;
+}
+function parseFragen(t){
+  const out = [];
+  for (const block of String(t || "").split(/\n\s*\n/)) {
+    let q = "", r = [], w = [], e = "", thema = "";
+    for (const raw of block.split("\n")) {
+      const l = raw.trim(); if (!l) continue;
+      const c = l[0], v = l.slice(1).trim();
+      if (c === "?") q = v; else if (c === "+") r.push(v); else if (c === "-") w.push(v);
+      else if (c === "=") e = e ? e + " " + v : v; else if (c === "@") thema = v; else if (q) q += " " + l;
+    }
+    if (!q) continue;
+    if (r.length && w.length) out.push({ typ: "mc", q, richtig: r[0], falsch: w, e, thema, key: hashStr(q) });
+    else if (r.length || e) out.push({ typ: "offen", q, richtig: r.length ? r.join(" ") : e, e: r.length ? e : "", thema, key: hashStr(q) });
+  }
+  return out;
+}
+const parseKarten = t => String(t || "").split("\n").map(l => l.split("::")).filter(p => p.length >= 2 && p[0].trim())
+  .map(p => { let ls = null; if (p.length >= 3 && /^\s*LS\s*\d+\s*[.,]\s*\d+\s*$/i.test(p[p.length - 1])) ls = lsOf(p.pop()); return { b: p[0].trim(), e: p.slice(1).join("::").trim(), ls, key: hashStr(p[0].trim()) }; });
+/* Thema einer Frage dem passenden Abschnitt zuordnen */
+function themaOf(lf, q){
+  if (!q.thema) return null;
+  const t = q.thema.toLowerCase();
+  const sec = parseSections(lf.inhalt).find(s => s.titel.toLowerCase() === t || s.titel.toLowerCase().startsWith(t));
+  return sec ? sec.titel : q.thema;
+}
+
+const lsOf = t => { const m = String(t || "").match(/\bLS\s*(\d+)\s*[.,]\s*(\d+)/i); return m ? `${+m[1]}.${+m[2]}` : null; };
+const lsSort = (a, b) => { const [a1, a2] = a.split(".").map(Number), [b1, b2] = b.split(".").map(Number); return a1 - b1 || a2 - b2; };
+const inLs = (x, ls) => !ls || (ls === "andere" ? !x.ls : x.ls === ls);
+const lsName = ls => ls === "andere" ? "Weitere Themen" : "LS " + ls;
+const lsHash = (id, ls) => "lf-" + id + (!ls ? "" : ls === "andere" ? "-lsandere" : "-ls" + ls.replace(".", "-"));
+
+/* ================= Lernblatt-Darstellung ================= */
+function nodeHtml(t){
+  const i = t.indexOf(":");
+  if (i > 0 && i < 60 && !/\*\*/.test(t.slice(0, i))) return `<b>${inline(t.slice(0, i))}</b><span class="ex">:${inline(t.slice(i + 1))}</span>`;
+  const m = t.match(/^(.*?)\s*(\(.*\))$/);
+  return m && m[1] ? `${inline(m[1])} <span class="ex">${inline(m[2])}</span>` : inline(t);
+}
+function buildTree(items){
+  const root = { c: [] }, stack = [{ d: -1, n: root }];
+  for (const it of items) {
+    while (stack.length > 1 && stack[stack.length - 1].d >= it.d) stack.pop();
+    const node = { t: it.t, c: [] }; stack[stack.length - 1].n.c.push(node); stack.push({ d: it.d, n: node });
+  }
+  return root.c;
+}
+function splitNode(t){
+  let label = t, note = "", ex = [];
+  const i = t.indexOf(":");
+  if (i > 0 && i < 70) { label = t.slice(0, i); ex = t.slice(i + 1).split(/,\s*(?![^()]*\))/).map(x => x.trim()).filter(Boolean); }
+  const m = label.match(/^(.*?)\s*\((.*)\)\s*$/); if (m && m[1]) { label = m[1]; note = m[2]; }
+  return { label: label.trim(), note, ex };
+}
+function orgHtml(nodes, depth){
+  return `<ul>${nodes.map(n => { const x = splitNode(n.t);
+    return `<li><div class="box d${Math.min(depth, 2)}${n.c.length ? "" : " leaf"}${x.ex.length > 5 ? " wide" : ""}"><b>${inline(x.label)}</b>${x.note ? `<small>${inline(x.note)}</small>` : ""}${x.ex.length ? `<div class="exl">${x.ex.map(e => `<span>• ${inline(e)}</span>`).join("")}</div>` : ""}</div>${n.c.length ? orgHtml(n.c, depth + 1) : ""}</li>`; }).join("")}</ul>`;
+}
+function listHtml(nodes, top){
+  return `<ul${top ? ' class="tree lst"' : ""}>${nodes.map(n => `<li><span class="node">${nodeHtml(n.t)}</span>${n.c.length ? listHtml(n.c) : ""}</li>`).join("")}</ul>`;
+}
+function renderTree(items){
+  const roots = buildTree(items);
+  return `<div class="treewrap"><div class="tmode"><button type="button" data-tm="org">Schaubild</button><button type="button" data-tm="list">Liste</button><span class="swipe">Breites Schaubild: seitlich wischen</span></div>
+    ${roots.map(r => `<div class="org">${orgHtml([r], 0)}</div>`).join("")}${listHtml(roots, true)}</div>`;
+}
+function renderTable(rows){
+  const cells = r => r.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map(c => c.trim());
+  const data = rows.filter(r => !/^\s*\|?\s*:?-{2,}/.test(r)).map(cells);
+  if (!data.length) return "";
+  const [head, ...body] = data;
+  return `<div class="tbl"><table><thead><tr>${head.map(h => `<th>${inline(h)}</th>`).join("")}</tr></thead><tbody>${body.map(r => `<tr>${head.map((_, i) => `<td>${inline(r[i] || "")}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+function renderSheet(lines){
+  let html = "", buf = [], kind = null;
+  const flush = () => {
+    if (!buf.length) return;
+    if (kind === "tree") html += renderTree(buf.map(l => { const m = l.match(/^(\s*)[-*]\s+(.*)$/); return { d: Math.floor(m[1].replace(/\t/g, "  ").length / 2), t: m[2] }; }));
+    else if (kind === "table") html += renderTable(buf);
+    else html += renderMd(buf);
+    buf = []; kind = null;
+  };
+  for (const raw of lines) {
+    const l = raw.replace(/\s+$/, "");
+    const k = /^\s*[-*]\s+/.test(l) ? "tree" : /^\s*\|/.test(l) ? "table" : l.trim() ? "md" : "blank";
+    if (k === "blank") { flush(); continue; }
+    if (k !== kind) flush();
+    kind = k; buf.push(l);
+  }
+  flush();
+  return html;
+}
+
+/* ================= Zustand ================= */
+const S = { ready: false, slow: false, error: null, mode: "local", db: null, uid: null, canWrite: true,
+  lfs: [], prog: null, busy: false, importe: [], queue: [], qRunning: false, maxImg: 5, isOwner: false, progLocalOnly: false, tab: "lernen", open: null, sample: null, imgOk: false, cache: new Map() };
+const emptyProg = () => ({ v: 2, lf: {}, verlauf: [], tage: [] });
+function migrate(p){
+  if (!p || typeof p !== "object") return emptyProg();
+  if (p.v === 2) { p.lf ||= {}; p.verlauf ||= []; p.tage ||= []; return p; }
+  const n = emptyProg();
+  for (const [id, o] of Object.entries(p.lf || {})) {
+    const L = n.lf[id] = { quiz: o.quiz || null, fragen: {}, karten: {} };
+    for (const k of o.falsch || []) L.fragen[k] = { r: 0, w: 1, s: 0, last: 0, at: Date.now() };
+    for (const k of o.gewusst || []) L.karten[k] = { k: 1, at: Date.now() };
+    if (o.quiz) n.verlauf.push({ at: o.quiz.at || Date.now(), titel: "Quiz", c: o.quiz.c, t: o.quiz.t, lfs: { [id]: [o.quiz.c, o.quiz.t] } });
+  }
+  return n;
+}
+const PL = id => (S.prog.lf[id] ||= { quiz: null, fragen: {}, karten: {} });
+const lfLabel = lf => `LF ${lf.nr ?? "?"}`;
+const sortLfs = () => S.lfs.slice().sort((a, b) => (+a.nr || 99) - (+b.nr || 99) || String(a.titel).localeCompare(b.titel));
+const getLf = id => S.lfs.find(l => l.id === id);
+function parsed(lf){
+  const k = lf.id + "|" + (lf.aktualisiert || "") + "|" + (lf.fragen || "").length + "|" + (lf.karten || "").length + "|" + (lf.merkblatt || "").length;
+  let c = S.cache.get(lf.id);
+  if (!c || c.k !== k) {
+    c = { k, fragen: parseFragen(lf.fragen), karten: parseKarten(lf.karten), secs: parseSections(lf.inhalt) };
+    c.secs.forEach(x => x.ls = lsOf(x.titel));
+    c.sheet = parseSections(lf.merkblatt); c.sheet.forEach(x => x.ls = lsOf(x.titel));
+    c.fragen.forEach(q => q.ls = lsOf(q.thema) || lsOf(themaOf(lf, q)));
+    c.lsList = [...new Set([...c.secs, ...c.fragen, ...c.karten].map(x => x.ls).filter(Boolean))].sort(lsSort);
+    c.hasOther = c.lsList.length > 0 && [...c.secs, ...c.fragen].some(x => !x.ls);
+    S.cache.set(lf.id, c);
+  }
+  return c;
+}
+
+/* ================= Analyse ================= */
+function qState(st){
+  if (!st || !(st.r + st.w)) return "new";
+  if (st.last === 0 || st.w / (st.r + st.w) >= .5) return "bad";
+  if (st.s >= 2) return "ok";
+  return "mid";
+}
+function lfStats(lf, ls){
+  let { fragen, karten } = parsed(lf); if (ls) { fragen = fragen.filter(q => inLs(q, ls)); karten = karten.filter(c => inLs(c, ls)); }
+  const P = S.prog.lf[lf.id] || { fragen: {}, karten: {} };
+  const n = { ok: 0, mid: 0, bad: 0, new: 0 };
+  for (const q of fragen) n[qState(P.fragen?.[q.key])]++;
+  const known = karten.filter(c => P.karten?.[c.key]?.k).length;
+  const total = fragen.length;
+  return { ...n, total, mastery: total ? n.ok / total : 0, karten: karten.length, known, quiz: P.quiz };
+}
+function weakQuestions(lfs = S.lfs){
+  const out = [];
+  for (const lf of lfs) {
+    const P = S.prog.lf[lf.id];
+    for (const q of parsed(lf).fragen) {
+      const st = P?.fragen?.[q.key], s = qState(st);
+      if (s === "bad" || s === "mid") out.push({ ...q, lfId: lf.id, st, state: s, rate: st.w / (st.r + st.w) });
+    }
+  }
+  return out.sort((a, b) => (a.state === b.state ? 0 : a.state === "bad" ? -1 : 1) || b.rate - a.rate || b.st.w - a.st.w);
+}
+function weakTopics(){
+  const map = new Map();
+  for (const lf of S.lfs) {
+    const P = S.prog.lf[lf.id];
+    for (const q of parsed(lf).fragen) {
+      const st = P?.fragen?.[q.key]; if (!st || !(st.r + st.w)) continue;
+      const th = themaOf(lf, q) || "Ohne Thema";
+      const key = lf.id + "|" + th;
+      const o = map.get(key) || { lfId: lf.id, thema: th, r: 0, w: 0, bad: 0, n: 0 };
+      o.r += st.r; o.w += st.w; o.n++; if (qState(st) === "bad") o.bad++;
+      map.set(key, o);
+    }
+  }
+  return [...map.values()].filter(o => o.w > 0).map(o => ({ ...o, rate: o.w / (o.r + o.w) })).sort((a, b) => b.rate - a.rate || b.bad - a.bad);
+}
+function streak(){
+  const days = new Set(S.prog.tage); let n = 0; const d = new Date();
+  if (!days.has(d.toLocaleDateString("sv-SE"))) d.setDate(d.getDate() - 1);
+  while (days.has(d.toLocaleDateString("sv-SE"))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function totals(){
+  let ok = 0, total = 0, attempts = 0;
+  for (const lf of S.lfs) { const s = lfStats(lf); ok += s.ok; total += s.total; }
+  for (const L of Object.values(S.prog.lf)) for (const st of Object.values(L.fragen || {})) attempts += (st.r || 0) + (st.w || 0);
+  const last = S.prog.verlauf.slice(-10); const c = last.reduce((s, v) => s + v.c, 0), t = last.reduce((s, v) => s + v.t, 0);
+  return { ok, total, attempts, recent: t ? c / t : null, sessions: S.prog.verlauf.length };
+}
+
+/* ================= Speichern ================= */
+let saveT, saving = Promise.resolve();
+function touchDay(){ const d = today(); if (!S.prog.tage.includes(d)) { S.prog.tage.push(d); S.prog.tage = S.prog.tage.slice(-120); } }
+function saveProg(now){
+  clearTimeout(saveT);
+  const run = () => { saving = saving.then(async () => {
+    S.prog.verlauf = S.prog.verlauf.slice(-200);
+    ls.set("lfk-prog-" + (S.uid || "lokal"), S.prog);
+    if (S.db && S.uid) { try { await S.db.doc(`data/users/${S.uid}/fortschritt`).set(JSON.parse(JSON.stringify(S.prog))); S.progLocalOnly = false; }
+      catch(e) { if (e?.code === "quota_exceeded") toast("Speicher voll – Fortschritt nur auf diesem Gerät gesichert");
+        else if (!S.progLocalOnly) { S.progLocalOnly = true; toast("Dein Fortschritt wird auf diesem Gerät gespeichert"); } } }
+  }); };
+  if (now) run(); else saveT = setTimeout(run, 800);
+}
+const LIMIT = 200000;
+async function saveLf(id, body){
+  if (JSON.stringify(body).length > LIMIT) throw { code: "too_big" };
+  if (S.mode === "db") await S.db.collection("lernfelder").doc(id).set(body);
+  else { const i = S.lfs.findIndex(l => l.id === id); const rec = { id, ...body }; if (i >= 0) S.lfs[i] = rec; else S.lfs.push(rec); ls.set("lfk-lfs", S.lfs); }
+}
+async function deleteLf(id){
+  if (S.mode === "db") await S.db.collection("lernfelder").doc(id).delete();
+  else { S.lfs = S.lfs.filter(l => l.id !== id); ls.set("lfk-lfs", S.lfs); }
+  delete S.prog.lf[id]; saveProg(true);
+}
+
+/* ================= Start ================= */
+async function init(){
+  route();
+  const c = window.claude;
+  const db = c?.use ? await c.use("db").catch(() => null) : null;
+  S.sample = c?.use ? await c.use("sample").catch(() => null) : null;
+  if (S.sample) { const lim = await S.sample.limits().catch(() => null); S.imgOk = !!lim?.images; S.maxImg = Math.max(1, lim?.images?.maxCount || 5); }
+  if (!db) {
+    S.mode = "local"; S.lfs = ls.get("lfk-lfs", []); S.importe = ls.get("lfk-importe", []); S.prog = migrate(ls.get("lfk-prog-lokal", null) || ls.get("lfk-prog", null));
+    S.ready = true; route(); return;
+  }
+  S.db = db; S.mode = "db";
+  const user = await c.use("user").catch(() => null);
+  S.uid = user ? await user.id() : null;
+  const cw = user ? await user.can("data.write") : null;
+  S.canWrite = cw === null ? true : cw;
+  S.isOwner = user ? await user.isOwner() : false;
+  S.prog = migrate(ls.get("lfk-prog-" + (S.uid || "lokal"), null));
+  if (S.uid) {
+    try {
+      const d = await db.doc(`data/users/${S.uid}/fortschritt`).get();
+      if (d.exists) S.prog = migrate(JSON.parse(JSON.stringify(d.data())));
+      else if (Object.keys(S.prog.lf).length) saveProg(true);
+    } catch(e) {}
+  }
+  const timer = setTimeout(() => { S.slow = true; if (!S.busy) route(); }, 10000);
+  db.collection("lernfelder").onSnapshot(snap => {
+    S.lfs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (!snap.metadata.fromCache) { clearTimeout(timer); S.slow = false; }
+    S.ready = true; if (!S.busy) route(); else navs();
+  }, err => { clearTimeout(timer); S.error = err.code; S.ready = true; if (!S.busy) route(); });
+  db.collection("importe").orderBy("at", "desc").limit(40).onSnapshot(snap => {
+    S.importe = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (location.hash === "#foto") renderImports();
+  }, () => {});
+}
+
+/* ================= Navigation ================= */
+window.addEventListener("hashchange", () => { S.busy = false; route(); window.scrollTo(0, 0); });
+function navs(){
+  const h = location.hash.slice(1) || "start";
+  const items = [["start", "Start", ICON.home]];
+  if (S.canWrite) items.push(["foto", "Foto", ICON.camera]);
+  items.push(["lernblatt", "Lernblätter", ICON.sheet], ["fortschritt", "Stand", ICON.chart], ["pruefung", "Prüfung", ICON.exam]);
+  const cur = k => (h === k || (k === "start" && h.startsWith("lf-"))) ? 'aria-current="page"' : "";
+  $("#snav").innerHTML = items.map(([k, n, i]) => `<a href="#${k}" ${h === k ? 'aria-current="page"' : ""}>${i}${k === "foto" ? "Foto hinzufügen" : k === "start" ? "Übersicht" : k === "fortschritt" ? "Fortschritt" : n}${k === "foto" && S.queue.some(q => q.status !== "fehler") ? ` <span class="chip acc" style="margin-left:auto">${S.queue.filter(q => q.status !== "fehler").length}</span>` : ""}</a>`).join("");
+  const bt = $("#btabs"); bt.style.gridTemplateColumns = `repeat(${items.length},1fr)`;
+  bt.innerHTML = items.map(([k, n, i]) => `<a href="#${k}" ${cur(k)}>${i}<span>${n}</span></a>`).join("");
+  const mini = (v, lbl) => ring(v, 22, 3.5, lbl).replace(/<b[^>]*>.*?<\/b>/, "");
+  $("#slist").innerHTML = S.prog ? sortLfs().map(l => { const s = lfStats(l), on = h === "lf-" + l.id || h.startsWith("lf-" + l.id + "-ls");
+    const P = parsed(l);
+    const subs = on ? [...P.lsList, ...(P.hasOther ? ["andere"] : [])].map(ls => { const t = lfStats(l, ls); return `<a class="sub" href="#${esc(lsHash(l.id, ls))}" ${h === lsHash(l.id, ls) ? 'aria-current="page"' : ""}>${mini(t.mastery, `${lsName(ls)}: ${Math.round(t.mastery*100)} %`)}<span class="t">${esc(lsName(ls))}</span></a>`; }).join("") : "";
+    return `<a href="#lf-${esc(l.id)}" ${h === "lf-" + l.id ? 'aria-current="page"' : ""}>${mini(s.mastery, `${lfLabel(l)}: ${Math.round(s.mastery*100)} % gemeistert`)}<span class="t">${esc(lfLabel(l))} · ${esc(l.titel)}</span></a>${subs}`; }).join("") : "";
+}
+function route(){
+  if (!S.ready) { app.innerHTML = `<p class="muted">Wird geladen …</p>`; return; }
+  navs();
+  const h = location.hash.slice(1);
+  if (h === "pruefung") return viewPruefung();
+  if (h === "fortschritt") return viewFortschritt();
+  if (h === "foto") return S.canWrite ? viewFoto() : viewHome();
+  if (h === "lernblatt") return viewLernblatt();
+  if (h === "neu") return S.canWrite ? viewEditor(null) : viewHome();
+  if (h.startsWith("lf-")) {
+    let id = h.slice(3), ls = null; const m = id.match(/^(.*)-ls(\d+)-(\d+)$/);
+    if (m && getLf(m[1])) { id = m[1]; ls = `${+m[2]}.${+m[3]}`; } else if (id.endsWith("-lsandere") && getLf(id.slice(0, -9))) { id = id.slice(0, -9); ls = "andere"; }
+    const lf = getLf(id); if (lf) { S.ls = ls; return viewLf(lf); }
+  }
+  viewHome();
+}
+function notes(){
+  let h = "";
+  if (S.error) h += `<p class="note">Deine Lernfelder konnten nicht geladen werden (${esc(S.error)}). Lade die Seite später neu.</p>`;
+  else if (S.slow) h += `<p class="note">Die Daten sind gerade nicht erreichbar. Was du siehst, ist eventuell nicht aktuell.</p>`;
+  if (S.mode === "local") h += `<p class="note">Dein Fortschritt wird nur in diesem Browser gespeichert. Für eine Sicherung in deinem Konto öffne die Seite über claude.ai.</p>`;
+  else if (!S.uid) h += `<p class="note">Melde dich bei claude.ai an, dann wird dein Fortschritt in deinem Konto gespeichert.</p>`;
+  else if (S.progLocalOnly) h += `<p class="note">Dein Fortschritt wird auf diesem Gerät gespeichert. Er bleibt privat und gehört nur dir.</p>`;
+  return h;
+}
+
+/* ================= Übersicht ================= */
+function viewHome(){
+  const lfs = sortLfs();
+  let html = notes();
+  if (!lfs.length) {
+    html += `<section class="empty"><h2>Noch keine Lernfelder</h2>
+      <p class="muted">Fotografier ein Arbeitsblatt. Die Seite erkennt das Lernfeld und trägt Lerninhalte, Quizfragen und Karteikarten automatisch ein.</p>
+      ${S.canWrite ? `<div class="row"><a class="btn" href="#foto">${ICON.camera.replace("<svg", '<svg width="18" height="18"')} Foto hinzufügen</a><a class="btn ghost" href="#neu">Selbst schreiben</a></div>` : ""}</section>`;
+    app.innerHTML = html; return;
+  }
+  const T = totals(), weak = weakQuestions(), topics = weakTopics(), st = streak();
+  const top = topics[0], topLf = top && getLf(top.lfId);
+  html += `<section class="card hero">
+    ${ring(T.total ? T.ok / T.total : 0, 112, 11, "Gesamt gemeistert")}
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:0">
+      <span class="eyebrow">Dein Stand</span>
+      <h1>${T.ok ? `${T.ok} von ${T.total} Fragen sitzen` : "Leg los mit deinem ersten Quiz"}</h1>
+      <p class="muted">${top ? `Größte Baustelle: <b style="color:var(--ink)">${esc(top.thema)}</b> in ${esc(topLf ? lfLabel(topLf) : "")} (${pct(top.w, top.r + top.w)} % Fehlerquote).` : "Sobald du übst, zeigt dir die Seite hier, wo deine Schwächen liegen."}</p>
+      <div class="acts">
+        <button class="btn" id="h-weak" ${weak.length ? "" : "disabled"}>Schwächen trainieren${weak.length ? ` (${Math.min(weak.length, 15)})` : ""}</button>
+        ${S.canWrite ? `<a class="btn ghost" href="#foto">${ICON.camera.replace("<svg", '<svg width="18" height="18"')} Foto hinzufügen</a>` : ""}
+        <a class="btn ghost" href="#fortschritt">Fortschritt ansehen</a>
+      </div>
+    </div></section>
+  <section class="kpis">
+    <div class="kpi"><span class="eyebrow">Lernserie</span><span class="v">${st} ${st === 1 ? "Tag" : "Tage"}</span><span class="s">${st ? "am Stück geübt" : "heute noch nicht geübt"}</span></div>
+    <div class="kpi"><span class="eyebrow">Quote zuletzt</span><span class="v">${T.recent === null ? "–" : Math.round(T.recent * 100) + " %"}</span><span class="s">letzte 10 Runden</span></div>
+    <div class="kpi"><span class="eyebrow">Schwache Fragen</span><span class="v">${weak.filter(q => q.state === "bad").length}</span><span class="s">zuletzt falsch oder oft falsch</span></div>
+    <div class="kpi"><span class="eyebrow">Beantwortet</span><span class="v">${T.attempts}</span><span class="s">Antworten insgesamt</span></div>
+  </section>
+  <section class="search">${ICON.search}<input type="text" id="suche" placeholder="Begriff suchen, z. B. Minimalprinzip, Sortiment …" autocomplete="off" aria-label="Lerninhalte durchsuchen"></section>
+  <div class="hits" id="hits"></div>
+  <div class="sh"><h2>Lernfelder</h2><span class="legend"><span><i class="s-ok"></i>sicher</span><span><i class="s-mid"></i>wackelig</span><span><i class="s-bad"></i>schwach</span><span><i class="s-new"></i>neu</span></span></div>
+  <section class="grid">${lfs.map(lfCard).join("")}</section>`;
+  app.innerHTML = html;
+  $("#suche").addEventListener("input", e => renderHits(e.target.value));
+  $("#h-weak").addEventListener("click", () => startWeak(app, S.lfs));
+}
+function stackBar(s){
+  const t = s.ok + s.mid + s.bad + s.new || 1;
+  const seg = (cls, n, name) => n ? `<span class="${cls}" style="width:${n / t * 100}%" title="${name}: ${n}"></span>` : "";
+  return `<div class="stack" role="img" aria-label="${s.ok} sicher, ${s.mid} wackelig, ${s.bad} schwach, ${s.new} neu">${seg("s-ok", s.ok, "sicher")}${seg("s-mid", s.mid, "wackelig")}${seg("s-bad", s.bad, "schwach")}${seg("s-new", s.new, "neu")}</div>`;
+}
+function lfCard(l){
+  const s = lfStats(l);
+  const chip = !s.total ? `<span class="chip new">keine Fragen</span>` : s.bad ? `<span class="chip bad">${s.bad} schwach</span>` : s.ok === s.total ? `<span class="chip ok">alles sicher</span>` : s.new === s.total ? `<span class="chip new">noch nicht geübt</span>` : `<span class="chip mid">${s.mid + s.new} offen</span>`;
+  return `<a class="card lf" href="#lf-${esc(l.id)}">
+    <div class="top">${ring(s.mastery, 58, 6)}<div><span class="eyebrow">${esc(lfLabel(l))}</span><h3>${esc(l.titel || "Ohne Titel")}</h3></div></div>
+    ${s.total ? stackBar(s) : ""}
+    <div class="meta">${chip}<span class="chip new">${s.known}/${s.karten} Karten</span>${parsed(l).lsList.map(ls => `<span class="chip acc">LS ${esc(ls)}</span>`).join("")}</div></a>`;
+}
+function renderHits(q){
+  const box = $("#hits"); q = q.trim().toLowerCase();
+  if (q.length < 2) { box.innerHTML = ""; return; }
+  const hits = [];
+  for (const l of sortLfs()) {
+    for (const s of parsed(l).secs) {
+      const text = s.lines.join(" ");
+      if ((s.titel + " " + text).toLowerCase().includes(q)) {
+        const i = text.toLowerCase().indexOf(q);
+        const snip = i >= 0 ? text.slice(Math.max(0, i - 50), i + 90).replace(/[#*>=]/g, " ") : "";
+        hits.push(`<a class="hit" href="#${esc(lsHash(l.id, s.ls))}" data-open="${esc(s.titel)}"><span class="eyebrow">${esc(lfLabel(l))}${s.ls ? " · LS " + esc(s.ls) : ""} · Thema</span><br><b>${esc(s.titel)}</b>${snip ? `<br><span class="muted">… ${esc(snip)} …</span>` : ""}</a>`);
+      }
+    }
+    for (const c of parsed(l).karten) if ((c.b + " " + c.e).toLowerCase().includes(q))
+      hits.push(`<a class="hit" href="#${esc(lsHash(l.id, c.ls))}"><span class="eyebrow">${esc(lfLabel(l))}${c.ls ? " · LS " + esc(c.ls) : ""} · Karte</span><br><b>${esc(c.b)}</b><br><span class="muted">${esc(c.e)}</span></a>`);
+  }
+  box.innerHTML = hits.length ? hits.slice(0, 15).join("") : `<p class="muted">Keine Treffer für „${esc(q)}“.</p>`;
+  box.querySelectorAll("[data-open]").forEach(a => a.addEventListener("click", () => { S.open = a.dataset.open; S.tab = "lernen"; }));
+  box.querySelectorAll(".hit:not([data-open])").forEach(a => a.addEventListener("click", () => { S.tab = "karten"; }));
+}
+
+/* ================= Fortschritt ================= */
+function viewFortschritt(){
+  let html = notes();
+  const lfs = sortLfs(), T = totals(), topics = weakTopics(), weak = weakQuestions();
+  html += `<div><span class="eyebrow">Auswertung</span><h1>Dein Fortschritt</h1></div>`;
+  if (!T.attempts) { html += `<section class="empty"><h2>Noch keine Daten</h2><p class="muted">Mach ein Quiz oder eine Prüfungssimulation. Danach siehst du hier deinen Verlauf und deine Schwächen.</p><a class="btn" href="#pruefung">Prüfung starten</a></section>`; app.innerHTML = html; return; }
+  html += `<section class="kpis">
+    <div class="kpi"><span class="eyebrow">Gemeistert</span><span class="v">${pct(T.ok, T.total)} %</span><span class="s">${T.ok} von ${T.total} Fragen sicher</span></div>
+    <div class="kpi"><span class="eyebrow">Lernserie</span><span class="v">${streak()} Tage</span><span class="s">${S.prog.tage.length} Lerntage insgesamt</span></div>
+    <div class="kpi"><span class="eyebrow">Runden</span><span class="v">${T.sessions}</span><span class="s">Quiz &amp; Prüfungen</span></div>
+    <div class="kpi"><span class="eyebrow">Quote zuletzt</span><span class="v">${T.recent === null ? "–" : Math.round(T.recent * 100) + " %"}</span><span class="s">letzte 10 Runden</span></div></section>
+  <section class="card"><div class="sh"><h2>Trefferquote pro Runde</h2><span class="muted">letzte ${Math.min(30, S.prog.verlauf.length)} Runden</span></div><div class="chart" id="trend"></div></section>
+  <section class="card"><div class="sh"><h2>Stand pro Lernfeld</h2><span class="legend"><span><i class="s-ok"></i>sicher</span><span><i class="s-mid"></i>wackelig</span><span><i class="s-bad"></i>schwach</span><span><i class="s-new"></i>neu</span></span></div>
+    <div>${lfs.filter(l => lfStats(l).total).map(l => { const s = lfStats(l), P = parsed(l);
+      const subs = [...P.lsList, ...(P.hasOther ? ["andere"] : [])].map(ls => { const t = lfStats(l, ls); return t.total ? `<a class="mrow" href="#${esc(lsHash(l.id, ls))}"><span class="lbl sub">${esc(lsName(ls))}</span>${stackBar(t)}<span class="num muted" style="font-size:.85rem">${t.ok}/${t.total}</span></a>` : ""; }).join("");
+      return `<a class="mrow" href="#lf-${esc(l.id)}"><span class="lbl">${esc(lfLabel(l))} · ${esc(l.titel)}</span>${stackBar(s)}<span class="num muted" style="font-size:.85rem">${s.ok}/${s.total}</span></a>${subs}`; }).join("")}</div></section>
+  <section class="card"><div class="sh"><h2>Schwächste Themen</h2><span class="muted">nach Fehlerquote</span></div>
+    ${topics.length ? `<div class="list">${topics.slice(0, 8).map((t, i) => { const l = getLf(t.lfId); const r = Math.round(t.rate * 100);
+      return `<div class="li"><div class="grow"><span class="eyebrow">${esc(l ? lfLabel(l) : "")}</span><b>${esc(t.thema)}</b><span class="muted" style="font-size:.85rem">${t.w} Fehler bei ${t.r + t.w} Antworten · ${t.n} Fragen geübt</span></div>
+      <span class="chip ${r >= 50 ? "bad" : r >= 25 ? "mid" : "ok"}">${r} % falsch</span>
+      <button class="btn soft sm" data-read="${i}">Lesen</button><button class="btn sm" data-train="${i}">Üben</button></div>`; }).join("")}</div>` : `<p class="muted">Bisher keine Fehler. Stark!</p>`}
+    <p class="muted" style="font-size:.82rem">Fragen werden einem Thema zugeordnet, wenn sie eine Zeile „@ Thema“ haben.</p></section>
+  <section class="card"><div class="sh"><h2>Häufigste Fehler</h2>${weak.length ? `<button class="btn sm" id="f-weak">Diese trainieren</button>` : ""}</div>
+    ${weak.length ? `<div class="list">${weak.slice(0, 10).map(q => { const l = getLf(q.lfId);
+      return `<div class="li"><div class="grow"><span class="eyebrow">${esc(l ? lfLabel(l) : "")}</span><b>${esc(q.q)}</b><span class="ans">✓ ${esc(q.richtig)}</span></div><span class="chip ${q.state === "bad" ? "bad" : "mid"}">${q.st.w}× falsch</span></div>`; }).join("")}</div>` : `<p class="muted">Keine offenen Fehler.</p>`}</section>
+  <section class="card flat"><h3>Fortschritt zurücksetzen</h3><p class="muted">Löscht deine Quiz-Ergebnisse, Karteikarten-Stand und Verlauf. Deine Lernfelder bleiben erhalten.</p>
+    <div class="row"><button class="btn ghost sm" id="rs">Zurücksetzen</button><span id="rs-c" hidden><span class="muted">Wirklich alles zurücksetzen?</span> <button class="btn danger sm" id="rs-y">Ja, zurücksetzen</button> <button class="btn ghost sm" id="rs-n">Nein</button></span></div></section>`;
+  app.innerHTML = html;
+  drawTrend($("#trend"));
+  app.querySelectorAll("[data-read]").forEach(b => b.addEventListener("click", () => { const t = topics[+b.dataset.read]; S.open = t.thema; S.tab = "lernen"; location.hash = lsHash(t.lfId, lsOf(t.thema)); }));
+  app.querySelectorAll("[data-train]").forEach(b => b.addEventListener("click", () => { const t = topics[+b.dataset.train], l = getLf(t.lfId);
+    const items = parsed(l).fragen.filter(q => (themaOf(l, q) || "Ohne Thema") === t.thema).map(q => ({ ...q, lfId: l.id }));
+    S.busy = true; runQuiz(app, items, `${lfLabel(l)} · ${t.thema}`); }));
+  $("#f-weak")?.addEventListener("click", () => startWeak(app, S.lfs));
+  $("#rs").addEventListener("click", () => { $("#rs-c").hidden = false; $("#rs").hidden = true; });
+  $("#rs-n").addEventListener("click", () => { $("#rs-c").hidden = true; $("#rs").hidden = false; });
+  $("#rs-y").addEventListener("click", () => { S.prog = emptyProg(); saveProg(true); toast("Fortschritt zurückgesetzt"); route(); });
+}
+function drawTrend(el){
+  const data = S.prog.verlauf.slice(-30);
+  if (data.length < 2) { el.innerHTML = `<p class="muted">Ab zwei Runden siehst du hier deine Entwicklung.</p>`; return; }
+  const W = 640, H = 220, L = 36, R = 12, Tp = 12, B = 26;
+  const x = i => L + (W - L - R) * (data.length === 1 ? .5 : i / (data.length - 1));
+  const y = v => Tp + (H - Tp - B) * (1 - v);
+  const pts = data.map((d, i) => [x(i), y(d.t ? d.c / d.t : 0)]);
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join("");
+  const area = line + `L${pts[pts.length-1][0]},${y(0)}L${pts[0][0]},${y(0)}Z`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Trefferquote der letzten ${data.length} Runden">
+    ${[0, .5, 1].map(v => `<line class="grid-l" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${v * 100}%</text>`).join("")}
+    <path class="area" d="${area}"/><path class="line" d="${line}"/>
+    <line class="hl" id="hl" y1="${Tp}" y2="${H - B}" x1="-10" x2="-10"/>
+    ${pts.map((p, i) => `<circle class="dot${i === pts.length - 1 ? " last" : ""}" cx="${p[0]}" cy="${p[1]}" r="${i === pts.length - 1 ? 5 : 3.5}"/>`).join("")}
+    <text class="ax" x="${L}" y="${H - 6}">${new Date(data[0].at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</text>
+    <text class="ax" x="${W - R}" y="${H - 6}" text-anchor="end">${new Date(data[data.length-1].at).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</text>
+    <rect x="${L}" y="0" width="${W - L - R}" height="${H}" fill="transparent" id="hit"/></svg><div class="tip" id="tip" hidden></div>`;
+  const svg = el.querySelector("svg"), tip = el.querySelector("#tip"), hl = el.querySelector("#hl");
+  const move = ev => {
+    const r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) / r.width * W;
+    let i = Math.round((sx - L) / (W - L - R) * (data.length - 1)); i = Math.max(0, Math.min(data.length - 1, i));
+    const d = data[i], p = pts[i];
+    hl.setAttribute("x1", p[0]); hl.setAttribute("x2", p[0]);
+    tip.hidden = false; tip.style.left = (p[0] / W * r.width) + "px"; tip.style.top = (p[1] / H * r.height) + "px";
+    tip.textContent = `${new Date(d.at).toLocaleDateString("de-DE")} · ${d.titel || "Quiz"} · ${d.c}/${d.t} (${pct(d.c, d.t)} %)`;
+  };
+  svg.addEventListener("pointermove", move);
+  svg.addEventListener("pointerleave", () => { tip.hidden = true; hl.setAttribute("x1", -10); hl.setAttribute("x2", -10); });
+}
+
+/* ================= Lernfeld ================= */
+function viewLf(lf){
+  const tabs = [["lernen", "Lernen"], ["blatt", "Lernblatt"], ["quiz", "Quiz"], ["karten", "Karten"]];
+  if (S.canWrite) tabs.push(["bearbeiten", "Bearbeiten"]);
+  if (!tabs.some(t => t[0] === S.tab)) S.tab = "lernen";
+  const PP = parsed(lf);
+  if (S.ls && S.ls !== "andere" && !PP.lsList.includes(S.ls)) S.ls = null;
+  const s = lfStats(lf, S.ls);
+  const lsAll = [...PP.lsList, ...(PP.hasOther ? ["andere"] : [])];
+  const lsbar = PP.lsList.length ? `<nav class="lsbar" aria-label="Lernsituationen"><a href="#${esc(lsHash(lf.id, null))}" aria-current="${!S.ls}"><b>Alle</b><span>${Math.round(lfStats(lf).mastery * 100)} %</span></a>${lsAll.map(ls => { const t = lfStats(lf, ls);
+      return `<a href="#${esc(lsHash(lf.id, ls))}" aria-current="${S.ls === ls}"><b>${esc(ls === "andere" ? "Weitere" : "LS " + ls)}</b><span>${t.total ? Math.round(t.mastery * 100) + " % · " + t.total + " Fr." : "keine Fragen"}</span></a>`; }).join("")}</nav>` : "";
+  app.innerHTML = `<div class="lfhead">${ring(s.mastery, 76, 8, "gemeistert")}
+      <div><span class="eyebrow">${esc(lfLabel(lf))}${S.ls ? " · " + esc(lsName(S.ls)) : ""}${lf.aktualisiert ? " · geändert am " + esc(new Date(lf.aktualisiert).toLocaleDateString("de-DE")) : ""}</span><h1>${esc(lf.titel || "Ohne Titel")}</h1>
+      ${s.total ? `<div style="max-width:420px">${stackBar(s)}</div>` : ""}</div></div>
+    ${lsbar}
+    <div class="seg" role="tablist">${tabs.map(([k, n]) => `<button role="tab" data-tab="${k}" aria-selected="${S.tab === k}">${n}</button>`).join("")}</div>
+    <div id="tabbody" style="display:flex;flex-direction:column;gap:14px"></div>`;
+  app.querySelectorAll("[data-tab]").forEach(b => b.addEventListener("click", () => { S.tab = b.dataset.tab; S.busy = false; viewLf(getLf(lf.id) || lf); }));
+  const body = $("#tabbody");
+  if (S.tab === "lernen") tabLernen(lf, body);
+  else if (S.tab === "blatt") { const h = sheetHtml(lf, S.ls, false); if (h) body.innerHTML = h; else emptyTab(lf, body, "Für diesen Bereich gibt es noch kein Lernblatt. Füge ein Foto hinzu oder trag unter „Bearbeiten“ eine Übersicht ein."); }
+  else if (S.tab === "quiz") tabQuiz(lf, body);
+  else if (S.tab === "karten") tabKarten(lf, body);
+  else { S.busy = true; viewEditor(lf, body); }
+}
+function emptyTab(lf, body, msg){
+  body.innerHTML = `<div class="empty"><p>${msg}</p>${S.canWrite ? `<button class="btn" id="go-edit">Jetzt eintragen</button>` : ""}</div>`;
+  $("#go-edit")?.addEventListener("click", () => { S.tab = "bearbeiten"; viewLf(lf); });
+}
+function tabLernen(lf, body){
+  const PP = parsed(lf), secs = PP.secs.filter(x => inLs(x, S.ls)), fragen = PP.fragen;
+  if (!secs.length) return emptyTab(lf, body, S.ls ? `Für ${lsName(S.ls)} gibt es noch keine Lerninhalte.` : "Für dieses Lernfeld sind noch keine Lerninhalte eingetragen.");
+  const P = S.prog.lf[lf.id];
+  const errs = {}; for (const q of fragen) { const st = P?.fragen?.[q.key], th = themaOf(lf, q); if (th && st && qState(st) === "bad") errs[th] = (errs[th] || 0) + 1; }
+  const open = S.open; S.open = null;
+  const hasSheet = PP.sheet.some(x => inLs(x, S.ls));
+  body.innerHTML = `${hasSheet ? `<button class="btn soft sm" id="to-blatt" style="align-self:flex-start">${ICON.sheet.replace("<svg", '<svg width="16" height="16"')} Schaubilder &amp; Übersichten ansehen</button>` : ""}${secs.length > 2 ? `<div class="toc">${secs.map((s, i) => `<button data-jump="${i}">${esc(s.titel)}</button>`).join("")}</div>` : ""}
+    <div class="sections">${secs.map((s, i) => `${!S.ls && PP.lsList.length && (i === 0 || secs[i - 1].ls !== s.ls) ? `<h2 class="lsh">${esc(lsName(s.ls || "andere"))} <a href="#${esc(lsHash(lf.id, s.ls || "andere"))}">nur diese ansehen</a></h2>` : ""}<details class="sec" id="sec-${i}" ${open ? (s.titel === open ? "open" : "") : (i === 0 ? "open" : "")}>
+      <summary><h3>${inline(s.titel)}</h3>${errs[s.titel] ? `<span class="chip bad">${errs[s.titel]} schwach</span>` : ""}<span class="chev">›</span></summary><div class="md">${renderMd(s.lines)}</div></details>`).join("")}</div>`;
+  $("#to-blatt")?.addEventListener("click", () => { S.tab = "blatt"; viewLf(lf); });
+  body.querySelectorAll("[data-jump]").forEach(b => b.addEventListener("click", () => { const d = $("#sec-" + b.dataset.jump); d.open = true; d.scrollIntoView({ behavior: "smooth", block: "start" }); }));
+  if (open) { const i = secs.findIndex(s => s.titel === open); if (i >= 0) setTimeout(() => $("#sec-" + i)?.scrollIntoView({ block: "start" }), 60); }
+}
+function tabQuiz(lf, body, thema){
+  const all = parsed(lf).fragen.filter(q => inLs(q, S.ls));
+  const themen = [...new Set(all.map(q => themaOf(lf, q)).filter(Boolean))];
+  if (thema && !themen.includes(thema)) thema = null;
+  const qs = thema ? all.filter(q => themaOf(lf, q) === thema) : all;
+  if (!qs.length) return emptyTab(lf, body, S.ls ? `Für ${lsName(S.ls)} gibt es noch keine Quizfragen.` : "Noch keine Quizfragen in diesem Lernfeld.");
+  const P = S.prog.lf[lf.id], tag = lfLabel(lf) + (thema ? " · " + thema : S.ls ? " · " + lsName(S.ls) : "");
+  const items = qs.map(q => ({ ...q, lfId: lf.id }));
+  const keys = new Set(qs.map(q => q.key));
+  const weak = weakQuestions([lf]).filter(q => keys.has(q.key)), fresh = items.filter(q => !P?.fragen?.[q.key]);
+  body.innerHTML = `${themen.length > 1 ? `<div class="row"><label for="q-thema" class="muted">Thema</label><select id="q-thema" style="flex:1;min-width:0"><option value="">Alle Themen (${all.length} Fragen)</option>${themen.map(t => `<option value="${esc(t)}" ${t === thema ? "selected" : ""}>${esc(t)} (${all.filter(q => themaOf(lf, q) === t).length})</option>`).join("")}</select></div>` : ""}
+    <div class="pick">
+    <button id="q-all"><b>Alle Fragen</b><span class="muted">${qs.length} Fragen, gemischt</span></button>
+    <button id="q-weak" ${weak.length ? "" : "disabled"}><b>Schwächen</b><span class="muted">${weak.length} Fragen, die noch nicht sitzen</span></button>
+    <button id="q-new" ${fresh.length ? "" : "disabled"}><b>Neue Fragen</b><span class="muted">${fresh.length} noch nie beantwortet</span></button></div>`;
+  $("#q-all").addEventListener("click", () => runQuiz(body, items, `${tag} · alle Fragen`));
+  $("#q-weak").addEventListener("click", () => runQuiz(body, weak.slice(0, 20), `${tag} · Schwächen`));
+  $("#q-new").addEventListener("click", () => runQuiz(body, fresh, `${tag} · neue Fragen`));
+  $("#q-thema")?.addEventListener("change", e => tabQuiz(lf, body, e.target.value || null));
+}
+function startWeak(host, lfs){
+  const weak = weakQuestions(lfs).slice(0, 15);
+  if (!weak.length) { toast("Keine Schwächen gefunden"); return; }
+  S.busy = true; runQuiz(host, weak, "Schwächen-Training");
+}
+
+/* ================= Quiz-Motor ================= */
+function runQuiz(body, items, titel){
+  S.busy = true;
+  const run = { list: shuffle(items), i: 0, score: 0, wrong: [], per: {} };
+  const record = (q, ok) => {
+    const p = run.per[q.lfId] ||= { c: 0, t: 0 }; p.t++;
+    const L = PL(q.lfId); const st = L.fragen[q.key] ||= { r: 0, w: 0, s: 0, last: 0, at: 0 };
+    if (ok) { run.score++; p.c++; st.r++; st.s++; st.last = 1; } else { run.wrong.push(q); st.w++; st.s = 0; st.last = 0; }
+    st.at = Date.now(); touchDay(); saveProg();
+  };
+  const next = () => { run.i++; run.i < run.list.length ? show() : finish(false); };
+  const show = () => {
+    const q = run.list[run.i], lf = getLf(q.lfId), th = lf ? themaOf(lf, q) : null;
+    body.innerHTML = `<div class="card">
+      <div class="qmeta"><span>Frage ${run.i + 1} von ${run.list.length}</span><span>${esc(lf ? lfLabel(lf) : "")}${q.ls ? " · LS " + esc(q.ls) : ""}${th && !lsOf(th) ? " · " + esc(th.length > 40 ? th.slice(0, 40) + "…" : th) : ""}</span><span>${run.score} richtig</span></div>
+      <div class="progress"><div style="width:${run.i / run.list.length * 100}%"></div></div>
+      <p class="qtext">${esc(q.q)}</p><div id="qa"></div><div id="fb"></div>
+      <div class="row between"><button class="btn ghost sm" id="q-stop">Beenden</button><button class="btn" id="q-next" hidden>Weiter</button></div></div>`;
+    $("#q-stop").addEventListener("click", () => finish(true));
+    $("#q-next").addEventListener("click", next);
+    const qa = $("#qa");
+    if (q.typ === "mc") {
+      const opts = shuffle([{ t: q.richtig, ok: true }, ...q.falsch.map(t => ({ t, ok: false }))]);
+      qa.innerHTML = `<div class="opts">${opts.map((o, k) => `<button class="opt" data-ok="${o.ok}"><span class="k">${"ABCDEFGH"[k]}</span><span>${esc(o.t)}</span></button>`).join("")}</div>`;
+      qa.querySelectorAll(".opt").forEach(b => b.addEventListener("click", () => {
+        qa.querySelectorAll(".opt").forEach(x => { x.disabled = true; if (x.dataset.ok === "true") x.classList.add("right"); });
+        const ok = b.dataset.ok === "true"; if (!ok) b.classList.add("wrong");
+        record(q, ok);
+        const fb = $("#fb"); fb.className = "feedback " + (ok ? "ok" : "no");
+        fb.innerHTML = `<b>${ok ? "Richtig!" : "Leider falsch."}</b> ${q.e ? inline(q.e) : ""}`;
+        const n = $("#q-next"); n.hidden = false; n.textContent = run.i + 1 < run.list.length ? "Weiter" : "Auswertung"; n.focus();
+      }));
+    } else {
+      qa.innerHTML = `<button class="btn soft" id="reveal">Antwort zeigen</button>`;
+      $("#reveal").addEventListener("click", () => {
+        qa.innerHTML = `<p class="answer">${inline(q.richtig)}</p>${q.e ? `<p class="muted">${inline(q.e)}</p>` : ""}
+          <div class="row"><button class="btn" id="knew">Gewusst</button><button class="btn ghost" id="nope">Nicht gewusst</button></div>`;
+        $("#knew").addEventListener("click", () => { record(q, true); next(); });
+        $("#nope").addEventListener("click", () => { record(q, false); next(); });
+      });
+    }
+  };
+  const finish = aborted => {
+    S.busy = false;
+    const answered = Object.values(run.per).reduce((n, p) => n + p.t, 0);
+    if (!answered) { route(); return; }
+    const lfsMap = {};
+    for (const [id, v] of Object.entries(run.per)) { PL(id).quiz = { c: v.c, t: v.t, at: Date.now() }; lfsMap[id] = [v.c, v.t]; }
+    S.prog.verlauf.push({ at: Date.now(), titel, c: run.score, t: answered, lfs: lfsMap });
+    saveProg(true); navs();
+    const p = run.score / answered;
+    const note = p >= .9 ? "Sehr gut – prüfungsreif!" : p >= .75 ? "Gut – fast geschafft." : p >= .5 ? "Befriedigend – die falschen Fragen noch mal üben." : "Lies die Themen noch mal und versuch es erneut.";
+    body.innerHTML = `<div class="card">
+      <div class="result">${ring(p, 120, 11, "Trefferquote")}
+        <div style="display:flex;flex-direction:column;gap:8px"><span class="eyebrow">${esc(titel)}${aborted ? " · vorzeitig beendet" : ""}</span>
+        <h2>${run.score} von ${answered} richtig</h2><p class="muted">${note}</p>
+        <div class="row">${Object.entries(run.per).map(([id, v]) => { const l = getLf(id); return `<span class="chip ${pct(v.c, v.t) >= 80 ? "ok" : pct(v.c, v.t) >= 50 ? "mid" : "bad"}">${esc(l ? lfLabel(l) : id)}: ${v.c}/${v.t}</span>`; }).join("")}</div></div></div>
+      ${run.wrong.length ? `<div><h3 style="margin-bottom:6px">Das hattest du falsch</h3><div class="list">${run.wrong.map(q => `<div class="li"><div class="grow"><b>${esc(q.q)}</b><span class="ans">✓ ${esc(q.richtig)}</span></div></div>`).join("")}</div></div>` : ""}
+      <div class="row"><button class="btn" id="r-wrong" ${run.wrong.length ? "" : "disabled"}>${run.wrong.length ? `Falsche wiederholen (${run.wrong.length})` : "Alles richtig!"}</button>
+      <a class="btn ghost" href="#fortschritt">Fortschritt ansehen</a><button class="btn ghost" id="r-back">Zurück</button></div></div>`;
+    $("#r-wrong").addEventListener("click", () => runQuiz(body, run.wrong, titel + " · Wiederholung"));
+    $("#r-back").addEventListener("click", () => route());
+  };
+  show();
+}
+
+/* ================= Karteikarten ================= */
+function tabKarten(lf, body){
+  const all = parsed(lf).karten.filter(c => inLs(c, S.ls));
+  if (!all.length) return emptyTab(lf, body, S.ls ? `Für ${lsName(S.ls)} gibt es keine Karteikarten. Karten ordnest du mit „Begriff :: Erklärung :: LS ${S.ls === "andere" ? "1.1" : S.ls}“ zu.` : "Noch keine Karteikarten in diesem Lernfeld.");
+  let onlyNew = false, deck = [], i = 0;
+  const known = c => !!PL(lf.id).karten[c.key]?.k;
+  const build = () => { deck = shuffle(onlyNew ? all.filter(c => !known(c)) : all); i = 0; };
+  const draw = () => {
+    const nKnown = all.filter(known).length;
+    if (!deck.length) {
+      body.innerHTML = `<div class="card"><div class="result">${ring(nKnown / all.length, 100, 10)}<div style="display:flex;flex-direction:column;gap:10px"><h2>Stapel durch</h2><p class="muted">${nKnown} von ${all.length} Karten sitzen.</p>
+        <div class="row"><button class="btn" id="k-all">Alle Karten noch mal</button><button class="btn ghost" id="k-reset">Karten zurücksetzen</button></div></div></div></div>`;
+      $("#k-all").addEventListener("click", () => { onlyNew = false; build(); draw(); });
+      $("#k-reset").addEventListener("click", () => { PL(lf.id).karten = {}; saveProg(); onlyNew = false; build(); draw(); });
+      return;
+    }
+    const c = deck[i];
+    body.innerHTML = `<div class="card">
+      <div class="qmeta"><span>Karte ${i + 1} von ${deck.length}</span><span>${nKnown}/${all.length} gewusst</span></div>
+      <div class="progress"><div style="width:${nKnown / all.length * 100}%"></div></div>
+      <label class="chk"><input type="checkbox" id="k-new" ${onlyNew ? "checked" : ""}> Nur Karten, die ich noch nicht weiß</label>
+      <div class="fc" id="fc" tabindex="0" role="button" aria-label="Karte umdrehen">
+        <div class="fc-inner"><div class="face"><span class="eyebrow">Begriff · tippen zum Umdrehen</span><span class="term">${esc(c.b)}</span></div>
+        <div class="face back"><p style="font-size:1.08rem">${inline(c.e)}</p></div></div></div>
+      <div class="row between"><button class="btn ghost" id="k-no">Nochmal</button><button class="btn" id="k-yes">Wusste ich</button></div></div>`;
+    const fc = $("#fc"), flip = () => fc.classList.toggle("flip");
+    fc.addEventListener("click", flip);
+    fc.addEventListener("keydown", e => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); flip(); } });
+    $("#k-new").addEventListener("change", e => { onlyNew = e.target.checked; build(); draw(); });
+    $("#k-yes").addEventListener("click", () => { PL(lf.id).karten[c.key] = { k: 1, at: Date.now() }; touchDay(); saveProg(); deck.splice(i, 1); if (i >= deck.length) i = 0; draw(); });
+    $("#k-no").addEventListener("click", () => { PL(lf.id).karten[c.key] = { k: 0, at: Date.now() }; touchDay(); saveProg(); deck.push(deck.splice(i, 1)[0]); if (deck.length === 1) i = 0; draw(); });
+  };
+  build(); draw();
+}
+
+/* ================= Prüfung ================= */
+function viewPruefung(){
+  const lfs = sortLfs().filter(l => parsed(l).fragen.length);
+  if (!lfs.length) { app.innerHTML = notes() + `<div class="empty"><h2>Prüfung simulieren</h2><p>Sobald deine Lernfelder Quizfragen haben, kannst du hier eine gemischte Prüfung machen.</p><a class="btn" href="#start">Zur Übersicht</a></div>`; return; }
+  app.innerHTML = notes() + `<div><span class="eyebrow">Alle Lernfelder gemischt</span><h1>Prüfung simulieren</h1></div>
+    <div id="pr-body"><div class="card">
+      <h3>Welche Lernfelder kommen dran?</h3>
+      <div>${lfs.map(l => { const P = parsed(l); const groups = P.lsList.length ? [...P.lsList, ...(P.fragen.some(q => !q.ls) ? ["andere"] : [])] : ["*"];
+        return `<div class="pgroup"><b>${esc(lfLabel(l))} · ${esc(l.titel)}</b><div class="chips">${groups.map(ls => { const n = P.fragen.filter(q => ls === "*" || inLs(q, ls)).length;
+          return n ? `<label><input type="checkbox" value="${esc(l.id + "|" + ls)}" checked> ${esc(ls === "*" ? "alle Themen" : lsName(ls))} <span class="muted">(${n})</span></label>` : ""; }).join("")}</div></div>`; }).join("")}</div>
+      <div class="row"><label for="pr-n">Anzahl Fragen</label>
+        <select id="pr-n"><option value="10">10</option><option value="20" selected>20</option><option value="30">30</option><option value="0">Alle</option></select>
+        <select id="pr-m" aria-label="Auswahl"><option value="alle">Alle Fragen</option><option value="schwach">Nur Schwächen</option><option value="neu">Nur neue Fragen</option></select></div>
+      <div class="row"><button class="btn" id="pr-go">Prüfung starten</button><span class="muted" id="pr-info"></span></div>
+    </div></div>`;
+  $("#pr-go").addEventListener("click", () => {
+    const ids = [...app.querySelectorAll(".chips input:checked")].map(i => i.value.split("|"));
+    const mode = $("#pr-m").value, n = +$("#pr-n").value;
+    const ok = q => ids.some(([id, ls]) => id === q.lfId && (ls === "*" || inLs(q, ls)));
+    const sel = [...new Set(ids.map(x => x[0]))].map(getLf).filter(Boolean);
+    let items = (mode === "schwach" ? weakQuestions(sel) : sel.flatMap(l => parsed(l).fragen.map(q => ({ ...q, lfId: l.id })))).filter(ok);
+    if (mode === "neu") items = items.filter(q => !S.prog.lf[q.lfId]?.fragen?.[q.key]);
+    items = mode === "schwach" ? items : shuffle(items); if (n) items = items.slice(0, n);
+    if (!items.length) { $("#pr-info").textContent = ids.length ? "Für diese Auswahl gibt es keine passenden Fragen." : "Wähle mindestens ein Lernfeld."; return; }
+    runQuiz($("#pr-body"), items, "Prüfungssimulation");
+  });
+}
+
+/* ================= Lernblätter ================= */
+function sheetHtml(lf, ls, withHead){
+  const P = parsed(lf);
+  const secs = P.sheet.filter(x => inLs(x, ls));
+  const merk = [];
+  for (const sec of P.secs.filter(x => inLs(x, ls))) for (const l of sec.lines) { const m = l.match(/^>\s?(.*)/); if (m && m[1].trim()) merk.push({ t: m[1], von: sec.titel }); }
+  if (!secs.length && !merk.length) return "";
+  const st = lfStats(lf, ls);
+  return `${withHead ? `<div class="sh"><h2>${esc(lfLabel(lf))} · ${esc(lf.titel)}</h2><div class="row">${st.bad ? `<a class="chip bad" href="#${esc(lsHash(lf.id, ls))}" data-quiz="1">${st.bad} schwache Fragen</a>` : ""}<a class="btn soft sm" href="#${esc(lsHash(lf.id, ls))}">Lernfeld öffnen</a></div></div>` : ""}
+    ${secs.length > 1 ? `<div class="toc">${secs.map((x, i) => `<button data-sj="${esc(lf.id)}-${i}">${esc(x.titel)}</button>`).join("")}</div>` : ""}
+    ${secs.map((x, i) => `<section class="card sheet" id="sj-${esc(lf.id)}-${i}"><span class="eyebrow">${esc(lfLabel(lf))}${x.ls ? " · LS " + esc(x.ls) : ""} · Lernblatt</span><h3 class="st">${inline(x.titel)}</h3>${renderSheet(x.lines)}</section>`).join("")}
+    ${merk.length ? `<section class="card"><h3>Merksätze${ls ? " · " + esc(lsName(ls)) : ""}</h3><div class="merk">${merk.map(m => `<p><small>${esc(m.von)}</small>${inline(m.t)}</p>`).join("")}</div></section>` : ""}`;
+}
+function viewLernblatt(){
+  const lfs = sortLfs();
+  let sel = ls.get("lfk-blatt-sel", null);
+  if (!Array.isArray(sel)) sel = lfs.map(l => l.id);
+  sel = sel.filter(id => getLf(id));
+  if (!sel.length && lfs.length) sel = [lfs[0].id];
+  const withContent = lfs.filter(l => sheetHtml(l, null, false));
+  app.innerHTML = notes() + `<div><span class="eyebrow">Das Wichtigste auf einen Blick</span><h1>Lernblätter</h1></div>
+    ${lfs.length ? `<div class="card flat"><div class="sh"><h3>Welche Lernfelder willst du sehen?</h3><div class="row"><button class="btn ghost sm" id="lb-all">Alle</button><button class="btn ghost sm" id="lb-none">Keins</button></div></div>
+      <div class="chips">${lfs.map(l => `<label><input type="checkbox" value="${esc(l.id)}" ${sel.includes(l.id) ? "checked" : ""}> <span style="white-space:nowrap">${esc(lfLabel(l))}</span> <span class="muted cut">${esc(l.titel.length > 34 ? l.titel.slice(0, 34) + "…" : l.titel)}</span></label>`).join("")}</div></div>` : ""}
+    <div id="lb-body" style="display:flex;flex-direction:column;gap:22px"></div>`;
+  const draw = () => {
+    const ids = [...app.querySelectorAll(".chips input:checked")].map(i => i.value);
+    ls.set("lfk-blatt-sel", ids);
+    const parts = ids.map(getLf).filter(Boolean).map(l => { const h = sheetHtml(l, null, true); return h ? `<div class="sheetlf">${h}</div>` : `<div class="sheetlf"><div class="sh"><h2>${esc(lfLabel(l))} · ${esc(l.titel)}</h2></div><p class="muted">Für dieses Lernfeld gibt es noch kein Lernblatt. Füge ein Foto hinzu, dann erstellt Claude eins.</p></div>`; });
+    $("#lb-body").innerHTML = parts.join("") || `<div class="empty"><p>${lfs.length ? "Wähle oben mindestens ein Lernfeld." : "Noch keine Lernfelder. Füge ein Foto hinzu."}</p>${!lfs.length && S.canWrite ? `<a class="btn" href="#foto">Foto hinzufügen</a>` : ""}</div>`;
+    $("#lb-body").querySelectorAll("[data-sj]").forEach(b => b.addEventListener("click", () => $("#sj-" + b.dataset.sj)?.scrollIntoView({ behavior: "smooth", block: "start" })));
+    $("#lb-body").querySelectorAll("[data-quiz]").forEach(a => a.addEventListener("click", () => { S.tab = "quiz"; }));
+  };
+  app.querySelectorAll(".chips input").forEach(i => i.addEventListener("change", draw));
+  $("#lb-all")?.addEventListener("click", () => { app.querySelectorAll(".chips input").forEach(i => i.checked = true); draw(); });
+  $("#lb-none")?.addEventListener("click", () => { app.querySelectorAll(".chips input").forEach(i => i.checked = false); draw(); });
+  draw();
+}
+
+/* ================= Foto hinzufügen ================= */
+function viewFoto(){
+  const can = S.sample && S.imgOk;
+  app.innerHTML = notes() + `<div><span class="eyebrow">Automatisch einsortieren</span><h1>Foto hinzufügen</h1></div>
+    ${can ? `<label class="drop" id="drop" for="f-in">
+        <span class="big">${ICON.camera}</span>
+        <b style="font-family:var(--f-display);font-size:1.2rem">Arbeitsblatt fotografieren oder Bilder wählen</b>
+        <span class="muted" style="max-width:46ch">Mehrere Fotos auf einmal gelten als zusammengehörige Seiten. Claude erkennt das Lernfeld und trägt Lerninhalte, Quizfragen und Karteikarten automatisch ein.</span>
+      </label><input type="file" id="f-in" accept="image/*" multiple hidden>`
+    : `<div class="empty"><h2>Automatische Erkennung nicht verfügbar</h2><p class="muted">Dafür braucht die Seite Claude mit Bildern. Öffne sie in claude.ai im Browser oder in der Claude-App und erlaube Claude, wenn die Seite fragt.</p><a class="btn ghost" href="#neu">Stattdessen selbst schreiben</a></div>`}
+    <section class="card"><div class="sh"><h2>Deine Fotos</h2><span class="muted" style="font-size:.85rem">Lass die Seite offen, bis alles fertig ist.</span></div><div id="imports"></div></section>
+    <p class="muted" style="font-size:.88rem">Lieber selbst schreiben? <a href="#neu">Lernfeld manuell anlegen</a></p>`;
+  renderImports();
+  if (!can) return;
+  const inp = $("#f-in"), drop = $("#drop");
+  inp.addEventListener("change", () => { addPhotos([...inp.files]); inp.value = ""; });
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); addPhotos([...e.dataTransfer.files].filter(f => f.type.startsWith("image/"))); });
+}
+function renderImports(){
+  const box = $("#imports"); if (!box) return;
+  const q = S.queue.map(it => `<div class="imp"><div class="th">${safeImg(it.thumb) ? `<img src="${safeImg(it.thumb)}" alt="">` : ""}</div>
+    <div class="info"><b>${it.files.length} ${it.files.length === 1 ? "Foto" : "Fotos"}</b>
+    <span class="muted" style="font-size:.88rem">${it.status === "wartet" ? "Wartet …" : it.status === "liest" ? `<span class="spin"></span> ${esc(it.msg || "Claude liest das Blatt …")}` : `<span style="color:var(--bad)">${esc(it.msg)}</span>`}</span></div>
+    <div class="acts">${it.status === "fehler" ? `<button class="btn sm" data-retry="${it.id}">Nochmal</button><button class="btn ghost sm" data-drop="${it.id}">Entfernen</button>` : it.status === "liest" ? `<button class="btn ghost sm" data-stop="${it.id}">Stopp</button>` : ""}</div></div>`).join("");
+  const done = S.importe.map(r => { const lf = getLf(r.lfId); const c = r.counts || {};
+    const canUndo = !r.undone && lf && lf.aktualisiert === r.resultAt;
+    const parts = [c.secsNew ? `+${c.secsNew} Themen` : "", c.sheets ? `+${c.sheets} Lernblatt` : "", c.secsExt ? `${c.secsExt} ergänzt` : "", c.fragen ? `+${c.fragen} Fragen` : "", c.karten ? `+${c.karten} Karten` : ""].filter(Boolean).join(" · ") || "nichts Neues gefunden";
+    return `<div class="imp"><div class="th">${safeImg(r.thumb) ? `<img src="${safeImg(r.thumb)}" alt="">` : ICON.camera}</div>
+      <div class="info"><span class="eyebrow">${esc(new Date(r.at).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }))}${r.created ? " · neues Lernfeld" : ""}</span>
+      <b>${r.undone ? "<s>" : ""}LF ${esc(r.lfNr ?? "?")} · ${esc(r.lfTitel || "")}${r.undone ? "</s>" : ""}</b>
+      <span class="muted" style="font-size:.88rem">${r.undone ? "Rückgängig gemacht" : esc(r.zusammenfassung ? r.zusammenfassung + " · " : "") + parts}</span></div>
+      <div class="acts">${!r.undone && lf ? `<a class="btn soft sm" href="#lf-${esc(r.lfId)}">Ansehen</a>` : ""}${canUndo ? `<button class="btn ghost sm" data-undo="${esc(r.id)}">Rückgängig</button>` : ""}</div></div>`; }).join("");
+  box.innerHTML = (q + done) || `<p class="muted">Noch keine Fotos. Dein erstes Arbeitsblatt landet hier, sobald du es hinzufügst.</p>`;
+  box.querySelectorAll("[data-retry]").forEach(b => b.addEventListener("click", () => { const it = S.queue.find(x => x.id === b.dataset.retry); if (it) { it.status = "wartet"; it.msg = ""; renderImports(); processQueue(); } }));
+  box.querySelectorAll("[data-drop]").forEach(b => b.addEventListener("click", () => { S.queue = S.queue.filter(x => x.id !== b.dataset.drop); renderImports(); navs(); }));
+  box.querySelectorAll("[data-stop]").forEach(b => b.addEventListener("click", () => S.queue.find(x => x.id === b.dataset.stop)?.ctl?.abort()));
+  box.querySelectorAll("[data-undo]").forEach(b => b.addEventListener("click", () => undoImport(b.dataset.undo, b)));
+}
+async function loadImg(file){
+  try { const b = await createImageBitmap(file); return { img: b, w: b.width, h: b.height }; }
+  catch (e) { const url = URL.createObjectURL(file); const img = new Image(); await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; }); return { img, w: img.naturalWidth, h: img.naturalHeight }; }
+}
+function toBlob(src, max, q){
+  const s = Math.min(1, max / Math.max(src.w, src.h)), c = document.createElement("canvas");
+  c.width = Math.round(src.w * s); c.height = Math.round(src.h * s);
+  c.getContext("2d").drawImage(src.img, 0, 0, c.width, c.height);
+  return c;
+}
+async function addPhotos(files){
+  if (!files.length) return;
+  const prepared = [];
+  for (const f of files) {
+    try { const src = await loadImg(f); const c = toBlob(src, 2000);
+      prepared.push({ blob: await new Promise(r => c.toBlob(r, "image/jpeg", .86)), thumb: toBlob(src, 200).toDataURL("image/jpeg", .6) });
+    } catch (e) { toast("Ein Bild konnte nicht geöffnet werden"); }
+  }
+  for (let i = 0; i < prepared.length; i += S.maxImg) {
+    const part = prepared.slice(i, i + S.maxImg).filter(p => p.blob);
+    if (part.length) S.queue.push({ id: "q" + Date.now().toString(36) + i, files: part.map(p => p.blob), thumb: part[0].thumb, status: "wartet", msg: "" });
+  }
+  renderImports(); navs(); processQueue();
+}
+const FORMAT_TXT = `Formate der Textfelder:
+- "inhalt": Abschnitte beginnen mit einer Zeile "# Thema"; darunter Stichpunkte mit "- ", wichtige Begriffe in **fett**, Merksätze als Zeile mit "> ".
+- "fragen": Fragen-Blöcke, getrennt durch eine Leerzeile. Jeder Block: "? Frage", "@ Thema" (genau der Titel des passenden Abschnitts), "+ richtige Antwort", drei Zeilen "- falsche, aber plausible Antwort", "= kurze Erklärung". Gemischt aus Wissens- und Anwendungsfragen (kleine Fälle aus dem Ladenalltag).
+- "karten": eine Zeile pro Karte im Format "Begriff :: kurze Erklärung :: LS x.y" (die Lernsituation am Ende nur, wenn bekannt).
+- "merkblatt": Abschnitte "# LS x.y Titel des Lernblatts". Begriffsbaum als Liste mit "- " und je Ebene zwei Leerzeichen Einrückung, Format eines Knotens "Begriff: Beispiele" oder "Begriff (kurze Erklärung)". Tabellen mit "| Spalte | Spalte |", erste Zeile ist die Kopfzeile. Merksätze mit "> ".
+Schreibe auf Deutsch, klar und prüfungsnah für Auszubildende im Einzelhandel (Berufsschule).`;
+function importPrompt(){
+  const known = sortLfs().map(l => `LF ${l.nr ?? "?"} "${l.titel}" – Themen: ${parsed(l).secs.map(s => s.titel).join(" | ").slice(0, 600) || "noch keine"}`).join("\n") || "noch keine";
+  return `Die Fotos zeigen Unterrichtsmaterial (Arbeitsblätter, Tafelbilder, Buchseiten, Notizen) einer Berufsschulklasse "Kaufmann/Kauffrau im Einzelhandel".
+
+Lernfelder, die es in der Kartei schon gibt:
+${known}
+
+Offizielle Lernfelder des Ausbildungsberufs (für neue Lernfelder):
+${LF_OFFIZIELL.map((t, i) => `LF ${i + 1} ${t}`).join("\n")}
+
+Aufgabe:
+1. Ordne das Material dem passenden Lernfeld zu. Steht auf dem Blatt eine Angabe wie "LF 1" oder "LS 1.3", nutze sie. Sonst entscheide nach dem Inhalt.
+2. Erstelle daraus Lernmaterial. Wenn das Blatt nur Aufgaben, Fälle oder Leitfragen enthält, beantworte sie mit dem üblichen Berufsschulwissen. Bleib beim Thema des Materials.
+3. Lernsituationen (Nachkommastelle, z. B. LS 1.4): Jeder Thementitel beginnt mit der Lernsituation, wenn sie auf dem Blatt steht oder aus einem bestehenden Thema klar ist, z. B. "# LS 1.4 Rechte und Pflichten in der Ausbildung". Jede Frage bekommt "@ " plus genau diesen Thementitel, jede Karte endet mit " :: LS 1.4". Ist keine Lernsituation erkennbar, lass die Angabe weg.
+   Gehört der Inhalt zu einem Thema, das es im Lernfeld schon gibt, verwende GENAU denselben Thementitel, dann wird es ergänzt.
+4. Mindestens 10 Quizfragen (bei vielen Begriffen gern 25 oder mehr) und 8 bis 25 Karteikarten pro Lernfeld.
+
+5. Erstelle zusätzlich ein Lernblatt ("merkblatt") mit dem Wichtigsten als Übersicht: Schaubilder und Begriffsbäume vollständig als eingerückte Liste, Einteilungen und Gegenüberstellungen als Tabelle. Fehlt in einem Schaubild auf dem Blatt etwas Prüfungsrelevantes, ergänze es.
+6. Stelle zu JEDEM Begriff und JEDEM Beispiel aus Schaubildern und Listen mindestens eine Quizfrage, damit alles abgefragt wird.
+
+Antworte NUR mit JSON: {"eintraege":[{"lf_nr": Zahl, "lf_titel": "…", "zusammenfassung": "ein kurzer Satz, was auf dem Blatt war", "inhalt": "…", "merkblatt": "…", "fragen": "…", "karten": "…"}]}
+Normalerweise genau ein Eintrag. Mehrere nur, wenn die Fotos zu verschiedenen Lernfeldern gehören. Ist nichts lesbar oder kein Unterrichtsmaterial, antworte {"eintraege":[],"fehler":"kurzer Grund"}.
+${FORMAT_TXT}`;
+}
+function mergeInto(lf, e){
+  const prev = { inhalt: lf?.inhalt || "", fragen: lf?.fragen || "", karten: lf?.karten || "", merkblatt: lf?.merkblatt || "" };
+  const sheets = parseSections(prev.merkblatt).map(s => ({ titel: s.titel, lines: s.lines.slice() }));
+  let sheetsNew = 0;
+  for (const ns of parseSections(String(e.merkblatt || ""))) {
+    if (!ns.lines.join("").trim()) continue;
+    const ex = sheets.find(s => s.titel.toLowerCase() === ns.titel.toLowerCase());
+    if (ex) ex.lines = [...ex.lines.join("\n").trimEnd().split("\n"), "", ...ns.lines]; else { sheets.push(ns); sheetsNew++; }
+  }
+  const merkblatt = sheets.map(s => `# ${s.titel}\n${s.lines.join("\n").trim()}`).join("\n\n");
+  const secs = parseSections(prev.inhalt).map(s => ({ titel: s.titel, lines: s.lines.slice() }));
+  let secsNew = 0, secsExt = 0;
+  for (const ns of parseSections(String(e.inhalt || ""))) {
+    if (!ns.lines.join("").trim()) continue;
+    const ex = secs.find(s => s.titel.toLowerCase() === ns.titel.toLowerCase());
+    if (ex) { ex.lines = [...ex.lines.join("\n").trimEnd().split("\n"), "", ...ns.lines]; secsExt++; } else { secs.push(ns); secsNew++; }
+  }
+  const inhalt = secs.map(s => `# ${s.titel}\n${s.lines.join("\n").trim()}`).join("\n\n");
+  const keys = new Set(parseFragen(prev.fragen).map(q => q.key));
+  const newBlocks = String(e.fragen || "").split(/\n\s*\n/).map(b => b.trim()).filter(b => { const q = parseFragen(b)[0]; if (!q || keys.has(q.key)) return false; keys.add(q.key); return true; });
+  const terms = new Set(parseKarten(prev.karten).map(c => c.b.toLowerCase()));
+  const newCards = String(e.karten || "").split("\n").map(l => l.trim()).filter(l => { const c = parseKarten(l)[0]; if (!c || terms.has(c.b.toLowerCase())) return false; terms.add(c.b.toLowerCase()); return true; });
+  const join = (a, add) => add.length ? (a.trim() ? a.trimEnd() + "\n\n" : "") + add.join(add === newCards ? "\n" : "\n\n") : a;
+  return { prev, fields: { inhalt, merkblatt, fragen: join(prev.fragen, newBlocks), karten: join(prev.karten, newCards) }, counts: { secsNew, secsExt, sheets: sheetsNew, fragen: newBlocks.length, karten: newCards.length } };
+}
+async function saveImport(rec){
+  if (S.mode === "db") { const ref = S.db.collection("importe").doc(); await ref.set(rec); }
+  else { S.importe.unshift({ id: "i" + Date.now(), ...rec }); S.importe = S.importe.slice(0, 40); ls.set("lfk-importe", S.importe); }
+}
+async function processQueue(){
+  if (S.qRunning) return; S.qRunning = true;
+  try {
+    let it;
+    while ((it = S.queue.find(x => x.status === "wartet"))) {
+      it.status = "liest"; it.msg = "Claude liest das Blatt …"; it.ctl = new AbortController(); renderImports(); navs();
+      let res;
+      try { res = await S.sample.json(importPrompt(), { images: it.files, signal: it.ctl.signal, cache: false }); }
+      catch (e) {
+        if (e.code === "cancelled") { S.queue = S.queue.filter(x => x !== it); renderImports(); navs(); continue; }
+        it.status = "fehler"; it.msg = ({ not_granted: "Du hast Claude für diese Seite nicht erlaubt.", rate_limited: "Gerade zu viele Anfragen. Versuch es in ein paar Minuten noch mal.", image_rejected: "Das Bild konnte nicht gelesen werden.", invalid_json: "Claude hat kein lesbares Ergebnis geliefert.", refused: "Claude konnte dieses Bild nicht bearbeiten." })[e.code] || "Das hat nicht geklappt.";
+        renderImports(); navs(); continue;
+      }
+      const list = Array.isArray(res?.eintraege) ? res.eintraege : [];
+      if (!list.length) { it.status = "fehler"; it.msg = res?.fehler ? "Nicht erkannt: " + String(res.fehler).slice(0, 140) : "Auf dem Foto wurde kein Lernstoff erkannt."; renderImports(); navs(); continue; }
+      it.msg = "Wird eingetragen …"; renderImports();
+      try {
+        for (const e of list) {
+          const nr = Number.isFinite(+e.lf_nr) && +e.lf_nr >= 1 && +e.lf_nr <= 99 ? Math.round(+e.lf_nr) : null;
+          let lf = nr ? sortLfs().find(l => +l.nr === nr) : null;
+          const created = !lf;
+          const id = lf?.id || (nr ? (getLf("lf" + String(nr).padStart(2, "0")) ? "lf" + String(nr).padStart(2, "0") + "-" + Date.now().toString(36) : "lf" + String(nr).padStart(2, "0")) : "lf-" + Date.now().toString(36));
+          const titel = lf?.titel || String(e.lf_titel || (nr && LF_OFFIZIELL[nr - 1]) || "Ohne Zuordnung").slice(0, 120);
+          const m = mergeInto(lf, e);
+          const body = { nr: lf?.nr ?? nr, titel, ...m.fields, aktualisiert: new Date().toISOString() };
+          await saveLf(id, body);
+          const i = S.lfs.findIndex(l => l.id === id); if (i >= 0) S.lfs[i] = { id, ...body }; else S.lfs.push({ id, ...body });
+          const rec = { at: Date.now(), lfId: id, lfNr: body.nr, lfTitel: titel, created, zusammenfassung: String(e.zusammenfassung || "").slice(0, 200), counts: m.counts, thumb: (safeImg(it.thumb) && it.thumb.length < 40000) ? it.thumb : null, resultAt: body.aktualisiert };
+          if (!created && JSON.stringify(m.prev).length < 150000) rec.prev = m.prev;
+          await saveImport(rec);
+          toast(`Eingetragen in LF ${body.nr ?? "?"}`);
+        }
+        S.queue = S.queue.filter(x => x !== it);
+      } catch (ex) {
+        it.status = "fehler"; it.msg = ex?.code === "too_big" ? "Das Lernfeld ist zu voll. Leg für weitere Blätter ein neues an." : ex?.code === "quota_exceeded" ? "Der Speicher ist voll." : "Speichern hat nicht geklappt.";
+      }
+      renderImports(); navs(); if (!S.busy && location.hash !== "#foto") route();
+    }
+  } finally { S.qRunning = false; }
+}
+async function undoImport(id, btn){
+  const r = S.importe.find(x => x.id === id), lf = r && getLf(r.lfId);
+  if (!r || !lf || lf.aktualisiert !== r.resultAt) { toast("Das Lernfeld wurde inzwischen geändert"); return; }
+  btn.disabled = true;
+  try {
+    if (r.created) await deleteLf(lf.id);
+    else if (r.prev) await saveLf(lf.id, { nr: lf.nr, titel: lf.titel, inhalt: lf.inhalt || "", fragen: lf.fragen || "", karten: lf.karten || "", merkblatt: lf.merkblatt || "", ...r.prev, aktualisiert: new Date().toISOString() });
+    else { toast("Dieses Foto kann nicht mehr rückgängig gemacht werden"); btn.disabled = false; return; }
+    if (S.mode === "db") await S.db.collection("importe").doc(id).update({ undone: true, prev: null });
+    else { r.undone = true; delete r.prev; ls.set("lfk-importe", S.importe); renderImports(); }
+    toast("Rückgängig gemacht");
+  } catch (e) { btn.disabled = false; toast("Rückgängig hat nicht geklappt"); }
+}
+
+/* ================= Editor ================= */
+const HELP = `LERNINHALTE
+# Thema (neuer aufklappbarer Abschnitt)
+## Zwischenüberschrift
+- Stichpunkt
+**fett**   ==markiert==
+> Merksatz oder Tipp
+
+QUIZFRAGEN (Leerzeile zwischen den Fragen)
+? Was besagt das Minimalprinzip?
+@ Ökonomisches Prinzip      (optional: Thema = Anfang des Abschnittstitels)
++ Ziel fest, möglichst geringer Mitteleinsatz
+- Mittel fest, möglichst großer Erfolg
+- Mit minimalem Einsatz maximalen Erfolg
+= Erklärung, die nach der Antwort erscheint
+
+Offene Frage (ohne falsche Antworten):
+? Nenne drei Funktionen des Einzelhandels.
++ Sortimentsfunktion, Raumüberbrückung, Zeitüberbrückung
+
+LERNBLATT (Übersichten)
+# LS 1.3 Güterarten
+- Güter
+  - Freie Güter: Luft, Sonnenlicht   (zwei Leerzeichen = eine Ebene tiefer)
+  - Wirtschaftsgüter (knapp)
+| Kriterium | Güterarten |
+| Nutzungsdauer | Gebrauchs- / Verbrauchsgüter |
+
+KARTEIKARTEN (eine Zeile pro Karte)
+Bedarf :: Bedürfnis mit Kaufkraft
+Bedarf :: Bedürfnis mit Kaufkraft :: LS 1.3   (optional: Lernsituation)
+
+LERNSITUATIONEN (Nachkommastellen)
+Beginnt ein Thementitel mit „LS 1.3“, wird er der Lernsituation 1.3 zugeordnet.
+Fragen folgen ihrem „@ Thema“, Karten der Angabe am Ende.`;
+
+function viewEditor(lf, target){
+  S.busy = true;
+  const host = target || app, isNew = !lf;
+  const nextNr = Math.max(0, ...S.lfs.map(l => +l.nr || 0)) + 1;
+  host.innerHTML = `${isNew ? `<div><span class="eyebrow">Neu</span><h1>Lernfeld anlegen</h1></div>` : ""}<form class="card" id="ed" novalidate>
+    <div class="two">
+      <div class="field"><label for="e-nr">LF-Nr.</label><input type="number" id="e-nr" min="1" max="99" value="${esc(lf?.nr ?? nextNr)}"></div>
+      <div class="field"><label for="e-titel">Titel</label><input type="text" id="e-titel" maxlength="120" list="lf-vorschlaege" value="${esc(lf?.titel ?? "")}" placeholder="z. B. Das Einzelhandelsunternehmen repräsentieren"></div>
+    </div>
+    <details class="help"><summary>So schreibst du Inhalte, Fragen und Karten</summary><pre>${esc(HELP)}</pre></details>
+    <div class="ai" id="ai" ${S.sample ? "" : "hidden"}>
+      <h3>Mit Claude füllen</h3>
+      <p class="muted">Claude ergänzt die Felder unten. Du prüfst den Entwurf und speicherst selbst.</p>
+      <div class="row">
+        <label class="btn sm" for="e-foto" ${S.imgOk ? "" : "hidden"}>Aus Fotos erstellen</label>
+        <input type="file" id="e-foto" accept="image/jpeg,image/png,image/webp" multiple hidden>
+        <button type="button" class="btn soft sm" id="e-gen">Fragen &amp; Karten aus Lerninhalt</button>
+        <button type="button" class="btn ghost sm" id="e-stop" hidden>Stopp</button>
+      </div>
+      <p id="ai-status" hidden></p>
+    </div>
+    <div class="field"><label for="e-inhalt">Lerninhalte</label><textarea id="e-inhalt" placeholder="# Thema&#10;- Stichpunkt">${esc(lf?.inhalt ?? "")}</textarea><span class="count" id="c-inhalt"></span></div>
+    <div class="field"><label for="e-fragen">Quizfragen</label><textarea id="e-fragen" placeholder="? Frage&#10;@ Thema&#10;+ richtig&#10;- falsch&#10;= Erklärung">${esc(lf?.fragen ?? "")}</textarea><span class="count" id="c-fragen"></span></div>
+    <div class="field"><label for="e-merk">Lernblatt (wichtige Übersichten)</label><textarea id="e-merk" placeholder="# LS 1.3 Güterarten&#10;- Güter&#10;  - Freie Güter: Luft, Sonnenlicht&#10;  - Wirtschaftsgüter&#10;| Kriterium | Arten |&#10;| Nutzungsdauer | Gebrauchs- / Verbrauchsgüter |" style="min-height:180px">${esc(lf?.merkblatt ?? "")}</textarea><span class="count" id="c-merk"></span></div>
+    <div class="field"><label for="e-karten">Karteikarten</label><textarea id="e-karten" placeholder="Begriff :: Erklärung" style="min-height:160px">${esc(lf?.karten ?? "")}</textarea><span class="count" id="c-karten"></span></div>
+    <p class="note" id="e-err" hidden></p>
+    <div class="row between">
+      <div class="row">${isNew ? "" : `<button type="button" class="btn ghost sm" id="e-del">Lernfeld löschen</button><span id="e-delc" hidden><span class="muted">Wirklich löschen?</span> <button type="button" class="btn danger sm" id="e-dely">Ja, löschen</button> <button type="button" class="btn ghost sm" id="e-deln">Nein</button></span>`}</div>
+      <div class="row"><button type="button" class="btn ghost" id="e-cancel">Abbrechen</button><button type="submit" class="btn" id="e-save">Speichern</button></div>
+    </div></form>`;
+  const counts = () => {
+    const secs = parseSections($("#e-inhalt").value), fr = parseFragen($("#e-fragen").value), ka = parseKarten($("#e-karten").value).length;
+    const tagged = fr.filter(f => f.thema).length;
+    $("#c-inhalt").textContent = `${secs.length} Themen erkannt`;
+    $("#c-merk").textContent = `${parseSections($("#e-merk").value).length} Lernblätter erkannt`;
+    $("#c-fragen").textContent = `${fr.length} Fragen erkannt (${fr.filter(f => f.typ === "mc").length} Multiple Choice, ${fr.filter(f => f.typ === "offen").length} offen) · ${tagged} mit Thema`;
+    $("#c-karten").textContent = `${ka} Karten erkannt`;
+  };
+  ["#e-inhalt", "#e-merk", "#e-fragen", "#e-karten"].forEach(s => $(s).addEventListener("input", counts)); counts();
+  $("#e-cancel").addEventListener("click", () => { S.busy = false; if (isNew) location.hash = "start"; else { S.tab = "lernen"; viewLf(getLf(lf.id) || lf); } });
+  $("#ed").addEventListener("submit", async e => {
+    e.preventDefault();
+    const nr = parseInt($("#e-nr").value, 10), titel = $("#e-titel").value.trim().slice(0, 120), err = $("#e-err");
+    if (!titel) { err.hidden = false; err.textContent = "Gib dem Lernfeld einen Titel."; $("#e-titel").focus(); return; }
+    const body = { nr: Number.isFinite(nr) ? Math.max(1, Math.min(99, nr)) : null, titel, inhalt: $("#e-inhalt").value, merkblatt: $("#e-merk").value, fragen: $("#e-fragen").value, karten: $("#e-karten").value, aktualisiert: new Date().toISOString() };
+    let id = lf?.id;
+    if (!id) { const want = "lf" + String(body.nr ?? "x").padStart(2, "0"); id = getLf(want) ? want + "-" + Date.now().toString(36) : want; }
+    $("#e-save").disabled = true;
+    try {
+      await saveLf(id, body); S.busy = false; toast("Gespeichert");
+      S.tab = "lernen"; if (location.hash === "#lf-" + id) viewLf(getLf(id) || { id, ...body }); else location.hash = "lf-" + id;
+    } catch (ex) {
+      $("#e-save").disabled = false; err.hidden = false;
+      err.textContent = ex?.code === "too_big" ? "Das Lernfeld ist zu lang. Teil es in zwei Lernfelder auf." :
+        ex?.code === "quota_exceeded" ? "Der Speicher ist voll. Lösche ein altes Lernfeld." :
+        ex?.code === "invalid_argument" ? "Du hast keine Berechtigung, Lernfelder zu ändern." : "Speichern hat nicht geklappt. Versuch es gleich noch mal.";
+    }
+  });
+  if (!isNew) {
+    $("#e-del").addEventListener("click", () => { $("#e-delc").hidden = false; $("#e-del").hidden = true; });
+    $("#e-deln").addEventListener("click", () => { $("#e-delc").hidden = true; $("#e-del").hidden = false; });
+    $("#e-dely").addEventListener("click", async () => { try { await deleteLf(lf.id); S.busy = false; toast("Lernfeld gelöscht"); location.hash = "start"; } catch(e) { toast("Löschen hat nicht geklappt"); } });
+  }
+  if (!S.sample) return;
+  let ctl = null;
+  const status = msg => { const s = $("#ai-status"); s.hidden = !msg; s.textContent = msg || ""; };
+  const busy = on => { $("#e-gen").disabled = on; $("#e-foto").disabled = on; $("#e-stop").hidden = !on; };
+  const append = (sel, txt) => { if (!txt || typeof txt !== "string") return; const t = $(sel); t.value = (t.value.trim() ? t.value.trimEnd() + "\n\n" : "") + txt.trim(); };
+  const errCopy = c => ({ not_granted: "Du hast Claude für diese Seite nicht erlaubt.", rate_limited: "Gerade zu viele Anfragen. Versuch es in ein paar Minuten noch mal.",
+    image_rejected: "Dieses Bild konnte nicht gelesen werden. Nimm ein JPG oder PNG.", invalid_json: "Claude hat kein lesbares Ergebnis geliefert. Versuch es noch mal.",
+    prompt_too_large: "Der Text ist zu lang. Versuch es mit weniger Inhalt.", refused: "Claude konnte diese Anfrage nicht bearbeiten." }[c] || "Das hat nicht geklappt. Versuch es noch mal.");
+  const FORMAT = `Antworte NUR mit einem JSON-Objekt. Formate der Textfelder:
+- "inhalt": Abschnitte beginnen mit einer Zeile "# Thema"; darunter Stichpunkte mit "- ", wichtige Begriffe in **fett**, Merksätze als Zeile mit "> ".
+- "fragen": Fragen-Blöcke, getrennt durch eine Leerzeile. Jeder Block: "? Frage", "@ Thema" (genau der Titel des passenden Abschnitts aus den Lerninhalten), "+ richtige Antwort", drei Zeilen "- falsche, aber plausible Antwort", "= kurze Erklärung". Gemischt aus Wissens- und Anwendungsfragen (kleine Fälle aus dem Ladenalltag).
+- "karten": eine Zeile pro Karte im Format "Begriff :: kurze Erklärung :: LS x.y" (Lernsituation am Ende nur, wenn sie aus den Thementiteln hervorgeht).
+Thementitel beginnen mit der Lernsituation, wenn bekannt (z. B. "# LS 1.4 …").
+Schreibe auf Deutsch, klar und prüfungsnah für Auszubildende im Einzelhandel (Berufsschule).`;
+  const ask = async (prompt, opts) => {
+    ctl = new AbortController(); busy(true); status("Claude denkt nach … das kann bis zu einer Minute dauern.");
+    try { return await S.sample.json(prompt, { ...opts, signal: ctl.signal }); }
+    catch (e) { status(e.code === "cancelled" ? "" : errCopy(e.code)); if (e.code === "not_granted" || e.code === "sampling_disabled") $("#ai").hidden = true; return null; }
+    finally { busy(false); }
+  };
+  $("#e-stop").addEventListener("click", () => ctl?.abort());
+  $("#e-foto").addEventListener("change", async e => {
+    const files = [...e.target.files].slice(0, 6); e.target.value = ""; if (!files.length) return;
+    const titel = $("#e-titel").value.trim();
+    const res = await ask(`Die Bilder zeigen Unterrichtsmaterial (Arbeitsblätter, Tafelbilder, Buchseiten) aus der Berufsschule für Kaufleute im Einzelhandel${titel ? `, Lernfeld "${titel}"` : ""}.
+Lies das Material und erstelle daraus Lernmaterial. Wenn das Blatt nur Aufgaben oder Leitfragen enthält, beantworte sie mit dem üblichen Berufsschulwissen. Bleib beim Thema des Materials.
+Gib {"titel": string, "inhalt": string, "merkblatt": string (Übersicht: Begriffsbaum als eingerückte "- "-Liste, Einteilungen als "| … |"-Tabelle, Abschnitte mit "# "), "fragen": string (mindestens 10, zu jedem Begriff eine), "karten": string (10 bis 25 Karten)} zurück.
+${FORMAT}`, { images: files });
+    if (!res) return;
+    if (!$("#e-titel").value.trim() && typeof res.titel === "string") $("#e-titel").value = res.titel.slice(0, 120);
+    append("#e-inhalt", res.inhalt); append("#e-merk", res.merkblatt); append("#e-fragen", res.fragen); append("#e-karten", res.karten); counts();
+    status("Fertig. Der Entwurf steht unten in den Feldern. Prüf ihn kurz und speichere dann.");
+  });
+  $("#e-gen").addEventListener("click", async () => {
+    const inhalt = $("#e-inhalt").value.trim();
+    if (!inhalt) { status("Trag zuerst Lerninhalte ein, dann kann Claude daraus Fragen machen."); return; }
+    const res = await ask(`Hier sind Lerninhalte eines Auszubildenden im Einzelhandel${$("#e-titel").value ? ` (Lernfeld "${$("#e-titel").value}")` : ""}:
+<<<
+${inhalt.slice(0, 12000)}
+>>>
+Diese Fragen gibt es schon, wiederhole sie nicht:
+<<<
+${$("#e-fragen").value.slice(0, 6000)}
+>>>
+Erstelle neue Quizfragen und Karteikarten, die genau diese Inhalte abfragen. Gib {"fragen": string (10 bis 15 Fragen), "karten": string (Begriffe, die noch keine Karte haben)} zurück.
+${FORMAT}`, { cache: false });
+    if (!res) return;
+    append("#e-fragen", res.fragen); append("#e-karten", res.karten); counts();
+    status("Fertig. Neue Fragen und Karten stehen unten. Prüf sie kurz und speichere dann.");
+  });
+}
+
+try { if (ls.get("lfk-tree", "org") === "list") document.documentElement.dataset.tree = "list"; } catch(e) {}
+function fitOrgs(){
+  document.querySelectorAll(".org").forEach(o => { const u = o.firstElementChild; if (!u || !o.clientWidth) return; u.style.zoom = 1;
+    const r = o.clientWidth / u.scrollWidth; if (r < 1 && r >= 0.7) u.style.zoom = (r - 0.005).toFixed(3);
+    else if (r < 0.7 && !o.dataset.centered) { o.dataset.centered = 1; o.scrollLeft = (u.scrollWidth - o.clientWidth) / 2; } });
+}
+new MutationObserver(() => requestAnimationFrame(fitOrgs)).observe(document.getElementById("app"), { childList: true, subtree: true });
+window.addEventListener("resize", () => requestAnimationFrame(fitOrgs));
+document.addEventListener("click", e => { const b = e.target.closest?.("[data-tm]"); if (!b) return; document.documentElement.dataset.tree = b.dataset.tm; ls.set("lfk-tree", b.dataset.tm); requestAnimationFrame(fitOrgs); });
+init();
+</script>
+<script>
+/* Sicherung: Lernfelder und Fortschritt als JSON-Datei */
+(async () => {
+  const dl = window.claude?.use ? await window.claude.use("downloads").catch(() => null) : null;
+  if (!dl) return;
+  document.querySelectorAll(".sich").forEach(b => {
+    b.hidden = false;
+    b.onclick = async () => {
+      if (!S.ready) { toast("Kartei lädt noch – gleich nochmal versuchen"); return; }
+      const data = { gesichert: new Date().toISOString(), lernfelder: S.lfs, fortschritt: S.prog };
+      try { await dl.save({ filename: "lernfeld-kartei-" + today() + ".json", data: new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }) }); toast("Sicherung gespeichert"); }
+      catch (e) { toast(e?.code === "unavailable" ? "Speichern geht in dieser Ansicht nicht" : "Sicherung wurde nicht gespeichert"); }
+    };
+  });
+})();
+</script>
+
+</body></html>

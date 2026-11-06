@@ -1,0 +1,547 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>LF 1 · Lernstationen 1.3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: Arbeitsblatt-Logik – Stationsübersicht oben, dann Lernen / Quiz / Karteikarten als Reiter; Quiz-Ergebnis als Kassenbon */
+:root{
+  --bg:#eef1f4; --paper:#ffffff; --ink:#1b2430; --muted:#5b6675; --line:#d5dbe3;
+  --accent:#0f6b73; --accent-soft:#d8eeef; --mark:#ffe75e; --ok:#1e7a46; --ok-soft:#dcf2e4; --bad:#b3261e; --bad-soft:#fbe1de;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171d; --paper:#1b222b; --ink:#e7ecf1; --muted:#9aa6b4; --line:#2f3946;
+  --accent:#5cc3c9; --accent-soft:#173a3d; --mark:#8a7a12; --ok:#6fd49a; --ok-soft:#173826; --bad:#ff8a80; --bad-soft:#3d1c1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171d; --paper:#1b222b; --ink:#e7ecf1; --muted:#9aa6b4; --line:#2f3946;
+  --accent:#5cc3c9; --accent-soft:#173a3d; --mark:#8a7a12; --ok:#6fd49a; --ok-soft:#173826; --bad:#ff8a80; --bad-soft:#3d1c1a; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+.wrap{max-width:900px;margin:0 auto;padding-block:28px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.15;margin:0}
+h1{font-size:clamp(1.8rem,5vw,2.6rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:1.45rem;font-weight:700}
+h3{font-size:1.1rem;font-weight:700}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+mark{background:var(--mark);color:inherit;padding:0 .15em;border-radius:2px}
+header{display:flex;flex-direction:column;gap:10px}
+header p.lead{color:var(--muted);max-width:62ch}
+
+/* Stationsübersicht wie auf dem Blatt */
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:6px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:560px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+thead th{background:var(--ink);color:var(--paper);font-family:var(--f-display);font-weight:500;font-size:.9rem}
+tbody tr:last-child td{border-bottom:0}
+td.num{font-family:var(--f-mono);color:var(--accent);font-weight:600;width:36px}
+td.rate{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap;width:120px}
+td.done{width:70px;text-align:center}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:.8rem;font-family:var(--f-mono)}
+.pill.plus{background:var(--ok-soft);color:var(--ok)}
+.pill.zero{background:var(--accent-soft);color:var(--accent)}
+.pill.minus{background:var(--bad-soft);color:var(--bad)}
+.pill.none{color:var(--muted)}
+
+/* Reiter */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:8px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.tabs button{font:600 1rem var(--f-display);padding:9px 16px;border-radius:99px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--paper)}
+button:focus-visible,summary:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Lernen */
+.stations{display:flex;flex-direction:column;gap:12px}
+details.st{background:var(--paper);border:1px solid var(--line);border-radius:6px}
+details.st>summary{list-style:none;cursor:pointer;padding:16px 18px;display:flex;gap:14px;align-items:baseline}
+details.st>summary::-webkit-details-marker{display:none}
+details.st>summary .n{font-family:var(--f-mono);color:var(--accent);font-weight:600}
+details.st>summary h3{flex:1}
+details.st>summary .chev{color:var(--muted);transition:transform .2s}
+details.st[open]>summary .chev{transform:rotate(90deg)}
+.body{padding:0 18px 20px;display:flex;flex-direction:column;gap:16px;max-width:72ch}
+.body ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.def{border-left:3px solid var(--accent);padding:6px 0 6px 14px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.box{border:1px solid var(--line);border-radius:6px;padding:12px 14px;min-width:0}
+.box h4{margin:0 0 6px;font-family:var(--f-display);font-size:1rem}
+.box p,.box li{font-size:.95rem}
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-family:var(--f-mono);font-size:.9rem}
+.chain span{border:1px solid var(--line);border-radius:4px;padding:6px 10px;background:var(--bg)}
+.chain i{color:var(--muted);font-style:normal}
+.tip{background:var(--accent-soft);border-radius:6px;padding:12px 14px;font-size:.95rem}
+.tip b{font-family:var(--f-display)}
+.pyr{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pyr div{background:var(--accent);color:var(--paper);text-align:center;padding:6px 8px;border-radius:3px;font-size:.88rem}
+svg text{fill:var(--ink);font-family:var(--f-body)}
+.diagram{overflow-x:auto}
+
+/* Quiz */
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+select{font:inherit;padding:8px 10px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);max-width:100%}
+.btn{font:700 1rem var(--f-display);padding:10px 18px;border-radius:6px;border:0;background:var(--accent);color:var(--paper);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn:disabled{opacity:.45;cursor:default}
+.progress{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress div{height:100%;background:var(--accent);width:0;transition:width .3s}
+.qmeta{display:flex;justify-content:space-between;gap:8px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+.qtext{font-family:var(--f-display);font-size:1.25rem;font-weight:700;line-height:1.3}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{text-align:left;font:inherit;padding:12px 14px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);cursor:pointer;display:flex;gap:10px}
+.opt .k{font-family:var(--f-mono);color:var(--muted)}
+.opt:hover:not(:disabled){border-color:var(--accent)}
+.opt.right{background:var(--ok-soft);border-color:var(--ok)}
+.opt.wrong{background:var(--bad-soft);border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.feedback{border-radius:6px;padding:12px 14px;font-size:.95rem}
+.feedback.ok{background:var(--ok-soft)} .feedback.no{background:var(--bad-soft)}
+.feedback b{font-family:var(--f-display)}
+
+/* Kassenbon */
+.receipt{font-family:var(--f-mono);font-size:.88rem;background:var(--paper);color:var(--ink);max-width:360px;width:100%;margin:0 auto;padding:22px 20px;border:1px dashed var(--muted);display:flex;flex-direction:column;gap:6px;font-variant-numeric:tabular-nums}
+.receipt .c{text-align:center}
+.receipt .l{display:flex;justify-content:space-between;gap:8px}
+.receipt hr{border:0;border-top:1px dashed var(--muted);margin:6px 0;width:100%}
+.receipt .big{font-size:1.15rem;font-weight:600}
+
+/* Karteikarten */
+.card{perspective:1200px;cursor:pointer;min-height:220px}
+.card-inner{position:relative;min-height:220px;transition:transform .45s;transform-style:preserve-3d}
+.card.flip .card-inner{transform:rotateY(180deg)}
+.face{position:absolute;inset:0;backface-visibility:hidden;border:1px solid var(--line);border-radius:8px;background:var(--paper);padding:22px;display:flex;flex-direction:column;justify-content:center;gap:10px}
+.face.back{transform:rotateY(180deg);background:var(--accent-soft)}
+.face .term{font-family:var(--f-display);font-size:1.6rem;font-weight:800}
+.hint{color:var(--muted);font-size:.85rem}
+@media (prefers-reduced-motion:reduce){.card-inner,.progress div,details.st>summary .chev{transition:none}}
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Berufskolleg · Einzelhandel · LF 1 · LS 1.3</span>
+    <h1>Vom Bedürfnis zur Nachfrage</h1>
+    <p class="lead">Alle fünf Stationen des Arbeitsblatts zum Lernen, dazu ein Quiz mit Erklärungen und Karteikarten. Die Tabelle trägt deine Quiz-Ergebnisse automatisch in die Spalte „Wie gut kam ich zurecht?“ ein.</p>
+  </header>
+
+  <section class="sheet" aria-label="Stationsübersicht">
+    <table>
+      <thead><tr><th></th><th>Station</th><th class="done">Quiz ✓</th><th>Wie gut kam ich zurecht?</th></tr></thead>
+      <tbody id="overview"></tbody>
+    </table>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-lernen" aria-selected="true" data-view="lernen">Lernen</button>
+    <button role="tab" id="tab-quiz" aria-selected="false" data-view="quiz">Quiz</button>
+    <button role="tab" id="tab-karten" aria-selected="false" data-view="karten">Karteikarten</button>
+  </nav>
+
+  <!-- LERNEN -->
+  <section id="view-lernen" class="stations">
+
+    <details class="st" open>
+      <summary><span class="n">①</span><h3>Warum sind unsere Bedürfnisse unbegrenzt?</h3><span class="chev">›</span></summary>
+      <div class="body">
+        <p class="def"><b>Bedürfnis</b> = das Gefühl eines Mangels, verbunden mit dem Wunsch, diesen Mangel zu beseitigen.</p>
+        <p><b>Unbegrenzt</b>, weil nach jeder Befriedigung <mark>sofort neue Bedürfnisse</mark> entstehen. Gründe: technischer Fortschritt (neues Handy-Modell), Werbung, Mode und Trends, Vergleich mit anderen, steigendes Einkommen.</p>
+        <div class="grid2">
+          <div class="box"><h4>Nach Dringlichkeit</h4><ul>
+            <li><b>Existenzbedürfnisse</b>: lebensnotwendig (Essen, Trinken, Kleidung, Wohnung)</li>
+            <li><b>Kulturbedürfnisse</b>: Teilnahme am gesellschaftlichen Leben (Bücher, Kino, Handy)</li>
+            <li><b>Luxusbedürfnisse</b>: gehen über das Übliche hinaus (Sportwagen, Designeruhr)</li></ul></div>
+          <div class="box"><h4>Nach Träger</h4><ul>
+            <li><b>Individualbedürfnisse</b>: einzelne Person befriedigt sie selbst (neue Schuhe)</li>
+            <li><b>Kollektivbedürfnisse</b>: nur durch die Gemeinschaft/Staat (Straßen, Schulen, Polizei)</li></ul></div>
+          <div class="box"><h4>Nach Bewusstsein</h4><ul>
+            <li><b>Offene</b> (bewusste) Bedürfnisse: man weiß, was man will</li>
+            <li><b>Latente</b> (verborgene) Bedürfnisse: schlummern, werden z.&nbsp;B. durch Werbung geweckt</li></ul></div>
+          <div class="box"><h4>Nach Gegenstand</h4><ul>
+            <li><b>Materielle</b>: durch Sachgüter befriedigt (Brot)</li>
+            <li><b>Immaterielle</b>: Anerkennung, Liebe, Bildung</li></ul></div>
+        </div>
+        <div>
+          <h4 style="font-family:var(--f-display);margin:0 0 8px">Bedürfnispyramide nach Maslow (unten zuerst)</h4>
+          <div class="pyr">
+            <div style="width:30%">5 Selbstverwirklichung</div>
+            <div style="width:45%">4 Wertschätzung / Ich-Bedürfnisse</div>
+            <div style="width:60%">3 Soziale Bedürfnisse</div>
+            <div style="width:78%">2 Sicherheitsbedürfnisse</div>
+            <div style="width:95%">1 Physiologische Grundbedürfnisse</div>
+          </div>
+        </div>
+        <div>
+          <h4 style="font-family:var(--f-display);margin:0 0 8px">Der Weg zur Nachfrage</h4>
+          <div class="chain"><span>Bedürfnis</span><i>+ Kaufkraft →</i><span>Bedarf</span><i>+ Kaufentscheidung am Markt →</i><span>Nachfrage</span></div>
+        </div>
+        <p class="tip"><b>Merksatz:</b> Ich will ein iPad (Bedürfnis). Ich habe 400 € gespart (Bedarf). Ich gehe in den Laden und kaufe es (Nachfrage).</p>
+      </div>
+    </details>
+
+    <details class="st">
+      <summary><span class="n">②</span><h3>Mit welchen begrenzten Gütern befriedigen wir unsere Bedürfnisse?</h3><span class="chev">›</span></summary>
+      <div class="body">
+        <p class="def"><b>Güter</b> sind alle Mittel, die der Bedürfnisbefriedigung dienen.</p>
+        <div class="grid2">
+          <div class="box"><h4>Freie Güter</h4><p>Unbegrenzt vorhanden, kein Preis: Luft, Sonnenlicht, Meerwasser.</p></div>
+          <div class="box"><h4>Wirtschaftliche Güter</h4><p><mark>Knapp</mark>, müssen hergestellt werden, haben einen Preis. Fast alle Güter sind wirtschaftliche Güter.</p></div>
+        </div>
+        <p>Wirtschaftliche Güter teilt man ein in:</p>
+        <div class="grid2">
+          <div class="box"><h4>Sachgüter</h4><p>Materiell, greifbar: Brot, Regal, Kasse.</p></div>
+          <div class="box"><h4>Dienstleistungen</h4><p>Immateriell: Haarschnitt, Beratung, Lieferung, Versicherung.</p></div>
+          <div class="box"><h4>Rechte</h4><p>Immateriell: Patente, Lizenzen, Markenrechte, Mietrecht.</p></div>
+        </div>
+        <div class="grid2">
+          <div class="box"><h4>Konsumgüter</h4><p>Für <b>private Haushalte</b> (Endverbraucher).</p></div>
+          <div class="box"><h4>Produktions- / Investitionsgüter</h4><p>Für <b>Unternehmen</b>, um damit zu arbeiten (Kassensystem, Lieferwagen).</p></div>
+          <div class="box"><h4>Gebrauchsgüter</h4><p>Werden mehrfach genutzt (Fernseher, Regal).</p></div>
+          <div class="box"><h4>Verbrauchsgüter</h4><p>Werden bei Nutzung verbraucht (Lebensmittel, Benzin, Kassenrollen).</p></div>
+        </div>
+        <div class="grid2">
+          <div class="box"><h4>Komplementärgüter</h4><p>Ergänzen sich, braucht man zusammen: Drucker + Patrone, Auto + Benzin.</p></div>
+          <div class="box"><h4>Substitutionsgüter</h4><p>Ersetzen sich gegenseitig: Butter ↔ Margarine, Bus ↔ Bahn.</p></div>
+        </div>
+        <p class="tip"><b>Achtung Prüfungsfalle:</b> Das gleiche Gut kann je nach Verwendung verschieden sein. Ein Laptop zu Hause ist ein <b>Konsumgut</b>, im Büro des Geschäfts ein <b>Produktionsgut</b>.</p>
+      </div>
+    </details>
+
+    <details class="st">
+      <summary><span class="n">③</span><h3>Wie handeln wir wirtschaftlich nach dem ökonomischen Prinzip?</h3><span class="chev">›</span></summary>
+      <div class="body">
+        <p>Weil die Bedürfnisse unbegrenzt, die Güter aber <b>knapp</b> sind, müssen wir wirtschaften, also vernünftig mit unseren Mitteln umgehen. Das nennt man <b>ökonomisches Prinzip</b> (Rationalprinzip).</p>
+        <div class="grid2">
+          <div class="box"><h4>Maximalprinzip</h4><p><b>Mittel fest</b> → möglichst großer Erfolg.</p><p class="hint">Mit 50 € möglichst viele Lebensmittel einkaufen.</p></div>
+          <div class="box"><h4>Minimalprinzip</h4><p><b>Ziel fest</b> → möglichst geringer Mitteleinsatz.</p><p class="hint">Ein bestimmtes Handy so günstig wie möglich kaufen.</p></div>
+          <div class="box"><h4>Optimumprinzip</h4><p>Mittel und Ziel sind beide offen → bestes Verhältnis von Aufwand und Ertrag.</p></div>
+        </div>
+        <p class="tip"><b>Trick:</b> Frag dich, was <b>feststeht</b>. Steht das Geld/der Einsatz fest → Maximal. Steht das Ziel fest → Minimal. „Mit minimalem Einsatz maximalen Erfolg“ ist <mark>unmöglich</mark> und kein ökonomisches Prinzip.</p>
+      </div>
+    </details>
+
+    <details class="st">
+      <summary><span class="n">④</span><h3>Wie sieht Arbeitsteilung in unserer Gesamtwirtschaft aus?</h3><span class="chev">›</span></summary>
+      <div class="body">
+        <p class="def"><b>Arbeitsteilung</b> = eine Gesamtaufgabe wird in Teilaufgaben zerlegt, die von verschiedenen Personen, Betrieben oder Ländern erledigt werden.</p>
+        <div class="grid2">
+          <div class="box"><h4>Berufliche Arbeitsteilung</h4><ul><li><b>Berufsbildung</b>: aus dem Selbstversorger entstehen Berufe (Bauer, Bäcker)</li><li><b>Berufsspaltung</b>: ein Beruf teilt sich auf (Schmied → Hufschmied, Kunstschmied)</li></ul></div>
+          <div class="box"><h4>Betriebliche Arbeitsteilung</h4><p>Innerhalb eines Betriebs: Einkauf, Lager, Verkauf, Kasse, Buchhaltung. Am Fließband: <b>Arbeitszerlegung</b>.</p></div>
+          <div class="box"><h4>Volkswirtschaftliche Arbeitsteilung</h4><ul><li><b>Primärer Sektor</b>: Urerzeugung (Landwirtschaft, Bergbau, Fischerei)</li><li><b>Sekundärer Sektor</b>: Weiterverarbeitung (Industrie, Handwerk)</li><li><b>Tertiärer Sektor</b>: Dienstleistungen, <mark>auch der Handel</mark></li></ul></div>
+          <div class="box"><h4>Internationale Arbeitsteilung</h4><p>Länder spezialisieren sich (Bananen aus Ecuador, Autos aus Deutschland) → Globalisierung.</p></div>
+        </div>
+        <div class="grid2">
+          <div class="box"><h4>Vorteile</h4><ul><li>Spezialisierung, mehr Können</li><li>höhere Produktivität</li><li>geringere Kosten, günstigere Waren</li><li>größeres Warenangebot</li></ul></div>
+          <div class="box"><h4>Nachteile</h4><ul><li>Monotonie, einseitige Belastung</li><li>gegenseitige Abhängigkeit (z.&nbsp;B. Lieferketten)</li><li>Entfremdung vom Endprodukt</li><li>Arbeitslosigkeit bei Krisen in einer Branche</li></ul></div>
+        </div>
+        <h4 style="font-family:var(--f-display);margin:0">Einfacher Wirtschaftskreislauf</h4>
+        <div class="diagram">
+          <svg viewBox="0 0 560 250" width="100%" style="min-width:420px;max-width:600px" role="img" aria-label="Einfacher Wirtschaftskreislauf zwischen Haushalten und Unternehmen">
+            <defs>
+              <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"/></marker>
+              <marker id="am" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker>
+            </defs>
+            <rect x="10" y="95" width="140" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/>
+            <text x="80" y="122" text-anchor="middle" font-weight="700">Private</text><text x="80" y="140" text-anchor="middle" font-weight="700">Haushalte</text>
+            <rect x="410" y="95" width="140" height="60" rx="6" fill="var(--accent-soft)" stroke="var(--accent)"/>
+            <text x="480" y="130" text-anchor="middle" font-weight="700">Unternehmen</text>
+            <path d="M80,92 C80,20 480,20 480,92" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#ag)"/>
+            <text x="280" y="30" text-anchor="middle" font-size="13">Güterstrom: Arbeit, Boden, Kapital →</text>
+            <path d="M100,92 C110,58 450,58 460,92" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 4" marker-start="url(#am)" transform="translate(0,0)"/>
+            <text x="280" y="72" text-anchor="middle" font-size="13" fill="var(--muted)">← Geldstrom: Einkommen (Lohn, Miete, Zins)</text>
+            <path d="M480,158 C480,230 80,230 80,158" fill="none" stroke="var(--accent)" stroke-width="2" marker-end="url(#ag)"/>
+            <text x="280" y="240" text-anchor="middle" font-size="13">← Güterstrom: Konsumgüter, Waren</text>
+            <path d="M460,158 C450,192 110,192 100,158" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 4" marker-start="url(#am)"/>
+            <text x="280" y="186" text-anchor="middle" font-size="13" fill="var(--muted)">Geldstrom: Konsumausgaben →</text>
+          </svg>
+        </div>
+        <ul>
+          <li><b>Güterstrom</b> (durchgezogen) und <b>Geldstrom</b> (gestrichelt) laufen immer <mark>entgegengesetzt</mark>.</li>
+          <li>Volkswirtschaftliche Produktionsfaktoren: <b>Arbeit, Boden, Kapital</b> (oft auch Bildung/Wissen).</li>
+          <li><b>Erweiterter</b> Wirtschaftskreislauf: zusätzlich <b>Staat</b> (Steuern, Subventionen), <b>Banken</b> (Sparen, Kredite) und <b>Ausland</b> (Import, Export).</li>
+        </ul>
+        <p class="tip"><b>Deine Rolle:</b> Als Azubi gehörst du zu einem <b>privaten Haushalt</b>. Du gibst deinem Betrieb den Faktor <b>Arbeit</b> und bekommst dafür die Ausbildungsvergütung (Einkommen). Davon kaufst du ein und bist damit Nachfrager. Im Laden arbeitest du gleichzeitig für ein <b>Unternehmen</b> des tertiären Sektors.</p>
+      </div>
+    </details>
+
+    <details class="st">
+      <summary><span class="n">⑤</span><h3>Welche Aufgaben übernimmt der Einzelhandel und welche Betriebsfaktoren nutzt er?</h3><span class="chev">›</span></summary>
+      <div class="body">
+        <p class="def"><b>Einzelhandel</b> kauft Waren beim Hersteller oder Großhandel und verkauft sie (meist unverändert) an den <b>Endverbraucher</b>.</p>
+        <div class="chain"><span>Hersteller</span><i>→</i><span>Großhandel</span><i>→</i><span>Einzelhandel</span><i>→</i><span>Endverbraucher</span></div>
+        <h4 style="font-family:var(--f-display);margin:0">Aufgaben (Funktionen) des Einzelhandels</h4>
+        <div class="grid2">
+          <div class="box"><h4>Sortimentsfunktion</h4><p>Waren vieler Hersteller auswählen und zusammenstellen.</p></div>
+          <div class="box"><h4>Raumüberbrückung</h4><p>Ware dorthin bringen, wo der Kunde ist (Laden in Wohnnähe).</p></div>
+          <div class="box"><h4>Zeitüberbrückung</h4><p>Lagerhaltung: Ware ist da, wenn der Kunde sie braucht (Weihnachtsware vorher einlagern).</p></div>
+          <div class="box"><h4>Mengenausgleich</h4><p>Große Mengen einkaufen, in kleinen Mengen verkaufen (Quantitätsfunktion).</p></div>
+          <div class="box"><h4>Qualitätsfunktion</h4><p>Ware prüfen, sortieren, Mängel aussortieren.</p></div>
+          <div class="box"><h4>Beratung & Information</h4><p>Kunden über Waren informieren und beraten; Kundenwünsche an Hersteller melden.</p></div>
+          <div class="box"><h4>Service / Kundendienst</h4><p>Lieferung, Montage, Reparatur, Umtausch, Geschenkverpackung.</p></div>
+          <div class="box"><h4>Kreditfunktion</h4><p>Ratenzahlung oder Kauf auf Rechnung ermöglichen.</p></div>
+        </div>
+        <h4 style="font-family:var(--f-display);margin:0">Betriebsfaktoren (betriebliche Produktionsfaktoren)</h4>
+        <div class="grid2">
+          <div class="box"><h4>Ausführende Arbeit</h4><p>Verkaufen, kassieren, Ware einräumen, beraten.</p></div>
+          <div class="box"><h4>Betriebsmittel</h4><p>Alles, womit gearbeitet wird: Gebäude, Regale, Kassen, Computer, Fahrzeuge.</p></div>
+          <div class="box"><h4>Werkstoffe = Waren</h4><p>Im Handel vor allem die <b>Handelswaren</b>, dazu Verpackungsmaterial.</p></div>
+          <div class="box"><h4>Dispositiver Faktor</h4><p>Leitende Arbeit: <b>planen, organisieren, entscheiden, kontrollieren</b>. Kombiniert die anderen Faktoren.</p></div>
+        </div>
+        <p class="tip"><b>Merke:</b> Arbeit, Betriebsmittel und Werkstoffe sind die <b>Elementarfaktoren</b>. Die Geschäftsleitung (dispositiver Faktor) sorgt dafür, dass sie sinnvoll zusammenwirken.</p>
+      </div>
+    </details>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="view-quiz" hidden>
+    <div class="panel" id="quiz-start">
+      <h2>Quiz</h2>
+      <p>Jede Frage hat eine richtige Antwort. Nach jeder Antwort siehst du die Erklärung. Am Ende bekommst du deinen Bon mit Punkten pro Station.</p>
+      <div class="row">
+        <label for="q-station">Station:</label>
+        <select id="q-station">
+          <option value="0">Alle Stationen (gemischt)</option>
+          <option value="1">① Bedürfnisse</option>
+          <option value="2">② Güter</option>
+          <option value="3">③ Ökonomisches Prinzip</option>
+          <option value="4">④ Arbeitsteilung & Kreislauf</option>
+          <option value="5">⑤ Einzelhandel & Betriebsfaktoren</option>
+        </select>
+        <button class="btn" id="q-go">Quiz starten</button>
+      </div>
+    </div>
+    <div class="panel" id="quiz-run" hidden>
+      <div class="qmeta"><span id="q-pos"></span><span id="q-st"></span><span id="q-score"></span></div>
+      <div class="progress"><div id="q-bar"></div></div>
+      <p class="qtext" id="q-text"></p>
+      <div class="opts" id="q-opts"></div>
+      <div id="q-fb" hidden></div>
+      <div class="row"><button class="btn" id="q-next" hidden>Weiter</button><button class="btn ghost" id="q-quit">Abbrechen</button></div>
+    </div>
+    <div class="panel" id="quiz-end" hidden>
+      <div class="receipt" id="receipt"></div>
+      <div class="row" style="justify-content:center">
+        <button class="btn" id="q-retry-wrong">Falsche wiederholen</button>
+        <button class="btn ghost" id="q-again">Neues Quiz</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- KARTEIKARTEN -->
+  <section id="view-karten" hidden>
+    <div class="panel">
+      <div class="qmeta"><span id="c-pos"></span><span>Tippen zum Umdrehen</span></div>
+      <div class="card" id="card" tabindex="0" role="button" aria-label="Karte umdrehen">
+        <div class="card-inner">
+          <div class="face front"><span class="eyebrow" id="c-st"></span><span class="term" id="c-term"></span></div>
+          <div class="face back"><p id="c-def"></p></div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <button class="btn ghost" id="c-prev">← Zurück</button>
+        <button class="btn ghost" id="c-shuffle">Mischen</button>
+        <button class="btn" id="c-next">Weiter →</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+const STATIONS = {1:"Bedürfnisse",2:"Güter",3:"Ökonomisches Prinzip",4:"Arbeitsteilung & Kreislauf",5:"Einzelhandel & Betriebsfaktoren"};
+const STATION_Q = {1:"Warum sind unsere Bedürfnisse unbegrenzt?",2:"Mit welchen begrenzten Gütern befriedigen wir unsere Bedürfnisse?",3:"Wie handeln wir wirtschaftlich nach dem ökonomischen Prinzip?",4:"Wie sieht Arbeitsteilung in unserer Gesamtwirtschaft aus?",5:"Welche Aufgaben übernimmt der Einzelhandel und welche Betriebsfaktoren nutzt er?"};
+
+// [station, frage, [richtig, falsch, falsch, falsch], erklärung]
+const Q = [
+ [1,"Was versteht man unter einem Bedürfnis?",["Das Gefühl eines Mangels mit dem Wunsch, ihn zu beseitigen","Ein Wunsch, für den man genug Geld hat","Die Menge an Waren, die am Markt gekauft wird","Ein Gut, das knapp ist"],"Bedürfnis = Mangelgefühl + Wunsch, den Mangel zu beheben. Mit Geld wird daraus Bedarf, am Markt Nachfrage."],
+ [1,"Warum gelten Bedürfnisse als unbegrenzt?",["Nach jeder Befriedigung entstehen neue Bedürfnisse","Weil alle Güter unbegrenzt vorhanden sind","Weil der Staat alle Bedürfnisse erfüllt","Weil Menschen nie Geld haben"],"Ist ein Bedürfnis erfüllt, kommt das nächste, z. B. durch Werbung, Trends oder technischen Fortschritt."],
+ [1,"Ein Theaterbesuch befriedigt ein …",["Kulturbedürfnis","Existenzbedürfnis","Luxusbedürfnis","Kollektivbedürfnis"],"Kulturbedürfnisse betreffen die Teilnahme am kulturellen und gesellschaftlichen Leben."],
+ [1,"Der Wunsch nach einem teuren Sportwagen ist ein …",["Luxusbedürfnis","Existenzbedürfnis","Kulturbedürfnis","Kollektivbedürfnis"],"Luxusbedürfnisse gehen deutlich über das Notwendige und Übliche hinaus."],
+ [1,"Gut ausgebaute Straßen und eine funktionierende Polizei sind …",["Kollektivbedürfnisse","Individualbedürfnisse","Latente Bedürfnisse","Luxusbedürfnisse"],"Kollektivbedürfnisse kann nur die Gemeinschaft bzw. der Staat befriedigen."],
+ [1,"Was steht ganz unten in der Bedürfnispyramide nach Maslow?",["Physiologische Grundbedürfnisse","Selbstverwirklichung","Soziale Bedürfnisse","Sicherheitsbedürfnisse"],"Zuerst müssen Essen, Trinken, Schlafen gesichert sein. Erst dann rücken höhere Stufen in den Fokus."],
+ [1,"Was ist ein Bedarf?",["Ein Bedürfnis, das mit Kaufkraft ausgestattet ist","Ein Bedürfnis, das man nicht kennt","Das Angebot eines Händlers","Ein freies Gut"],"Bedarf = Bedürfnis + Kaufkraft (Geld)."],
+ [1,"Wann spricht man von Nachfrage?",["Wenn der Bedarf am Markt tatsächlich wirksam wird (Kauf)","Wenn jemand einen Mangel spürt","Wenn ein Händler Waren bestellt","Wenn ein Gut kostenlos ist"],"Nachfrage = Bedarf, der am Markt auftritt, also die Kaufentscheidung."],
+ [1,"Ein Bedürfnis, das erst durch Werbung geweckt wird, war vorher …",["latent (verborgen)","offen (bewusst)","kollektiv","existenziell"],"Latente Bedürfnisse sind unbewusst vorhanden und werden z. B. durch Werbung geweckt."],
+
+ [2,"Welches ist ein freies Gut?",["Sonnenlicht","Trinkwasser aus der Flasche","Strom","Ein Haarschnitt"],"Freie Güter sind unbegrenzt vorhanden und kosten nichts."],
+ [2,"Warum haben wirtschaftliche Güter einen Preis?",["Sie sind knapp und müssen hergestellt werden","Weil der Staat es so festlegt","Weil sie unbegrenzt vorhanden sind","Weil sie nur Unternehmen nutzen"],"Knappheit ist das Kennzeichen wirtschaftlicher Güter."],
+ [2,"Ein Haarschnitt beim Friseur ist …",["eine Dienstleistung","ein Sachgut","ein Recht","ein freies Gut"],"Dienstleistungen sind immateriell, man kann sie nicht anfassen oder lagern."],
+ [2,"Ein Patent gehört zu den …",["Rechten","Sachgütern","Dienstleistungen","Verbrauchsgütern"],"Patente, Lizenzen und Markenrechte zählen zu den Rechten."],
+ [2,"Drucker und Druckerpatronen sind …",["Komplementärgüter","Substitutionsgüter","freie Güter","Kollektivgüter"],"Komplementärgüter ergänzen sich und werden zusammen gebraucht."],
+ [2,"Butter und Margarine sind …",["Substitutionsgüter","Komplementärgüter","Investitionsgüter","Rechte"],"Substitutionsgüter können sich gegenseitig ersetzen."],
+ [2,"Das Kassensystem in einem Supermarkt ist ein …",["Produktionsgut (Gebrauchsgut)","Konsumgut (Verbrauchsgut)","freies Gut","Recht"],"Unternehmen arbeiten damit (Produktionsgut) und es wird mehrfach genutzt (Gebrauchsgut)."],
+ [2,"Lebensmittel, die eine Familie zu Hause isst, sind …",["Konsumgüter und Verbrauchsgüter","Produktionsgüter und Gebrauchsgüter","Konsumgüter und Gebrauchsgüter","Rechte"],"Privater Haushalt = Konsumgut; wird beim Essen verbraucht = Verbrauchsgut."],
+ [2,"Ein Laptop wird privat zu Hause genutzt. Er ist ein …",["Konsumgut","Produktionsgut","Investitionsgut","freies Gut"],"Entscheidend ist die Verwendung: privat = Konsumgut. Im Betrieb wäre er ein Produktionsgut."],
+
+ [3,"Warum müssen Menschen wirtschaften?",["Weil Güter knapp, Bedürfnisse aber unbegrenzt sind","Weil es gesetzlich vorgeschrieben ist","Weil alle Güter frei sind","Weil es nur wenige Bedürfnisse gibt"],"Die Spannung zwischen unbegrenzten Bedürfnissen und knappen Gütern zwingt zum Wirtschaften."],
+ [3,"Was besagt das Maximalprinzip?",["Mit gegebenen Mitteln einen möglichst großen Erfolg erzielen","Ein festes Ziel mit möglichst geringen Mitteln erreichen","Mit minimalem Einsatz maximalen Erfolg erzielen","Möglichst viel Geld ausgeben"],"Beim Maximalprinzip stehen die Mittel fest, der Erfolg soll maximal werden."],
+ [3,"Lisa möchte mit 50 € möglichst viele Lebensmittel kaufen. Welches Prinzip?",["Maximalprinzip","Minimalprinzip","Optimumprinzip","Kein ökonomisches Prinzip"],"Die Mittel (50 €) stehen fest, der Erfolg (Menge) soll maximal sein."],
+ [3,"Ein Händler will ein bestimmtes Kassensystem möglichst günstig kaufen. Welches Prinzip?",["Minimalprinzip","Maximalprinzip","Optimumprinzip","Kein ökonomisches Prinzip"],"Das Ziel (bestimmtes Kassensystem) steht fest, der Mitteleinsatz soll minimal sein."],
+ [3,"„Mit möglichst wenig Geld möglichst viel kaufen.“ Was trifft zu?",["Das ist unmöglich und kein ökonomisches Prinzip","Das ist das Maximalprinzip","Das ist das Minimalprinzip","Das ist das Optimumprinzip"],"Man kann nicht gleichzeitig Mittel minimieren und Erfolg maximieren. Eine Größe muss feststehen."],
+ [3,"Ein Geschäft möchte einen Umsatz von 100.000 € mit möglichst geringen Werbekosten erreichen.",["Minimalprinzip","Maximalprinzip","Optimumprinzip","Kein ökonomisches Prinzip"],"Ziel (100.000 € Umsatz) steht fest → Mittel minimieren."],
+
+ [4,"Zu welchem Wirtschaftssektor gehört der Einzelhandel?",["Tertiärer Sektor (Dienstleistung)","Primärer Sektor (Urerzeugung)","Sekundärer Sektor (Weiterverarbeitung)","Quartärer Sektor"],"Handel ist eine Dienstleistung und gehört zum tertiären Sektor."],
+ [4,"Ein landwirtschaftlicher Betrieb gehört zum …",["Primären Sektor","Sekundären Sektor","Tertiären Sektor","Kein Sektor"],"Urerzeugung (Landwirtschaft, Bergbau, Fischerei) = primärer Sektor."],
+ [4,"Aus dem Beruf Schmied entstehen Hufschmied und Kunstschmied. Das ist …",["Berufsspaltung","Berufsbildung","Arbeitszerlegung","Internationale Arbeitsteilung"],"Ein bestehender Beruf teilt sich in spezialisierte Berufe auf."],
+ [4,"Welcher ist ein Nachteil der Arbeitsteilung?",["Abhängigkeit von anderen und eintönige Arbeit","Höhere Produktivität","Größeres Warenangebot","Günstigere Preise"],"Spezialisierung bringt Abhängigkeit (z. B. Lieferketten) und Monotonie."],
+ [4,"Was fließt im einfachen Wirtschaftskreislauf von den Haushalten zu den Unternehmen?",["Produktionsfaktoren (z. B. Arbeit) und Konsumausgaben","Nur Konsumgüter","Löhne und Gehälter","Steuern"],"Haushalte geben Arbeit, Boden, Kapital (Güterstrom) und zahlen Konsumausgaben (Geldstrom)."],
+ [4,"Was erhalten die Haushalte von den Unternehmen im Geldstrom?",["Einkommen (Lohn, Miete, Zinsen)","Konsumausgaben","Subventionen","Kredite"],"Für ihre Produktionsfaktoren bekommen die Haushalte Einkommen."],
+ [4,"Welche Sektoren kommen im erweiterten Wirtschaftskreislauf hinzu?",["Staat, Banken, Ausland","Nur der Staat","Haushalte und Unternehmen","Großhandel und Einzelhandel"],"Der einfache Kreislauf hat nur Haushalte und Unternehmen; erweitert kommen Staat, Banken und Ausland dazu."],
+ [4,"Welche sind die volkswirtschaftlichen Produktionsfaktoren?",["Arbeit, Boden, Kapital","Waren, Regale, Kassen","Planung, Organisation, Kontrolle","Geld, Steuern, Zinsen"],"Volkswirtschaftlich: Arbeit, Boden, Kapital. Betrieblich spricht man von Betriebsfaktoren."],
+ [4,"Welche Rolle hast du als Azubi im Wirtschaftskreislauf?",["Mitglied eines Haushalts, das dem Unternehmen Arbeit gibt und dafür Einkommen erhält","Ich bin selbst ein Unternehmen","Ich gehöre zum Sektor Staat","Ich nehme am Kreislauf nicht teil"],"Du stellst Arbeitskraft zur Verfügung, bekommst Ausbildungsvergütung und gibst sie als Konsument wieder aus."],
+
+ [5,"An wen verkauft der Einzelhandel?",["An Endverbraucher","An Hersteller","An den Großhandel","Nur an Unternehmen"],"Der Einzelhandel ist das letzte Glied der Handelskette vor dem Endverbraucher."],
+ [5,"Ein Händler kauft 500 Packungen Nudeln und verkauft sie einzeln. Welche Funktion?",["Mengenausgleich (Quantitätsfunktion)","Zeitüberbrückung","Raumüberbrückung","Kreditfunktion"],"Große Einkaufsmengen werden in haushaltsübliche Mengen aufgeteilt."],
+ [5,"Weihnachtsartikel werden schon im Oktober eingelagert. Welche Funktion?",["Zeitüberbrückung","Raumüberbrückung","Sortimentsfunktion","Beratungsfunktion"],"Durch Lagerhaltung ist die Ware verfügbar, wenn sie gebraucht wird."],
+ [5,"Ein Supermarkt liegt mitten im Wohngebiet. Welche Funktion erfüllt er damit?",["Raumüberbrückung","Zeitüberbrückung","Qualitätsfunktion","Kreditfunktion"],"Der Handel bringt die Ware vom Hersteller zum Wohnort der Kunden."],
+ [5,"Ein Händler stellt Waren vieler Hersteller in seinem Laden zusammen. Welche Funktion?",["Sortimentsfunktion","Mengenausgleich","Raumüberbrückung","Servicefunktion"],"Das Sortiment ist die Auswahl an Waren, die ein Händler anbietet."],
+ [5,"Ein Kunde kann einen Fernseher in Raten bezahlen. Welche Funktion?",["Kreditfunktion","Beratungsfunktion","Sortimentsfunktion","Zeitüberbrückung"],"Durch Ratenzahlung gibt der Händler dem Kunden einen Kredit."],
+ [5,"Regale, Kassen und das Ladengebäude gehören zu den …",["Betriebsmitteln","Werkstoffen","dispositiven Faktoren","Dienstleistungen"],"Betriebsmittel sind alles, womit im Betrieb gearbeitet wird."],
+ [5,"Was entspricht im Einzelhandel vor allem den Werkstoffen?",["Die Handelswaren","Die Mitarbeiter","Die Kassen","Die Geschäftsleitung"],"Im Handel werden Waren nicht verarbeitet, sondern weiterverkauft. Sie sind die Werkstoffe."],
+ [5,"Was macht der dispositive Faktor?",["Planen, organisieren, entscheiden und kontrollieren","Ware einräumen und kassieren","Waren herstellen","Kunden beraten"],"Der dispositive Faktor ist die leitende Arbeit, die die Elementarfaktoren kombiniert."],
+ [5,"Eine Verkäuferin berät einen Kunden. Welcher Betriebsfaktor?",["Ausführende Arbeit","Dispositiver Faktor","Betriebsmittel","Werkstoff"],"Ausführende Arbeit ist die direkte Tätigkeit am Kunden oder an der Ware."],
+];
+
+const CARDS = [
+ [1,"Bedürfnis","Gefühl eines Mangels, verbunden mit dem Wunsch, ihn zu beseitigen."],
+ [1,"Bedarf","Bedürfnis, das mit Kaufkraft (Geld) ausgestattet ist."],
+ [1,"Nachfrage","Bedarf, der am Markt wirksam wird: der Kauf."],
+ [1,"Existenz-, Kultur-, Luxusbedürfnis","Einteilung nach Dringlichkeit: lebensnotwendig / gesellschaftliche Teilhabe / über das Übliche hinaus."],
+ [1,"Kollektivbedürfnis","Nur durch die Gemeinschaft (Staat) befriedigbar: Straßen, Schulen, Polizei."],
+ [1,"Latentes Bedürfnis","Unbewusst vorhanden, wird z. B. durch Werbung geweckt."],
+ [1,"Maslow-Pyramide","Physiologisch → Sicherheit → Sozial → Wertschätzung → Selbstverwirklichung."],
+ [2,"Freies Gut","Unbegrenzt vorhanden, kein Preis (Luft, Sonnenlicht)."],
+ [2,"Wirtschaftliches Gut","Knapp, hat einen Preis. Arten: Sachgüter, Dienstleistungen, Rechte."],
+ [2,"Konsumgut vs. Produktionsgut","Für private Haushalte vs. für Unternehmen zum Arbeiten."],
+ [2,"Gebrauchsgut vs. Verbrauchsgut","Mehrfach nutzbar (Regal) vs. wird verbraucht (Lebensmittel)."],
+ [2,"Komplementärgüter","Ergänzen sich: Drucker + Patrone."],
+ [2,"Substitutionsgüter","Ersetzen sich: Butter ↔ Margarine."],
+ [3,"Maximalprinzip","Mittel stehen fest → möglichst großer Erfolg."],
+ [3,"Minimalprinzip","Ziel steht fest → möglichst geringer Mitteleinsatz."],
+ [3,"Optimumprinzip","Bestes Verhältnis von Aufwand und Ertrag, beides variabel."],
+ [4,"Arbeitsteilung","Zerlegung einer Gesamtaufgabe in Teilaufgaben für verschiedene Personen, Betriebe oder Länder."],
+ [4,"Primär / Sekundär / Tertiär","Urerzeugung / Weiterverarbeitung / Dienstleistung inkl. Handel."],
+ [4,"Berufsspaltung","Ein Beruf teilt sich in spezialisierte Berufe (Schmied → Hufschmied)."],
+ [4,"Einfacher Wirtschaftskreislauf","Haushalte ↔ Unternehmen. Güterstrom und Geldstrom laufen entgegengesetzt."],
+ [4,"Erweiterter Wirtschaftskreislauf","Zusätzlich Staat, Banken, Ausland."],
+ [4,"Volkswirtschaftliche Produktionsfaktoren","Arbeit, Boden, Kapital."],
+ [5,"Einzelhandel","Kauft bei Hersteller/Großhandel, verkauft an Endverbraucher."],
+ [5,"Funktionen des Einzelhandels","Sortiment, Raum- und Zeitüberbrückung, Mengenausgleich, Qualität, Beratung, Service, Kredit."],
+ [5,"Elementarfaktoren","Ausführende Arbeit, Betriebsmittel, Werkstoffe (im Handel: Waren)."],
+ [5,"Dispositiver Faktor","Leitende Arbeit: planen, organisieren, entscheiden, kontrollieren."],
+];
+
+/* Speicher (nur für dich, in deinem Browser) */
+const store = {
+  get(){ try{ return JSON.parse(localStorage.getItem("lf1-results")||"{}"); }catch(e){ return {}; } },
+  set(v){ try{ localStorage.setItem("lf1-results", JSON.stringify(v)); }catch(e){} }
+};
+const NUMS = ["","①","②","③","④","⑤"];
+
+function renderOverview(){
+  const r = store.get(), tb = document.getElementById("overview");
+  tb.innerHTML = "";
+  for(let s=1;s<=5;s++){
+    const res = r[s]; let pill = '<span class="pill none">noch offen</span>', done = "";
+    if(res){
+      const pct = res.c/res.t;
+      const cls = pct>=0.8?"plus":pct>=0.5?"zero":"minus", sym = pct>=0.8?"+":pct>=0.5?"0":"−";
+      pill = `<span class="pill ${cls}">${sym} &nbsp;${res.c}/${res.t}</span>`; done = "✓";
+    }
+    tb.insertAdjacentHTML("beforeend",`<tr><td class="num">${NUMS[s]}</td><td>${STATION_Q[s]}</td><td class="done">${done}</td><td class="rate">${pill}</td></tr>`);
+  }
+}
+
+/* Reiter */
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".tabs button").forEach(x=>x.setAttribute("aria-selected", x===b));
+  ["lernen","quiz","karten"].forEach(v=>document.getElementById("view-"+v).hidden = v!==b.dataset.view);
+}));
+
+/* Quiz */
+const $ = id=>document.getElementById(id);
+let run = null;
+const shuffle = a=>{ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+function startQuiz(list){
+  run = {list:shuffle(list), i:0, score:0, wrong:[], per:{}};
+  $("quiz-start").hidden = true; $("quiz-end").hidden = true; $("quiz-run").hidden = false;
+  showQ();
+}
+function showQ(){
+  const q = run.list[run.i];
+  $("q-pos").textContent = `Frage ${run.i+1} / ${run.list.length}`;
+  $("q-st").textContent = `${NUMS[q[0]]} ${STATIONS[q[0]]}`;
+  $("q-score").textContent = `${run.score} richtig`;
+  $("q-bar").style.width = (run.i/run.list.length*100)+"%";
+  $("q-text").textContent = q[1];
+  $("q-fb").hidden = true; $("q-next").hidden = true;
+  const opts = shuffle(q[2].map((t,k)=>({t,ok:k===0})));
+  const box = $("q-opts"); box.innerHTML = "";
+  opts.forEach((o,k)=>{
+    const b = document.createElement("button");
+    b.className="opt"; b.innerHTML = `<span class="k">${"ABCD"[k]}</span><span></span>`;
+    b.lastChild.textContent = o.t; b.dataset.ok = o.ok;
+    b.addEventListener("click",()=>answer(b,o.ok,q));
+    box.appendChild(b);
+  });
+}
+function answer(btn, ok, q){
+  document.querySelectorAll("#q-opts .opt").forEach(b=>{ b.disabled = true; if(b.dataset.ok==="true") b.classList.add("right"); });
+  const p = run.per[q[0]] || (run.per[q[0]]={c:0,t:0}); p.t++;
+  if(ok){ run.score++; p.c++; } else { btn.classList.add("wrong"); run.wrong.push(q); }
+  const fb = $("q-fb"); fb.hidden = false; fb.className = "feedback "+(ok?"ok":"no");
+  fb.innerHTML = `<b>${ok?"Richtig!":"Leider falsch."}</b> `; fb.append(q[3]);
+  $("q-score").textContent = `${run.score} richtig`;
+  $("q-next").hidden = false; $("q-next").textContent = run.i+1<run.list.length ? "Weiter" : "Auswertung";
+  $("q-next").focus();
+}
+$("q-next").addEventListener("click",()=>{ run.i++; if(run.i<run.list.length) showQ(); else endQuiz(); });
+$("q-quit").addEventListener("click",()=>{ $("quiz-run").hidden = true; $("quiz-start").hidden = false; });
+$("q-go").addEventListener("click",()=>{ const s=+$("q-station").value; startQuiz(s?Q.filter(q=>q[0]===s):Q); });
+$("q-again").addEventListener("click",()=>{ $("quiz-end").hidden = true; $("quiz-start").hidden = false; });
+$("q-retry-wrong").addEventListener("click",()=>{ if(run.wrong.length) startQuiz(run.wrong); });
+
+function endQuiz(){
+  $("quiz-run").hidden = true; $("quiz-end").hidden = false;
+  const saved = store.get();
+  Object.entries(run.per).forEach(([s,v])=>{ saved[s] = v; });
+  store.set(saved); renderOverview();
+  const pct = Math.round(run.score/run.list.length*100);
+  const note = pct>=90?"Sehr gut – prüfungsreif!":pct>=75?"Gut – fast geschafft.":pct>=50?"Befriedigend – Lücken nacharbeiten.":"Noch mal die Stationen lesen.";
+  const d = new Date();
+  let lines = Object.entries(run.per).sort().map(([s,v])=>`<div class="l"><span>${NUMS[s]} ${STATIONS[s]}</span><span>${v.c}/${v.t}</span></div>`).join("");
+  $("receipt").innerHTML = `
+    <div class="c big">LERNMARKT LF 1</div>
+    <div class="c">Lernsituation 1.3</div>
+    <div class="c">${d.toLocaleDateString("de-DE")} · ${d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}</div>
+    <hr>${lines}<hr>
+    <div class="l big"><span>SUMME</span><span>${run.score}/${run.list.length}</span></div>
+    <div class="l"><span>Quote</span><span>${pct} %</span></div>
+    <div class="l"><span>Falsch</span><span>${run.wrong.length}</span></div>
+    <hr><div class="c">${note}</div>
+    <div class="c">Vielen Dank für Ihren Einkauf an Wissen!</div>`;
+  $("q-retry-wrong").disabled = run.wrong.length===0;
+  $("q-retry-wrong").textContent = run.wrong.length ? `Falsche wiederholen (${run.wrong.length})` : "Alles richtig!";
+}
+
+/* Karteikarten */
+let deck = CARDS.slice(), ci = 0;
+function showCard(){
+  const c = deck[ci]; $("card").classList.remove("flip");
+  $("c-st").textContent = `${NUMS[c[0]]} ${STATIONS[c[0]]}`;
+  $("c-term").textContent = c[1]; $("c-def").textContent = c[2];
+  $("c-pos").textContent = `Karte ${ci+1} / ${deck.length}`;
+}
+const flip = ()=>$("card").classList.toggle("flip");
+$("card").addEventListener("click",flip);
+$("card").addEventListener("keydown",e=>{ if(e.key===" "||e.key==="Enter"){ e.preventDefault(); flip(); } });
+$("c-next").addEventListener("click",()=>{ ci=(ci+1)%deck.length; showCard(); });
+$("c-prev").addEventListener("click",()=>{ ci=(ci-1+deck.length)%deck.length; showCard(); });
+$("c-shuffle").addEventListener("click",()=>{ deck=shuffle(CARDS); ci=0; showCard(); });
+
+renderOverview(); showCard();
+</script>
+
+</body></html>

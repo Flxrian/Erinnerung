@@ -1,0 +1,235 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>JUPITER Elektromarkt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;900&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+/* Layout: Shop-Startseite – Kopfleiste, Slogan-Hero mit Planet, Sortiment, Werte, Service, Kontakt */
+:root{
+  --bg:#FFFFFF; --soft:#F3F0F8; --fg:#1A1426; --muted:#5A5268;
+  --violet:#2A1950; --on-violet:#FFFFFF; --orange:#F59E2E; --on-orange:#2A1950;
+  --line:#E2DCEC; --stripe:#B4530F; --spot:#B4231A;
+  --display:'Archivo','Arial Black',system-ui,sans-serif;
+  --body:'Source Sans 3','Segoe UI',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#130C22; --soft:#1F1636; --fg:#F1ECF8; --muted:#B4AAC6; --violet:#2A1950; --line:#34284E; color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#130C22; --soft:#1F1636; --fg:#F1ECF8; --muted:#B4AAC6; --violet:#2A1950; --line:#34284E; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:17px;line-height:1.55}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+
+header{background:var(--violet);color:var(--on-violet);position:sticky;top:env(safe-area-inset-top,0px);z-index:5}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:14px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font-family:var(--display);font-weight:900;font-size:24px;letter-spacing:1px}
+.brand span{font-weight:500;font-size:17px;letter-spacing:0}
+nav{display:flex;gap:18px;flex-wrap:wrap}
+nav a{text-decoration:none;font-weight:600;font-size:15px;opacity:.9}
+nav a:hover{color:var(--orange)}
+
+.hero{background:var(--violet);color:var(--on-violet);padding-block:56px 72px;position:relative;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.3fr 1fr;gap:32px;align-items:center}
+.hero h1{font-size:clamp(36px,6vw,64px);line-height:1.02;letter-spacing:-1px}
+.hero h1 mark{background:var(--orange);color:var(--on-orange);padding:0 10px}
+.hero p{font-size:19px;max-width:34em;opacity:.9;margin:20px 0 28px}
+.btns{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-block;padding:13px 22px;border-radius:6px;font-weight:700;text-decoration:none;border:2px solid var(--orange);font-family:var(--body);font-size:16px;cursor:pointer}
+.btn.primary{background:var(--orange);color:var(--on-orange)}
+.btn.ghost{color:var(--on-violet);background:transparent}
+.planet{width:100%;max-width:340px;justify-self:center;animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px)}}
+@media (prefers-reduced-motion:reduce){.planet{animation:none}}
+
+section{padding-block:64px}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--orange)}
+h2{font-size:clamp(28px,4vw,40px);margin-top:6px;color:var(--fg)}
+.lead{color:var(--muted);max-width:40em;margin:10px 0 0}
+
+.grid{display:grid;gap:16px;margin-top:28px}
+.cats{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.cat{background:var(--soft);border-radius:10px;padding:22px;min-width:0}
+.cat svg{width:36px;height:36px;stroke:var(--orange)}
+.cat h3{font-size:19px;margin-top:12px}
+.cat p{margin:6px 0 0;color:var(--muted);font-size:15px}
+
+.offers{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.offer{border:1px solid var(--line);border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.offer .tag{align-self:flex-start;background:var(--orange);color:var(--on-orange);font-weight:700;font-size:12px;padding:3px 8px;border-radius:4px;letter-spacing:.5px}
+.offer h3{font-size:18px}
+.offer .spec{color:var(--muted);font-size:14px}
+.price{font-family:var(--display);font-weight:900;font-size:28px;font-variant-numeric:tabular-nums;margin-top:auto}
+.price s{font-family:var(--body);font-weight:400;font-size:15px;color:var(--muted);margin-left:8px}
+.note{font-size:13px;color:var(--muted);margin-top:14px}
+
+.mission{background:var(--soft)}
+.mission blockquote{font-family:var(--display);font-weight:700;font-size:clamp(22px,3vw,30px);line-height:1.3;margin:18px 0 0;max-width:30em;color:var(--fg)}
+.values{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.value{border-top:4px solid var(--orange);padding-top:14px;min-width:0}
+.value h3{font-size:20px}
+.value p{margin:6px 0 0;color:var(--muted);font-size:15.5px}
+
+.service{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.svc{display:flex;gap:14px;align-items:flex-start;min-width:0}
+.svc .ic{flex:none;width:44px;height:44px;border-radius:50%;background:var(--violet);display:grid;place-items:center}
+.svc .ic svg{width:22px;height:22px;stroke:var(--orange)}
+.svc h3{font-size:17px}
+.svc p{margin:4px 0 0;color:var(--muted);font-size:15px}
+
+.contact .wrap{display:grid;grid-template-columns:1fr 1fr;gap:40px}
+dl{display:grid;grid-template-columns:auto 1fr;gap:10px 20px;margin:24px 0 0}
+dt{font-weight:700;color:var(--muted);font-size:14px;text-transform:uppercase;letter-spacing:1px;padding-top:2px}
+dd{margin:0;font-variant-numeric:tabular-nums}
+form{display:grid;gap:14px;background:var(--soft);padding:24px;border-radius:10px;min-width:0}
+label{font-weight:600;font-size:15px;display:grid;gap:6px}
+input,textarea,select{font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--fg);width:100%}
+.ok{background:var(--violet);color:var(--on-violet);padding:14px 16px;border-radius:6px;font-weight:600}
+
+footer{background:var(--violet);color:var(--on-violet);padding-block:28px;font-size:14px}
+footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+footer strong{color:var(--orange)}
+
+@media (max-width:760px){
+  .hero .wrap,.contact .wrap{grid-template-columns:1fr}
+  .planet{max-width:200px;order:-1}
+  nav{gap:12px}
+}
+</style>
+
+<header>
+  <div class="wrap bar">
+    <a class="brand" href="#top" aria-label="JUPITER Elektromarkt Startseite">
+      <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5" fill="var(--orange)"/><path d="M3.3 8.5H20.7" stroke="var(--stripe)" stroke-width="1.6"/><path d="M2.6 12H21.4" stroke="#FDE7C2" stroke-width="1.2"/><path d="M3.6 16H20.4" stroke="var(--stripe)" stroke-width="1.6"/><ellipse cx="15.5" cy="14" rx="2.4" ry="1.4" fill="var(--spot)"/></svg>
+      JUPITER <span>Elektromarkt</span>
+    </a>
+    <nav aria-label="Hauptmenü">
+      <a href="#sortiment">Sortiment</a>
+      <a href="#angebote">Angebote</a>
+      <a href="#ueber-uns">Über uns</a>
+      <a href="#service">Service</a>
+      <a href="#kontakt">Kontakt</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <h1>Technik aus einer anderen Welt – <mark>Preise von dieser.</mark></h1>
+      <p>Jupiter steht für moderne Technik, die verständlich, zugänglich und bezahlbar ist. Dabei legen wir großen Wert auf eine kompetente und zuverlässige Beratung.</p>
+      <div class="btns">
+        <a class="btn primary" href="#angebote">Zu den Angeboten</a>
+        <a class="btn ghost" href="#kontakt">Beratung anfragen</a>
+      </div>
+    </div>
+    <svg class="planet" viewBox="0 0 200 200" aria-hidden="true">
+      <circle cx="100" cy="100" r="86" fill="var(--orange)"/>
+      <path d="M22 66H178M16 100H184M24 138H176" stroke="var(--stripe)" stroke-width="10" opacity=".7"/>
+      <path d="M18 84H182M20 120H180" stroke="#FDE7C2" stroke-width="5" opacity=".7"/>
+      <ellipse cx="132" cy="122" rx="22" ry="12" fill="var(--spot)"/>
+      <circle cx="40" cy="30" r="2" fill="#fff"/><circle cx="180" cy="20" r="1.5" fill="#fff"/><circle cx="190" cy="170" r="2" fill="#fff"/>
+    </svg>
+  </div>
+</div>
+
+<main>
+<section id="sortiment">
+  <div class="wrap">
+    <div class="eyebrow">Sortiment</div>
+    <h2>Alles rund um Elektro, Strom und Energie</h2>
+    <p class="lead">Ein breites und aktuelles Sortiment an Elektrogeräten – mit Liefer-, Reparatur- und Montageservice dazu.</p>
+    <div class="grid cats">
+      <div class="cat"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg><h3>TV &amp; Audio</h3><p>Fernseher, Soundbars, Kopfhörer</p></div>
+      <div class="cat"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1"/><path d="M1 20h22"/></svg><h3>Computer &amp; Gaming</h3><p>Laptops, PCs, Konsolen, Zubehör</p></div>
+      <div class="cat"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg><h3>Smartphones</h3><p>Handys, Tablets, Smartwatches</p></div>
+      <div class="cat"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="13" r="4"/><path d="M8 6h2"/></svg><h3>Haushalt</h3><p>Waschmaschinen, Kühlschränke, Küche</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="angebote" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow">Angebote der Woche</div>
+    <h2>Ehrlich günstig</h2>
+    <div class="grid offers">
+      <div class="offer"><span class="tag">TOP-PREIS</span><h3>55" 4K-Fernseher</h3><div class="spec">UHD · Smart TV · Energieklasse F</div><div class="price">449 €<s>549 €</s></div></div>
+      <div class="offer"><span class="tag">BELIEBT</span><h3>Notebook 15,6"</h3><div class="spec">16 GB RAM · 512 GB SSD</div><div class="price">629 €<s>729 €</s></div></div>
+      <div class="offer"><span class="tag">SPARSAM</span><h3>Waschmaschine 8 kg</h3><div class="spec">Energieklasse A · inkl. Lieferung</div><div class="price">499 €<s>589 €</s></div></div>
+      <div class="offer"><span class="tag">NEU</span><h3>Kabellose Kopfhörer</h3><div class="spec">Noise-Cancelling · 30 h Akku</div><div class="price">119 €<s>149 €</s></div></div>
+    </div>
+    <p class="note">Beispielangebote. Alle Preise inkl. MwSt.</p>
+  </div>
+</section>
+
+<section class="mission" id="ueber-uns">
+  <div class="wrap">
+    <div class="eyebrow">Unser Leitbild</div>
+    <h2>Wofür wir stehen</h2>
+    <blockquote>„Technik soll das Leben leichter machen – nicht komplizierter.“</blockquote>
+    <div class="grid values">
+      <div class="value"><h3>Fachwissen</h3><p>Wir kennen unsere Produkte genau und beraten unsere Kund:innen passend zu ihren individuellen Bedürfnissen.</p></div>
+      <div class="value"><h3>Ehrlichkeit</h3><p>Wir empfehlen Ihnen nicht das teuerste Produkt, sondern die Lösung, die wirklich zu Ihnen passt.</p></div>
+      <div class="value"><h3>Nachhaltigkeit</h3><p>Kostenlose Altgeräte-Rücknahme und ein verantwortungsvoller Umgang mit Ressourcen. Bei uns steht Reparieren vor Wegwerfen.</p></div>
+      <div class="value"><h3>Schnelligkeit</h3><p>24 Stunden für Sie da, Selbstscan-Kassen in unseren Filialen und Lieferung spätestens nach 48 Stunden.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="service">
+  <div class="wrap">
+    <div class="eyebrow">Service</div>
+    <h2>Auch nach dem Kauf für Sie da</h2>
+    <div class="grid service">
+      <div class="svc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h14v10H1zM15 10h4l3 3v3h-7"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/></svg></div><div><h3>Lieferung in 48 h</h3><p>Schnell und zuverlässig bis an Ihre Haustür.</p></div></div>
+      <div class="svc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.5-2.5z"/></svg></div><div><h3>Reparatur</h3><p>Unser Reparaturservice bringt Ihr Gerät wieder zum Laufen.</p></div></div>
+      <div class="svc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18M5 21V8l7-5 7 5v13"/><path d="M10 21v-6h4v6"/></svg></div><div><h3>Montage</h3><p>Wir bauen auf und schließen an – fertig zum Einschalten.</p></div></div>
+      <div class="svc"><div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></div><div><h3>Altgeräte-Rücknahme</h3><p>Kostenlos und fachgerecht recycelt.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="contact" id="kontakt" style="padding-top:0">
+  <div class="wrap">
+    <div>
+      <div class="eyebrow">Kontakt</div>
+      <h2>Besuchen Sie uns</h2>
+      <dl>
+        <dt>Adresse</dt><dd>Musterstraße 12<br>12345 Musterstadt</dd>
+        <dt>Mo–Fr</dt><dd>9:30–20:00 Uhr</dd>
+        <dt>Sa</dt><dd>9:30–18:00 Uhr</dd>
+        <dt>Telefon</dt><dd>01234 567890</dd>
+        <dt>E-Mail</dt><dd>info@jupiter-elektromarkt.de</dd>
+      </dl>
+    </div>
+    <form id="beratung" novalidate>
+      <h3 style="font-size:20px">Beratung anfragen</h3>
+      <label for="name">Name<input id="name" required autocomplete="name"></label>
+      <label for="mail">E-Mail<input id="mail" type="email" required autocomplete="email"></label>
+      <label for="thema">Thema<select id="thema"><option>Kaufberatung</option><option>Reparatur</option><option>Lieferung &amp; Montage</option><option>Altgeräte-Rücknahme</option></select></label>
+      <label for="msg">Nachricht<textarea id="msg" rows="4"></textarea></label>
+      <button class="btn primary" type="submit">Anfrage absenden</button>
+      <div class="ok" id="ok" hidden>Danke! Ihre Anfrage ist bei uns eingegangen. Wir melden uns innerhalb von 24 Stunden.</div>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><strong>JUPITER</strong> Elektromarkt · Technik aus einer anderen Welt – Preise von dieser.</div>
+    <div>© 2026 JUPITER Elektromarkt · Schulprojekt · <a href="https://claude.ai/artifact/Pv55c31TcBRBQda2GW5xiU" target="_blank" rel="noopener noreferrer" style="color:var(--orange)">Zur Ausbildungsmappe</a></div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('beratung').addEventListener('submit',function(e){
+  e.preventDefault();
+  var n=document.getElementById('name'),m=document.getElementById('mail');
+  if(!n.value.trim()||!m.value.includes('@')){ (n.value.trim()?m:n).focus(); return; }
+  this.querySelectorAll('label,button').forEach(function(el){el.hidden=true});
+  document.getElementById('ok').hidden=false;
+});
+</script>
+
+</body></html>
