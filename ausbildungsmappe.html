@@ -2,9 +2,9 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
-/* Layout: Ausbildungsordner – nur Register-Reiter zum Auswählen */
+/* Layout: Ausbildungsordner – Anmeldung als Deckblatt, danach Register-Reiter; Admin bekommt darunter Verwaltung und Protokoll */
 :root {
   --bg: #eef1f4;
   --sheet: #ffffff;
@@ -12,78 +12,479 @@
   --muted: #566274;
   --rule: #d5dbe3;
   --accent: #0f6b5c;
+  --on-accent: #ffffff;
   --reg-a: #c9472f;
   --reg-b: #2a5bb8;
   --reg-c: #b07a10;
   --reg-d: #6b4fa3;
+  --ok: #1d7a4a;  --ok-bg: #e2f2e8;
+  --err: #b42318; --err-bg: #fbe5e3;
+  --warn: #9a5b00; --warn-bg: #fbefd9;
   --f-display: "Familjen Grotesk", "Segoe UI", system-ui, sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #11161d; --sheet: #19202a; --ink: #e7ecf2; --muted: #9ba7b8; --rule: #2c3644;
-    --accent: #4fc2ab; --reg-a: #f07c64; --reg-b: #78a2f2; --reg-c: #e2b04a; --reg-d: #ad93e6;
+    --accent: #4fc2ab; --on-accent: #0b1a17;
+    --reg-a: #f07c64; --reg-b: #78a2f2; --reg-c: #e2b04a; --reg-d: #ad93e6;
+    --ok: #5fd39a; --ok-bg: #16301f; --err: #ff8a80; --err-bg: #3a1b1a; --warn: #f0b45a; --warn-bg: #352712;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #11161d; --sheet: #19202a; --ink: #e7ecf2; --muted: #9ba7b8; --rule: #2c3644;
-  --accent: #4fc2ab; --reg-a: #f07c64; --reg-b: #78a2f2; --reg-c: #e2b04a; --reg-d: #ad93e6;
+  --accent: #4fc2ab; --on-accent: #0b1a17;
+  --reg-a: #f07c64; --reg-b: #78a2f2; --reg-c: #e2b04a; --reg-d: #ad93e6;
+  --ok: #5fd39a; --ok-bg: #16301f; --err: #ff8a80; --err-bg: #3a1b1a; --warn: #f0b45a; --warn-bg: #352712;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body {
   background: var(--bg); color: var(--ink);
-  font: 17px/1.4 var(--f-display);
+  font: 17px/1.45 var(--f-display);
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   padding-block: 40px 64px;
 }
 .wrap { max-width: 640px; margin: 0 auto; display: grid; gap: 28px; }
+.wrap.wide { max-width: 860px; }
 h1 {
   font: 700 clamp(30px, 6vw, 44px)/1.05 var(--f-display); margin: 0; letter-spacing: -.02em;
   border-left: 8px solid var(--accent); padding-left: 16px;
 }
-section { display: grid; gap: 8px; }
-h2 { font: 600 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--c); margin: 0 0 2px 2px; }
-.r1 { --c: var(--reg-a); } .r2 { --c: var(--reg-b); } .r3 { --c: var(--reg-c); } .r4 { --c: var(--reg-d); }
-a {
+.top { display: flex; justify-content: space-between; align-items: end; gap: 12px 20px; flex-wrap: wrap; }
+.who { font: 500 13px/1.4 var(--f-mono); color: var(--muted); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.who b { color: var(--ink); }
+
+/* Deckblatt / Anmeldung */
+.card { background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 22px; display: grid; gap: 14px; min-width: 0; }
+.card h2 { font: 700 20px/1.2 var(--f-display); margin: 0; }
+label { display: grid; gap: 6px; font: 600 13px/1.2 var(--f-mono); letter-spacing: .04em; color: var(--muted); min-width: 0; }
+input {
+  font: 500 17px/1.3 var(--f-display); color: var(--ink); background: var(--bg);
+  border: 1.5px solid var(--rule); border-radius: 6px; padding: 11px 12px; width: 100%; min-width: 0;
+}
+.pw { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+button {
+  font: 700 15px/1 var(--f-display); cursor: pointer; border-radius: 6px; padding: 11px 16px;
+  border: 1.5px solid var(--accent); background: var(--accent); color: var(--on-accent);
+}
+button.ghost { background: transparent; color: var(--accent); }
+button.small { padding: 7px 11px; font-size: 13px; }
+button.danger { border-color: var(--err); color: var(--err); background: transparent; }
+button.danger.armed { background: var(--err); color: var(--sheet); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.msg { font-size: 15px; min-height: 1.2em; margin: 0; }
+.msg.err { color: var(--err); }
+.msg.ok { color: var(--ok); }
+
+/* Register mit Links */
+section.reg { display: grid; gap: 8px; }
+section.reg h2 { font: 600 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--c); margin: 0 0 2px 2px; }
+.ra { --c: var(--reg-a); } .rb { --c: var(--reg-b); } .rc { --c: var(--reg-c); } .rd { --c: var(--reg-d); }
+a.page {
   display: flex; justify-content: space-between; align-items: center; gap: 12px;
   text-decoration: none; color: var(--ink); font-weight: 700; font-size: 19px;
   background: var(--sheet); border: 1px solid var(--rule); border-left: 6px solid var(--c);
-  border-radius: 4px 10px 10px 4px; padding: 14px 18px; min-width: 0;
+  border-radius: 4px 10px 10px 4px; padding: 14px 18px; min-width: 0; overflow-wrap: anywhere;
 }
-a::after { content: "↗"; color: var(--c); font-weight: 600; }
-a:hover { border-color: var(--c); }
-a:focus-visible { outline: 3px solid var(--c); outline-offset: 3px; }
+a.page::after { content: "↗"; color: var(--c); font-weight: 600; }
+a.page:hover { border-color: var(--c); }
+a.page:focus-visible { outline-color: var(--c); }
 @media (prefers-reduced-motion: no-preference) {
-  a { transition: translate .15s ease, border-color .15s ease; }
-  a:hover { translate: 4px 0; }
+  a.page { transition: translate .15s ease, border-color .15s ease; }
+  a.page:hover { translate: 4px 0; }
 }
+
+/* Verwaltung */
+.admin { display: grid; gap: 18px; padding-top: 8px; border-top: 2px dashed var(--rule); }
+.admin > h2 { font: 700 26px/1.1 var(--f-display); margin: 0; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 18px; align-items: start; }
+.row2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.list { display: grid; gap: 0; border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--rule); min-width: 0; }
+.item:first-child { border-top: 0; }
+.item .nm { font-weight: 700; overflow-wrap: anywhere; min-width: 0; }
+.item .sub { font: 500 12px/1.3 var(--f-mono); color: var(--muted); }
+.result { background: var(--ok-bg); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; }
+.result code { font: 600 15px/1.4 var(--f-mono); user-select: all; overflow-wrap: anywhere; }
+.note { font-size: 14px; color: var(--muted); margin: 0; }
+
+.pill { font: 600 12px/1 var(--f-mono); padding: 5px 9px; border-radius: 99px; white-space: nowrap; }
+.pill.ok { color: var(--ok); background: var(--ok-bg); }
+.pill.err { color: var(--err); background: var(--err-bg); }
+.pill.warn { color: var(--warn); background: var(--warn-bg); }
+.pill.info { color: var(--muted); background: var(--bg); }
+.status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; }
+.status strong { font-size: 17px; }
+.log { max-height: 420px; overflow-y: auto; }
+.log .item { align-items: start; }
+.log .txt { display: grid; gap: 3px; min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; }
 </style>
 
-<div class="wrap">
-  <h1>Meine Ausbildungsmappe</h1>
+<div class="wrap" id="app">
+  <div class="top">
+    <h1>Meine Ausbildungsmappe</h1>
+    <div class="who" id="who" hidden><span>Angemeldet als <b id="whoName"></b></span><button class="ghost small" id="logout" type="button">Abmelden</button></div>
+  </div>
 
-  <section class="r1">
-    <h2>Berichtsheft</h2>
-    <a href="https://berichtshelftsapp.netlify.app/" target="_blank" rel="noopener">Tätigkeitsbericht</a>
-  </section>
+  <form class="card" id="loginForm" autocomplete="on">
+    <h2>Anmelden</h2>
+    <label for="lgName">Benutzername<input id="lgName" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label for="lgPass">Passwort
+      <span class="pw"><input id="lgPass" name="password" type="password" autocomplete="current-password" required><button class="ghost" type="button" id="lgShow" aria-label="Passwort anzeigen">Zeigen</button></span>
+    </label>
+    <button type="submit" id="lgBtn">Anmelden</button>
+    <p class="msg err" id="lgMsg" role="alert"></p>
+  </form>
 
-  <section class="r2">
-    <h2>Lernfelder</h2>
-    <a href="https://claude.ai/artifact/SNg8WXD2HX9Q96FSWf5zxP" target="_blank" rel="noopener">Lernfeld-Kartei</a>
-  </section>
+  <div id="links" hidden></div>
 
-  <section class="r3">
-    <h2>Präsentationen</h2>
-    <a href="https://claude.ai/artifact/U6cUuBj5Bp7okfNHAA37bH" target="_blank" rel="noopener">JUPITER Elektromarkt</a>
-    <a href="https://claude.ai/artifact/GjtJqHz7qCQjZ3tPirXdmo" target="_blank" rel="noopener">Elektro-Shop Flyer</a>
-    <a href="https://claude.ai/artifact/Nc2KxvcqFMz2cJrN9qMsaS" target="_blank" rel="noopener">Jupiter Flyer Redesign</a>
-  </section>
+  <div class="admin" id="admin" hidden>
+    <h2>Verwaltung</h2>
+    <p class="note" id="adNote" hidden></p>
+    <div class="cols">
+      <div class="card">
+        <h2>Zugänge</h2>
+        <div class="list" id="accList"></div>
+        <form id="newForm" style="display:grid;gap:12px">
+          <div class="row2">
+            <label for="nwName">Benutzername<input id="nwName" autocapitalize="none" spellcheck="false" maxlength="32" required></label>
+            <label for="nwPass">Passwort<input id="nwPass" maxlength="64" required></label>
+          </div>
+          <div class="btns">
+            <button type="submit" id="nwBtn">Zugang anlegen</button>
+            <button type="button" class="ghost" id="nwDice">Neu würfeln</button>
+          </div>
+          <p class="msg" id="nwMsg" role="status"></p>
+        </form>
+        <div class="result" id="nwResult" hidden>
+          <span class="sub" style="font:600 12px var(--f-mono);color:var(--ok)">ZUGANG ANGELEGT · JETZT NOTIEREN</span>
+          <code id="nwOut"></code>
+          <div class="btns"><button type="button" class="small" id="nwCopy">Kopieren</button></div>
+        </div>
+      </div>
 
-  <section class="r4">
-    <h2>Ablage</h2>
-    <a href="https://claude.ai/artifact/Bc7CkT8PVhaSSaQCaiVGSX" target="_blank" rel="noopener">Meine Projektmappe</a>
-  </section>
+      <div class="card">
+        <div class="status"><h2>Fehler-Protokoll</h2><span class="pill info" id="logPill">wird geladen</span></div>
+        <p class="note" id="logSummary"></p>
+        <div class="list log" id="logList"></div>
+        <div class="btns">
+          <button type="button" class="ghost small" id="logReload">Aktualisieren</button>
+          <button type="button" class="danger small" id="logClear">Protokoll leeren</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<script>
+(function () {
+  "use strict";
+  const CFG = {"iter": 310000, "admin": {"name": "dachs-r40a8", "salt": "fASsjptTwfXElEK3vRoOPQ==", "iv": "8GOeakCoYImcWk6V", "ct": "mRRXJITUSST4+QXBIRumMrFBIKKctK+PK9Y9W0gdFU9W2KwxUzCZXuGIjbBViU1c"}, "links": {"iv": "HaDnvc1yoROnEKps", "ct": "5qIz4ecbaHEJ/HSRAv9Q0PwOCCD4l/x/X1Fc7eCuLlkqj/oGtr5bxn1xW2BfCewF9Kr+6157p0uNouiic3cB+B6GONO66C03DvVaGY/odzFkkb/NHB9fcmNQNT9aJLqP3uMLNjpC70qknymWtt0OHV7ed9HiqjHipDrhScq4vV0zTXM7gFPhVtaUgsftDr1Ozi+JtJqGrkZTPX0QCXxV+wgLoox9yBNGbtJ67kB3HmJmNLM9FUyqpx1gticp0sgSC47Fwl5XIDq7jikFV/oRaNxJqdI4Pq4Hv1ZK22fYhjG4t7ER2Rvo+7zBXiaounGkggGJOtBnN5uSJVRi2MqZpXdilMOnHUTSrXsN5ZP6KaihBEAQfT1a3QtBwbO/pFQ8YBKEm5UQNn2DZpIcFlRvQuXyHJ4j8I1V3S+6AOZwnYqhpEzA+fIycbWpuiUoDCl62X8jzXRejVDmsWlhdNft+sdTFpQomKYjxHj8Ysc839Z4ILbekyAQ5bR4dptX0vi2dTfp2eLHR/sdXe5GiASFcqhrOxWEzH90CR+W0WdFAEF3aUy5I+oAsZaflrshcnd65fe3IuzbZR0D7QrDz7zF3WO2fa/8/IxlhfQIH2FzzIurTANPN2KjtrSglwiAgU2cb4NYzSkNw41KjSJEfeJG5gceVyNtUTinhBdrCxbLszdXxaZEiisgmX6VQCLBMMYKkftzhoKynAqXuC1l+USzdP8PEfrOHNgmd2RqNzrHRIp5wCTOsgpYMeZJWZB2PkKWuBGffuFCo5L0DzYmz0+ThRVS3e02FNKNmtW/zzC77oAcYQxylUb3zjrsZamRqwMHyOkvmmR1PQDHdklPnmeMOdWR9pGad2zYKqBXS+y/UrTabHccUnjmy0p7yKDIpHT2+Pnfj3/F+/5NrpWLCKfEcbLX2tvglm3qt0HHBldbs5HF+K5G7RGLP51SVjd+Vz8BX0UoH1wjrZC80CqGPBGCJ/skx2qIkyR9RCRB2ho/2RHsW8Ki6RKmLlguZF2JqiBsVoBpFQ1PE1J7"}};
+  const $ = id => document.getElementById(id);
+  const te = new TextEncoder(), td = new TextDecoder();
+  const toB64 = b => { let s = ""; new Uint8Array(b).forEach(x => s += String.fromCharCode(x)); return btoa(s); };
+  const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const fmt = t => new Date(t).toLocaleString("de-DE", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const NAME_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/;
+
+  /* ---------- Plattform (Datenbank + Nutzer) ---------- */
+  const caps = (async () => {
+    if (!window.claude || !window.claude.use) return { db: null, user: null };
+    const [db, user] = await Promise.all([
+      window.claude.use("db").catch(() => null),
+      window.claude.use("user").catch(() => null)
+    ]);
+    return { db, user };
+  })();
+
+  /* ---------- Protokoll: jeder Fehler wird gespeichert ---------- */
+  let logCount = 0, logDocSet = false, inLog = false;
+  async function log(typ, text) {
+    if (inLog || logCount >= 30) return;
+    logCount++; inLog = true;
+    try {
+      const { db, user } = await caps;
+      const uid = db && user ? await user.id() : null;
+      if (!uid) return;
+      if (!logDocSet) { await db.doc("protokoll/" + uid).set({ zuletzt: Date.now() }); logDocSet = true; }
+      await db.collection("protokoll/" + uid + "/eintraege").add({
+        zeit: Date.now(), typ, text: String(text).slice(0, 500), konto: session ? session.name : ""
+      });
+    } catch (e) { /* Protokoll darf die Seite nie blockieren */ }
+    finally { inLog = false; }
+  }
+  window.addEventListener("error", e => log("fehler", (e.message || "Unbekannter Fehler") + (e.lineno ? " (Zeile " + e.lineno + ")" : "")));
+  window.addEventListener("unhandledrejection", e => log("fehler", "Unbehandelt: " + (e.reason && (e.reason.message || e.reason.code) || String(e.reason))));
+
+  /* ---------- Verschlüsselung ---------- */
+  async function kek(pw, salt) {
+    const base = await crypto.subtle.importKey("raw", te.encode(pw), "PBKDF2", false, ["deriveKey"]);
+    return crypto.subtle.deriveKey({ name: "PBKDF2", salt, iterations: CFG.iter, hash: "SHA-256" }, base,
+      { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]);
+  }
+  async function unwrap(acc, pw) {
+    const k = await kek(pw, fromB64(acc.salt));
+    return new Uint8Array(await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(acc.iv) }, k, fromB64(acc.ct)));
+  }
+  async function wrap(master, pw) {
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await kek(pw, salt), master);
+    return { salt: toB64(salt), iv: toB64(iv), ct: toB64(ct) };
+  }
+  async function openLinks(master) {
+    const k = await crypto.subtle.importKey("raw", master, "AES-GCM", false, ["decrypt"]);
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: fromB64(CFG.links.iv) }, k, fromB64(CFG.links.ct));
+    return JSON.parse(td.decode(pt));
+  }
+
+  /* ---------- Zufallsnamen und Passwörter ---------- */
+  const rnd = n => crypto.getRandomValues(new Uint32Array(n));
+  const pick = (s, n) => Array.from(rnd(n), x => s[x % s.length]).join("");
+  const TIERE = ["falke", "luchs", "otter", "dachs", "kranich", "biber", "marder", "uhu", "igel", "fuchs"];
+  const randName = () => TIERE[rnd(1)[0] % TIERE.length] + "-" + pick("abcdefghijkmnpqrstuvwxyz23456789", 5);
+  const randPass = () => [0, 1, 2, 3].map(() => pick("ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789", 5)).join("-");
+
+  /* ---------- Sitzung ---------- */
+  let session = null;
+  const SKEY = "ausbildungsmappe_sitzung";
+  const saveSess = s => { try { s ? sessionStorage.setItem(SKEY, JSON.stringify(s)) : sessionStorage.removeItem(SKEY); } catch (e) {} };
+  const loadSess = () => { try { return JSON.parse(sessionStorage.getItem(SKEY) || "null"); } catch (e) { return null; } };
+
+  let fails = 0, lockedUntil = 0;
+  $("loginForm").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const msg = $("lgMsg"); msg.textContent = "";
+    if (Date.now() < lockedUntil) { msg.textContent = "Zu viele Fehlversuche. Warte " + Math.ceil((lockedUntil - Date.now()) / 1000) + " Sekunden."; return; }
+    const name = $("lgName").value.trim().toLowerCase(), pw = $("lgPass").value;
+    $("lgBtn").disabled = true; $("lgBtn").textContent = "Prüfe …";
+    try {
+      let acc = null, rolle = "nutzer";
+      if (name === CFG.admin.name) { acc = CFG.admin; rolle = "admin"; }
+      else if (NAME_RE.test(name)) {
+        const { db } = await caps;
+        if (!db) { msg.textContent = "Nutzerzugänge funktionieren nur, wenn du auf claude.ai angemeldet bist."; return; }
+        const snap = await db.collection("konten").doc(name).get();
+        if (snap.exists) acc = snap.data();
+      }
+      let master = null;
+      if (acc) { try { master = await unwrap(acc, pw); } catch (e) { master = null; } }
+      if (!master) {
+        fails++; if (fails >= 5) { lockedUntil = Date.now() + 30000; fails = 0; }
+        msg.textContent = "Benutzername oder Passwort stimmt nicht.";
+        log("anmeldung-fehlgeschlagen", "Falsche Anmeldung für „" + name.slice(0, 40) + "“");
+        return;
+      }
+      fails = 0;
+      session = { name, rolle, k: toB64(master) };
+      saveSess(session);
+      $("lgPass").value = "";
+      await show();
+      log("anmeldung", name + " hat sich angemeldet");
+    } catch (e) {
+      msg.textContent = "Anmeldung hat nicht geklappt. Lade die Seite neu und versuch es nochmal.";
+      log("fehler", "Anmeldung: " + (e.message || e.code || e));
+    } finally { $("lgBtn").disabled = false; $("lgBtn").textContent = "Anmelden"; }
+  });
+  $("lgShow").onclick = () => {
+    const p = $("lgPass"), show = p.type === "password";
+    p.type = show ? "text" : "password"; $("lgShow").textContent = show ? "Verbergen" : "Zeigen";
+    $("lgShow").setAttribute("aria-label", show ? "Passwort verbergen" : "Passwort anzeigen");
+  };
+  $("logout").onclick = () => {
+    log("abmeldung", (session ? session.name : "") + " hat sich abgemeldet");
+    session = null; saveSess(null); stopAdmin();
+    $("links").hidden = true; $("links").replaceChildren(); $("admin").hidden = true; $("who").hidden = true;
+    $("loginForm").hidden = false; $("app").classList.remove("wide"); $("lgName").focus();
+  };
+
+  async function show() {
+    let groups;
+    try { groups = await openLinks(fromB64(session.k)); }
+    catch (e) { log("fehler", "Links ließen sich nicht entschlüsseln"); session = null; saveSess(null); $("lgMsg").textContent = "Die Seite konnte nicht entschlüsselt werden. Bitte neu anmelden."; return; }
+    const box = $("links"); box.replaceChildren();
+    box.style.display = "grid"; box.style.gap = "28px";
+    groups.forEach(g => {
+      const s = el("section", "reg r" + g.farbe); s.append(el("h2", null, g.gruppe));
+      g.seiten.forEach(p => {
+        if (!/^https:\/\//.test(p.url)) return;
+        const a = el("a", "page", p.titel); a.href = p.url; a.target = "_blank"; a.rel = "noopener";
+        s.append(a);
+      });
+      box.append(s);
+    });
+    $("loginForm").hidden = true; box.hidden = false;
+    $("whoName").textContent = session.name + (session.rolle === "admin" ? " (Admin)" : ""); $("who").hidden = false;
+    if (session.rolle === "admin") { $("app").classList.add("wide"); startAdmin(); }
+  }
+
+  /* ---------- Verwaltung (nur Admin) ---------- */
+  let unsubAcc = null, canWrite = false;
+  function stopAdmin() { if (unsubAcc) { try { unsubAcc(); } catch (e) {} unsubAcc = null; } }
+
+  async function startAdmin() {
+    $("admin").hidden = false;
+    $("nwName").value = randName(); $("nwPass").value = randPass();
+    const { db, user } = await caps;
+    const note = $("adNote");
+    if (!db) {
+      note.hidden = false; note.textContent = "Zugänge und Protokoll sind nur auf claude.ai verfügbar, wenn du dort angemeldet bist.";
+      ["nwBtn", "logClear", "logReload"].forEach(id => $(id).disabled = true);
+      $("accList").replaceChildren(adminRow()); $("logPill").textContent = "nicht verfügbar"; return;
+    }
+    try { canWrite = !!(user && await user.canEdit()); } catch (e) { canWrite = false; }
+    if (!canWrite) {
+      note.hidden = false; note.textContent = "Zugänge anlegen, löschen und das Protokoll lesen kann nur der Besitzer dieser Seite auf claude.ai.";
+      ["nwBtn", "logClear"].forEach(id => $(id).disabled = true);
+    }
+    stopAdmin();
+    const timer = setTimeout(() => { $("accList").replaceChildren(adminRow(), info("Zugänge laden gerade nicht.")); }, 10000);
+    unsubAcc = db.collection("konten").onSnapshot(snap => {
+      clearTimeout(timer);
+      const rows = snap.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.erstellt || 0) - (b.erstellt || 0));
+      renderAccounts(rows);
+    }, err => { clearTimeout(timer); log("fehler", "Zugänge laden: " + (err && (err.code || err.message))); $("accList").replaceChildren(adminRow(), info("Zugänge ließen sich nicht laden.")); });
+    loadLog();
+  }
+  const info = t => { const r = el("div", "item"); r.append(el("span", "sub", t)); return r; };
+  function adminRow() {
+    const r = el("div", "item"), l = el("div");
+    l.append(el("div", "nm", CFG.admin.name), el("div", "sub", "Admin · fest eingebaut"));
+    r.append(l, el("span", "pill info", "Admin")); return r;
+  }
+  function renderAccounts(rows) {
+    const list = $("accList"); list.replaceChildren(adminRow());
+    if (!rows.length) list.append(info("Noch keine weiteren Zugänge."));
+    rows.forEach(a => {
+      const r = el("div", "item"), l = el("div");
+      l.append(el("div", "nm", a.name || a.id), el("div", "sub", "Nutzer · seit " + (a.erstellt ? fmt(a.erstellt) : "–")));
+      const b = el("button", "danger small", "Löschen"); b.type = "button"; b.disabled = !canWrite;
+      let t = null;
+      b.onclick = async () => {
+        if (!b.classList.contains("armed")) {
+          b.classList.add("armed"); b.textContent = "Wirklich löschen?";
+          t = setTimeout(() => { b.classList.remove("armed"); b.textContent = "Löschen"; }, 4000); return;
+        }
+        clearTimeout(t); b.disabled = true;
+        try {
+          const { db } = await caps;
+          await db.collection("konten").doc(a.id).delete();
+          log("verwaltung", "Zugang „" + a.id + "“ gelöscht");
+        } catch (e) {
+          b.disabled = false; b.classList.remove("armed"); b.textContent = "Löschen";
+          $("nwMsg").className = "msg err"; $("nwMsg").textContent = "Löschen hat nicht geklappt.";
+          log("fehler", "Zugang löschen: " + (e.code || e.message));
+        }
+      };
+      r.append(l, b); list.append(r);
+    });
+  }
+
+  $("nwDice").onclick = () => { $("nwName").value = randName(); $("nwPass").value = randPass(); };
+  $("newForm").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const m = $("nwMsg"); m.className = "msg err"; m.textContent = "";
+    const name = $("nwName").value.trim().toLowerCase(), pw = $("nwPass").value;
+    if (!NAME_RE.test(name)) { m.textContent = "Benutzername: 3–32 Zeichen, nur Kleinbuchstaben, Ziffern, Punkt, Strich und Unterstrich."; return; }
+    if (name === CFG.admin.name) { m.textContent = "Diesen Namen hat schon der Admin."; return; }
+    if (pw.length < 10) { m.textContent = "Das Passwort braucht mindestens 10 Zeichen."; return; }
+    $("nwBtn").disabled = true;
+    try {
+      const { db } = await caps;
+      const ref = db.collection("konten").doc(name);
+      if ((await ref.get()).exists) { m.textContent = "Diesen Benutzernamen gibt es schon."; return; }
+      const w = await wrap(fromB64(session.k), pw);
+      await ref.set(Object.assign({ name, rolle: "nutzer", erstellt: Date.now() }, w));
+      $("nwOut").textContent = "Benutzername: " + name + "\nPasswort: " + pw;
+      $("nwOut").style.whiteSpace = "pre-line";
+      $("nwResult").hidden = false;
+      m.className = "msg ok"; m.textContent = "Zugang „" + name + "“ ist angelegt.";
+      log("verwaltung", "Zugang „" + name + "“ angelegt");
+      $("nwName").value = randName(); $("nwPass").value = randPass();
+    } catch (e) {
+      m.textContent = e && e.code === "invalid_argument" ? "Nur der Besitzer der Seite darf Zugänge anlegen." : "Anlegen hat nicht geklappt. Versuch es nochmal.";
+      log("fehler", "Zugang anlegen: " + (e.code || e.message));
+    } finally { $("nwBtn").disabled = !canWrite; }
+  });
+  $("nwCopy").onclick = () => {
+    const txt = $("nwOut").textContent;
+    navigator.clipboard.writeText(txt).then(() => { $("nwCopy").textContent = "Kopiert"; setTimeout(() => $("nwCopy").textContent = "Kopieren", 2000); })
+      .catch(() => { const r = document.createRange(); r.selectNodeContents($("nwOut")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+  };
+
+  /* ---------- Protokoll anzeigen ---------- */
+  const TYP = {
+    "fehler": ["Fehler", "err"], "anmeldung-fehlgeschlagen": ["Falsches Passwort", "warn"],
+    "anmeldung": ["Anmeldung", "info"], "abmeldung": ["Abmeldung", "info"], "verwaltung": ["Verwaltung", "info"]
+  };
+  let logRefs = [];
+  async function loadLog() {
+    const { db } = await caps; if (!db) return;
+    const list = $("logList"), pill = $("logPill");
+    pill.className = "pill info"; pill.textContent = "wird geladen";
+    try {
+      const people = await db.collection("protokoll").get();
+      const parts = await Promise.all(people.docs.map(p =>
+        db.collection("protokoll/" + p.id + "/eintraege").orderBy("zeit", "desc").limit(100).get()));
+      logRefs = [];
+      const rows = [];
+      parts.forEach((snap, i) => snap.docs.forEach(d => {
+        logRefs.push("protokoll/" + people.docs[i].id + "/eintraege/" + d.id);
+        rows.push(d.data());
+      }));
+      rows.sort((a, b) => b.zeit - a.zeit);
+      const week = Date.now() - 7 * 864e5;
+      const errs = rows.filter(r => r.typ === "fehler" && r.zeit > week).length;
+      const bad = rows.filter(r => r.typ === "anmeldung-fehlgeschlagen" && r.zeit > week).length;
+      if (errs) { pill.className = "pill err"; pill.textContent = errs + (errs === 1 ? " Fehler" : " Fehler"); }
+      else if (bad) { pill.className = "pill warn"; pill.textContent = bad + "× falsches Passwort"; }
+      else { pill.className = "pill ok"; pill.textContent = "Alles in Ordnung"; }
+      $("logSummary").textContent = "Letzte 7 Tage: " + errs + " Fehler, " + bad + " falsche Anmeldungen. Zuletzt geprüft " + fmt(Date.now()) + ".";
+      list.replaceChildren();
+      if (!rows.length) list.append(info("Noch keine Einträge."));
+      rows.slice(0, 150).forEach(r => {
+        const [lab, cls] = TYP[r.typ] || [r.typ, "info"];
+        const it = el("div", "item"), t = el("div", "txt");
+        t.append(el("span", null, r.text), el("span", "sub", fmt(r.zeit) + (r.konto ? " · " + r.konto : "")));
+        it.append(t, el("span", "pill " + cls, lab)); list.append(it);
+      });
+    } catch (e) {
+      pill.className = "pill info"; pill.textContent = "nicht lesbar";
+      list.replaceChildren(info(canWrite ? "Das Protokoll ließ sich nicht laden." : "Nur der Besitzer der Seite kann das Protokoll lesen."));
+    }
+  }
+  $("logReload").onclick = loadLog;
+  let clearT = null;
+  $("logClear").onclick = async () => {
+    const b = $("logClear");
+    if (!b.classList.contains("armed")) { b.classList.add("armed"); b.textContent = "Wirklich leeren?"; clearT = setTimeout(() => { b.classList.remove("armed"); b.textContent = "Protokoll leeren"; }, 4000); return; }
+    clearTimeout(clearT); b.classList.remove("armed"); b.textContent = "Protokoll leeren"; b.disabled = true;
+    try { const { db } = await caps; for (const p of logRefs) await db.doc(p).delete(); }
+    catch (e) { log("fehler", "Protokoll leeren: " + (e.code || e.message)); }
+    b.disabled = false; loadLog();
+  };
+
+  /* ---------- Start ---------- */
+  if (!CFG) { $("lgMsg").textContent = "Diese Seite ist noch nicht eingerichtet."; return; }
+  const saved = loadSess();
+  if (saved && saved.k && saved.name) {
+    session = saved;
+    (async () => {
+      if (session.rolle !== "admin") {
+        const { db } = await caps;
+        if (db) {
+          try { if (!(await db.collection("konten").doc(session.name).get()).exists) { session = null; saveSess(null); $("lgMsg").textContent = "Dein Zugang wurde gelöscht."; return; } }
+          catch (e) {}
+        }
+      }
+      show();
+    })();
+  }
+})();
+</script>
