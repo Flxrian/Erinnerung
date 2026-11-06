@@ -1,0 +1,266 @@
+<title>Meine Ausbildungsmappe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Karla:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: Ausbildungsordner – Rücken-Etikett als Kopf, links Register-Reiter (Inhaltsverzeichnis), rechts die abgehefteten Seiten je Register */
+:root {
+  --bg: #eef1f4;
+  --sheet: #ffffff;
+  --ink: #18212d;
+  --muted: #566274;
+  --rule: #d5dbe3;
+  --accent: #0f6b5c;      /* Ordner-Grün */
+  --reg-a: #c9472f;       /* Register 1 Berichtsheft */
+  --reg-b: #2a5bb8;       /* Register 2 Lernfelder */
+  --reg-c: #b07a10;       /* Register 3 Präsentationen */
+  --reg-d: #6b4fa3;       /* Register 4 Ablage */
+  --tint: #e3ece9;
+  --f-display: "Familjen Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Karla", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11161d; --sheet: #19202a; --ink: #e7ecf2; --muted: #9ba7b8; --rule: #2c3644;
+    --accent: #4fc2ab; --reg-a: #f07c64; --reg-b: #78a2f2; --reg-c: #e2b04a; --reg-d: #ad93e6;
+    --tint: #18302b; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11161d; --sheet: #19202a; --ink: #e7ecf2; --muted: #9ba7b8; --rule: #2c3644;
+  --accent: #4fc2ab; --reg-a: #f07c64; --reg-b: #78a2f2; --reg-c: #e2b04a; --reg-d: #ad93e6;
+  --tint: #18302b; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font: 17px/1.55 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+.wrap { max-width: 1100px; margin: 0 auto; }
+
+/* Rücken-Etikett */
+.label {
+  margin-top: 36px; background: var(--sheet); border: 1px solid var(--rule); border-left: 10px solid var(--accent);
+  border-radius: 6px; padding: 24px 28px; display: grid; gap: 14px;
+}
+.label .kicker { font: 600 12px/1 var(--f-mono); letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+h1 { font: 700 clamp(34px, 6vw, 56px)/1.02 var(--f-display); margin: 0; letter-spacing: -.02em; text-wrap: balance; }
+.label p { margin: 0; color: var(--muted); max-width: 62ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 28px; padding-top: 6px; border-top: 1px dashed var(--rule); }
+.facts div { font: 500 13px/1.3 var(--f-mono); color: var(--muted); }
+.facts b { display: block; font: 700 24px/1.1 var(--f-display); color: var(--ink); font-variant-numeric: tabular-nums; }
+
+/* Ordner: Register links, Inhalt rechts */
+.binder { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 32px; margin-top: 32px; align-items: start; }
+.tabs { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); display: grid; gap: 6px; }
+.tabs .head { font: 600 12px/1 var(--f-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); padding: 0 0 8px 2px; }
+.tab {
+  display: grid; grid-template-columns: 30px 1fr; align-items: center; gap: 10px; text-decoration: none;
+  background: var(--sheet); border: 1px solid var(--rule); border-left: 6px solid var(--c);
+  border-radius: 4px 10px 10px 4px; padding: 10px 12px; font-weight: 700;
+}
+.tab .n { font: 600 13px/1 var(--f-mono); color: var(--c); }
+.tab small { grid-column: 2; font-weight: 400; font-size: 13px; color: var(--muted); margin-top: -6px; }
+.tab:hover { border-color: var(--c); }
+
+.reg { --c: var(--accent); scroll-margin-top: 20px; display: grid; gap: 16px; }
+.reg + .reg { margin-top: 48px; }
+.r1 { --c: var(--reg-a); } .r2 { --c: var(--reg-b); } .r3 { --c: var(--reg-c); } .r4 { --c: var(--reg-d); }
+.reg-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; border-bottom: 2px solid var(--c); padding-bottom: 10px; }
+.reg-head .n { font: 600 13px/1 var(--f-mono); color: var(--sheet); background: var(--c); padding: 6px 9px; border-radius: 4px; }
+.reg-head h2 { font: 700 28px/1.1 var(--f-display); margin: 0; text-wrap: balance; }
+.reg-head p { margin: 0; color: var(--muted); flex-basis: 100%; max-width: 64ch; }
+
+.pages { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.page {
+  position: relative; display: grid; gap: 8px; align-content: start; text-decoration: none; min-width: 0;
+  background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px 16px 34px;
+}
+/* Lochung am linken Rand */
+.page::before, .page::after {
+  content: ""; position: absolute; left: 11px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--bg); box-shadow: inset 0 1px 2px rgba(0,0,0,.18);
+}
+.page::before { top: 22px; } .page::after { bottom: 22px; }
+.page .meta { display: flex; justify-content: space-between; gap: 8px; font: 500 12px/1.3 var(--f-mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+.page .meta span:first-child { color: var(--c); font-weight: 600; }
+.page h3 { font: 700 21px/1.2 var(--f-display); margin: 0; text-wrap: balance; overflow-wrap: anywhere; }
+.page p { margin: 0; color: var(--muted); font-size: 15.5px; }
+.page .go { font-weight: 700; font-size: 15px; color: var(--c); margin-top: 4px; }
+.page:hover { border-color: var(--c); }
+.page:hover .go { text-decoration: underline; }
+@media (prefers-reduced-motion: no-preference) {
+  .page { transition: translate .15s ease, border-color .15s ease; }
+  .page:hover { translate: 0 -2px; }
+}
+.page.wide { grid-column: 1 / -1; }
+
+/* Lernfeld-Übersicht 1–14 */
+.lf { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 18px 20px; display: grid; gap: 12px; }
+.lf-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.lf-top h3 { font: 700 18px/1.2 var(--f-display); margin: 0; }
+.lf-top span { font: 500 13px/1 var(--f-mono); color: var(--muted); }
+.lf ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 6px 14px; counter-reset: lf; }
+.lf li { counter-increment: lf; display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: baseline; font-size: 14.5px; color: var(--muted); min-width: 0; }
+.lf li::before { content: "LF " counter(lf); font: 600 12px/1.6 var(--f-mono); color: var(--muted); border: 1px solid var(--rule); border-radius: 4px; text-align: center; }
+.lf li.has { color: var(--ink); font-weight: 700; }
+.lf li.has::before { background: var(--c); border-color: var(--c); color: var(--sheet); }
+.lf .key { font-size: 13px; color: var(--muted); }
+
+footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--rule); color: var(--muted); font-size: 14px; }
+
+@media (max-width: 820px) {
+  .binder { grid-template-columns: 1fr; gap: 24px; }
+  .tabs { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tabs .head { grid-column: 1 / -1; }
+  .tab small { display: none; }
+  .label { padding: 20px; }
+}
+</style>
+
+<div class="wrap">
+  <header class="label">
+    <div class="kicker">Ausbildung · Kaufmann im Einzelhandel</div>
+    <h1>Meine Ausbildungsmappe</h1>
+    <p>Alles aus Betrieb und Berufsschule an einem Ort: Berichtsheft, Lernfeld-Übungen und Präsentationen. Jede Seite öffnet sich in einem neuen Tab.</p>
+    <div class="facts" aria-label="Überblick">
+      <div><b>8</b>Seiten abgeheftet</div>
+      <div><b>3</b>Register</div>
+      <div><b>LF 1</b>aktuelles Lernfeld</div>
+      <div><b>06.11.26</b>zuletzt ergänzt</div>
+    </div>
+  </header>
+
+  <div class="binder">
+    <nav class="tabs" aria-label="Register">
+      <div class="head">Register</div>
+      <a class="tab" href="#berichtsheft" style="--c: var(--reg-a)"><span class="n">1</span>Berichtsheft<small>Wochenberichte</small></a>
+      <a class="tab" href="#lernfelder" style="--c: var(--reg-b)"><span class="n">2</span>Lernfelder<small>Berufsschule</small></a>
+      <a class="tab" href="#praesentationen" style="--c: var(--reg-c)"><span class="n">3</span>Präsentationen<small>Projekt JUPITER</small></a>
+      <a class="tab" href="#ablage" style="--c: var(--reg-d)"><span class="n">4</span>Ablage<small>Weitere Projekte</small></a>
+    </nav>
+
+    <main>
+      <section class="reg r1" id="berichtsheft">
+        <div class="reg-head">
+          <span class="n">REG 1</span>
+          <h2>Berichtsheft</h2>
+          <p>Der Ausbildungsnachweis für jede Kalenderwoche: Tätigkeiten im Betrieb und Unterricht eintragen, als PDF ausgeben.</p>
+        </div>
+        <div class="pages">
+          <a class="page wide" href="https://claude.ai/artifact/FtzQjZG3iMa8vt9CFHSJJi" target="_blank" rel="noopener">
+            <div class="meta"><span>Werkzeug</span><span>28.10.26</span></div>
+            <h3>Tätigkeitsbericht – Meine Ausbildung</h3>
+            <p>Kalenderwoche wählen, Einträge pro Tag ausfüllen oder aus früheren Berichten automatisch füllen lassen, Vorschau prüfen und die Wochen im eigenen Konto speichern.</p>
+            <span class="go">Berichtsheft öffnen ↗</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="reg r2" id="lernfelder">
+        <div class="reg-head">
+          <span class="n">REG 2</span>
+          <h2>Lernfelder</h2>
+          <p>Übungen, Lernstationen und Karteikarten aus der Berufsschule.</p>
+        </div>
+        <div class="pages">
+          <a class="page" href="https://claude.ai/artifact/SNg8WXD2HX9Q96FSWf5zxP" target="_blank" rel="noopener">
+            <div class="meta"><span>Alle Lernfelder</span><span>06.11.26</span></div>
+            <h3>Lernfeld-Kartei Einzelhandel</h3>
+            <p>Karteikarten und Prüfungsfragen zu allen 14 Lernfeldern, mit Lernfortschritt pro Lernfeld.</p>
+            <span class="go">Kartei öffnen ↗</span>
+          </a>
+          <a class="page" href="https://claude.ai/artifact/SQi3feqdtjzGGRZxu6QXFb" target="_blank" rel="noopener">
+            <div class="meta"><span>LF 1 · Arbeitsblatt 1.3</span><span>06.11.26</span></div>
+            <h3>Vom Bedürfnis zur Nachfrage</h3>
+            <p>Die fünf Lernstationen: Bedürfnisse, Güter, ökonomisches Prinzip, Arbeitsteilung und Aufgaben des Einzelhandels. Dazu Quiz und Karteikarten.</p>
+            <span class="go">Lernstationen öffnen ↗</span>
+          </a>
+          <a class="page" href="https://claude.ai/artifact/E42icojxf5dTQyLrzMbGD5" target="_blank" rel="noopener">
+            <div class="meta"><span>LF 1 · Mindmap</span><span>16.10.26</span></div>
+            <h3>Arten der Bedürfnisse</h3>
+            <p>Einteilung nach Art, nach Dringlichkeit und nach Gegenstand, jeweils mit Beispielen.</p>
+            <span class="go">Mindmap öffnen ↗</span>
+          </a>
+        </div>
+        <div class="lf">
+          <div class="lf-top">
+            <h3>Die 14 Lernfelder im Überblick</h3>
+            <span>1 von 14 mit eigenen Übungen</span>
+          </div>
+          <ol>
+            <li class="has">Das Einzelhandelsunternehmen repräsentieren</li>
+            <li>Verkaufsgespräche kundenorientiert führen</li>
+            <li>Kunden im Servicebereich Kasse betreuen</li>
+            <li>Waren präsentieren</li>
+            <li>Werben und den Verkauf fördern</li>
+            <li>Waren beschaffen</li>
+            <li>Waren annehmen, lagern und pflegen</li>
+            <li>Geschäftsprozesse erfassen und kontrollieren</li>
+            <li>Preispolitische Maßnahmen vorbereiten und durchführen</li>
+            <li>Besondere Verkaufssituationen bewältigen</li>
+            <li>Geschäftsprozesse erfolgsorientiert steuern</li>
+            <li>Mit Marketingkonzepten Kunden gewinnen und binden</li>
+            <li>Personaleinsatz planen und Mitarbeiter führen</li>
+            <li>Ein Unternehmen leiten und entwickeln</li>
+          </ol>
+          <div class="key">Farbig markiert: Lernfelder mit eigenen Übungsseiten. Die Kartei deckt alle 14 ab.</div>
+        </div>
+      </section>
+
+      <section class="reg r3" id="praesentationen">
+        <div class="reg-head">
+          <span class="n">REG 3</span>
+          <h2>Präsentationen</h2>
+          <p>Projekt JUPITER Elektromarkt: ein ausgedachter Elektromarkt mit Leitbild, Website und Werbeflyer.</p>
+        </div>
+        <div class="pages">
+          <a class="page wide" href="https://claude.ai/artifact/U6cUuBj5Bp7okfNHAA37bH" target="_blank" rel="noopener">
+            <div class="meta"><span>Website</span><span>07.10.26</span></div>
+            <h3>JUPITER Elektromarkt</h3>
+            <p>„Technik aus einer anderen Welt – Preise von dieser.“ Startseite mit Sortiment, Angeboten der Woche, Leitbild mit den Werten Fachwissen, Ehrlichkeit, Nachhaltigkeit und Schnelligkeit, Service und Kontakt.</p>
+            <span class="go">Website öffnen ↗</span>
+          </a>
+          <a class="page" href="https://claude.ai/artifact/GjtJqHz7qCQjZ3tPirXdmo" target="_blank" rel="noopener">
+            <div class="meta"><span>Flyer · Version 1</span><span>07.10.26</span></div>
+            <h3>Elektro-Shop Flyer</h3>
+            <p>Der erste Werbeflyer für den Markt.</p>
+            <span class="go">Flyer öffnen ↗</span>
+          </a>
+          <a class="page" href="https://claude.ai/artifact/Nc2KxvcqFMz2cJrN9qMsaS" target="_blank" rel="noopener">
+            <div class="meta"><span>Flyer · Version 2</span><span>07.10.26</span></div>
+            <h3>Jupiter Flyer Redesign</h3>
+            <p>Überarbeitete Fassung des Flyers im JUPITER-Design.</p>
+            <span class="go">Redesign öffnen ↗</span>
+          </a>
+        </div>
+      </section>
+
+      <section class="reg r4" id="ablage">
+        <div class="reg-head">
+          <span class="n">REG 4</span>
+          <h2>Ablage</h2>
+          <p>Weitere Schulprojekte, die nicht in die Register oben passen.</p>
+        </div>
+        <div class="pages">
+          <a class="page wide" href="https://claude.ai/artifact/Bc7CkT8PVhaSSaQCaiVGSX" target="_blank" rel="noopener">
+            <div class="meta"><span>Sammlung</span><span>12.10.26</span></div>
+            <h3>Meine Projektmappe</h3>
+            <p>Referate, Facharbeiten und Gruppenprojekte mit Fach, Note und Status. Durchsuchbar und nach Fach filterbar.</p>
+            <span class="go">Projektmappe öffnen ↗</span>
+          </a>
+        </div>
+      </section>
+
+      <footer>Neue Seiten kommen ins passende Register. Stand: 6. November 2026.</footer>
+    </main>
+  </div>
+</div>
